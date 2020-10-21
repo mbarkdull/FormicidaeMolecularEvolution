@@ -67,14 +67,23 @@ translate the data we downloaded. This will be done in one of two ways:
     codon table.
 
 The script `./scripts/DataTranslating` takes care of this process for
-us. It will attempt to run Transdecoder on each cleaned transcripts
-file; if the data is unprocessed, this will give us a translated output
-file. If the data is already processed, Transdecoder will fail to run
-and the script will instead translate the file with my Python script,
+us. It will attempt to run
+[Transdecoder](https://github.com/TransDecoder/TransDecoder/wiki) on
+each cleaned transcripts file; if the data is unprocessed, this will
+give us a translated output file. If the data is already processed,
+Transdecoder will fail to run and the script will instead translate the
+file with my Python script,
 `./scripts/TranscriptFilesTranslateScript.py`.
 
-To run this step, simply use the command: `./scripts/DataTranslating
-./scripts/inputurls.txt`
+***This step uses the path to Transdecoder on Cornell’s BioHPC. I plan
+to update the script in future so that it is more portabe. In the
+meantime, you’d need to edit lines 26 and 27 of
+`./scripts/DataTranslating` so that they point to Transdecoder on your
+machine.***
+
+To run this step, simply use the command:
+
+`./scripts/DataTranslating ./scripts/inputurls.txt`
 
 This will create a new directory, `./TranslatedData`, that contains the
 cleaned transcript files.
