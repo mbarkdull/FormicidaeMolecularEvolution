@@ -10,6 +10,12 @@ is:
 
 <img src="README_files/figure-gfm/unnamed-chunk-1-1.png" style="display: block; margin: auto;" />
 
+### Using this workflow:
+
+To use this workflow, simply clone this repository onto your own
+machine. You will run all Bash scripts in the main directory associated
+with this repository (i.e., in `/FormicidaeMolecularEvolution/`)
+
 ## Downloading data:
 
 For a project of this kind, you will need transcript data from your
@@ -31,6 +37,20 @@ following command in a Bash shell:
 
 This will create a new directory, `./RawData`, containing the downloaded
 transcript files.
+
+## Cleaning the raw data:
+
+The raw data is likely to have several features that will make future
+steps difficult or annoying. To solve this problem, you’ll want to run
+the script `DataCleaning`. This will remove any special characters from
+gene names (for example, \_ or (), which Orthofinder will change,
+causing errors) and add your four-letter taxon abbreviation to the
+beginning of each gene name. To run this script, simply use the command:
+
+`./scripts/DataCleaning ./scripts/inputurls.txt`
+
+This will create a new directory, `./CleanedData`, that contains the
+cleaned transcript files.
 
 For the step where you must convert the outputs of OrthoFinder to be
 inputs for RERConverge, please see the [Comparative Genomics
