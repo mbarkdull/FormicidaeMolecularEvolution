@@ -1,0 +1,70 @@
+---
+title: "Comparative Genomic Analysis Workflow"
+author: "Megan Barkdull"
+output: 
+  github_document:
+    toc: true
+    toc_depth: 5
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Introduction
+
+This repository hosts the workflow for a comparative genomics analysis. The general overview is:
+
+```{r, echo = FALSE, fig.align = 'center'}
+library(DiagrammeR)
+grViz("digraph flowchart {
+      # node definitions with substituted label text
+      node [fontname = Helvetica, shape = rectangle]        
+      tab1 [label = '@@1']
+      tab2 [label = '@@2']
+      tab3 [label = '@@3']
+      tab4 [label = '@@4']
+      tab5 [label = '@@5']
+      tab6 [label = '@@6']
+      tab7 [label = '@@7']
+      tab8 [label = '@@8']
+      tab9 [label = '@@9']
+      tab10 [label = '@@10']
+      tab11 [label = '@@11']
+      # edge definitions with the node IDs
+      tab1 -> tab2 -> tab3 -> tab4 -> tab5 -> tab9;
+      tab2 -> tab6 -> tab7 -> tab8 -> tab9;
+      tab3 -> tab8;
+      tab1 -> tab10 -> tab11;
+      tab4 -> tab11;
+      tab3 -> tab10;
+      }
+      [1]: 'Download the coding sequences for each species'
+      [2]: 'Clean data; translate coding sequences to amino acid sequences'
+      [3]: 'Run Orthofinder on the amino acid sequences'
+      [4]: 'Infer gene trees with Rubin pipeline using the coding sequences'
+      [5]: 'Run RERconverge on the gene trees'
+      [6]: 'Annotate genes with InterProScan'
+      [7]: 'Concatenate InterProScan results'
+      [8]: 'Run Kinfin on the Orthofinder results'
+      [9]: 'Test for enrichment with GOATOOLS'
+      [10]: 'Use PAL2NAL to create sequence-aware nucleotide alignments'
+      [11]: 'Used BustedS to test for positive selection'
+      ")
+```
+
+## Downloading data:
+For a project of this kind, you will need transcript data from your species of interest. The Bash script `DataDownload` can download these data for you. This script requires an input file, which should be a tab-delimited text file with:
+
+  + Download URLs in the first column
+  + The file names that you want your data downloaded to in the second column, formatted like: `FOURLETTERTAXONABBREVIATION_transcripts.fasta`.
+  
+See `./scripts/inputurls.txt` for an example. 
+
+Once you have an input URLs file, simply run the script by executing the following command in a Bash shell:
+
+`./scripts/DataDownload ./scripts/inputurls.txt`
+
+This will create a new directory, `./RawData`, containing the downloaded transcript files. 
+
+For the step where you must convert the outputs of OrthoFinder to be inputs for RERConverge, please see the [Comparative Genomics repository](https://github.com/mbarkdull/ComparativeGenomics)
