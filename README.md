@@ -52,6 +52,33 @@ beginning of each gene name. To run this script, simply use the command:
 This will create a new directory, `./CleanedData`, that contains the
 cleaned transcript files.
 
+## Translating nucleotide sequences to amino acid sequences:
+
+For many steps of this workflow, you’ll actually need amino acid
+sequences rather than protein sequences. Therefore, we’ll need to
+translate the data we downloaded. This will be done in one of two ways:
+
+  - If the data you downloaded are raw transcript data, meaning for
+    example that they don’t start with a start codon, then we’ll use
+    Transdecoder to process and translate them into meaningful amino
+    acid sequences.
+  - If they have already been processed and begin with start codons, we
+    can take a simpler route and just translate them with the use of a
+    codon table.
+
+The script `./scripts/DataTranslating` takes care of this process for
+us. It will attempt to run Transdecoder on each cleaned transcripts
+file; if the data is unprocessed, this will give us a translated output
+file. If the data is already processed, Transdecoder will fail to run
+and the script will instead translate the file with my Python script,
+`./scripts/TranscriptFilesTranslateScript.py`.
+
+To run this step, simply use the command: `./scripts/DataTranslating
+./scripts/inputurls.txt`
+
+This will create a new directory, `./TranslatedData`, that contains the
+cleaned transcript files.
+
 For the step where you must convert the outputs of OrthoFinder to be
 inputs for RERConverge, please see the [Comparative Genomics
 repository](https://github.com/mbarkdull/ComparativeGenomics)
