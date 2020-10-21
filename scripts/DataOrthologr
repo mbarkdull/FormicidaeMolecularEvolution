@@ -1,0 +1,48 @@
+#!/bin/bash
+
+#The command to run this is `./DataDownload [input file]`. This will read in each line of the input file; create a variable that is the url from which to download the data, based on the first field of the line of the input file; it will create a temporary file that holds the individual tree for that gene; and will then send those pieces of information to HyPhy to be run.
+  while read -r line;
+  do
+    # This script uses Orthologr to iterate PAL2NAL over the genomes, creating codon-aware alignments that can be used for running BUSTEDs.
+    # The function we will use is codon_aln, which requires two input files, a list of paths to the protein alignments (these are created by OrthoFinder) and a list of paths to the nucleotide sequences (These are created by DataCleaning).
+
+      # The two input files need to have the same genes names inside of them, so the protein alignments file created by ./DataMSA needs to be edited:
+        # This uses the second field on each line  of the input urls file to get chunk of text that needs to be removed from the gene names:
+          export abbrev=`echo "$line" | awk -F',' '{print $2}' | awk -F'_' '{print $1}'`
+          export proteinFile=proteins_$abbrev.fasta
+          echo Running on $proteinFile
+          export transcripts=_transcripts_
+          export fasta=.fasta
+          export remove=$abbrev$transcripts
+          echo Removing $remove from gene names.
+
+          mkdir /workdir/$USER/Orthologr
+          cd /workdir/$USER/Orthologr
+
+        # Copy the aligned protein files to this directory:
+          cp /workdir/$USER/Proteins/proteins_$abbrev$fasta ./
+          echo Copying /workdir/$USER/Proteins/proteins_$abbrev$fasta to working directory.
+          ls
+
+        # Then use sed to remove that chunk of text from all of the genes names:
+          sed -i'.original' -e "s|>${remove}|>|g" $proteinFile
+          rm *.original
+
+          echo Gene names in $proteinFile are cleaned.
+
+        # Make the list of protein alignments (file_aln):
+          export file_aln=$proteinFile
+          echo Alignment file is $file_aln
+
+        # Make the list of nucleotide sequences (file_nuc):
+          # These are named like cds_aech_transcripts.fasta
+          export fileEnding=_transcripts.fasta
+          export file_nuc=cds_$abbrev$fileEnding
+          cp ../CodingSequences/$file_nuc ./
+          echo Nucleotide sequence file is $file_nuc
+
+    echo __________________________________________________
+
+  done < $1
+
+  

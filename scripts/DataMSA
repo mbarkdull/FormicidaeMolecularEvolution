@@ -1,0 +1,50 @@
+#!/bin/bash
+# The command to run this script is ./DataMSA inputurls /DIRECTORYTOMSAFILES
+mkdir /workdir/$USER/Proteins
+export directory=$2
+
+while read -r line;
+do
+  # This line extracts the species abbreviation from the information in the inputurls file:
+  export abbrev=`echo "$line" | awk -F',' '{print $2}' | awk -F'_' '{print $1}'`
+  echo $abbrev
+  # This line creates the file name where we will be sending all of the aligned amino acid sequences for the species:
+  export outfileName=proteins_$abbrev.fasta
+
+  cd /workdir/$USER/Proteins
+
+  # This loop reads through all of the files in the multiple sequence alignments directory:
+  # For each file in the specified directory:
+  for f in $directory/*
+  do
+    # echo the file name:
+    #echo $f
+    # This loop will read through all of the lines in the file:
+    export printMore=false
+    while read -r fline;
+    do
+      # This part will check if the line of the file contains the species abbreviation:
+
+      if (echo $fline |grep '^>') ; then
+        if (echo $fline |grep $abbrev) ; then
+          # If the line contains the species abbreviation, the script will tell us yes:
+           export printMore=true
+           # Then it will send that line, and all the lines after it until the next less than sign (so the gene name and the protein sequence) to our file (outfileName):
+        else
+          export printMore=false
+        fi
+      fi
+      if ($printMore -eq true); then
+        echo $fline >> $outfileName
+      fi
+    done < $f
+  done
+
+cd /workdir/$USER
+
+done < $1
+
+
+# file name: proteins_$abbrev.fasta
+
+#destination: /workdir/$USER/Proteins
