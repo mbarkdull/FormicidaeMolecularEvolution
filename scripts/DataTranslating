@@ -19,7 +19,7 @@
     mkdir ./TranslatedData
     cd ./TranslatedData
     cp ../CleanedData/$cleanName ./$cleanName
-    cp ../TranscriptFilesTranslateScript.py ./
+    cp ../scripts/TranscriptFilesTranslateScript.py ./
 
     # Now we can run Transdecoder on the cleaned file:
     echo "First, attempting TransDecoder run on $cleanName"
