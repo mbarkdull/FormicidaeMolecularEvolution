@@ -91,7 +91,33 @@ To run this step, simply use the command:
 
 `./scripts/DataTranslating ./scripts/inputurls.txt`
 
-This will create a new directory, `./TranslatedData`, that contains the cleaned transcript files. 
+This will create a new directory, `./TranslatedData/OutputFiles/`, that contains the translated transcript files. 
+
+If you use Transdecoder, please cite it as:
+Haas, B., and A. Papanicolaou. "TransDecoder." (2017).
+
+## Running Orthofinder:
+Next, we will use [Orthofinder](https://davidemms.github.io) to identify groups of orthologous genes in our amino acid sequences, and to produce multiple sequence alignments with MAFFT. To run Orthofinder automatically, you can use the Bash script `DataOrthofinder`. ***This script takes a version number as a command line option to run either version 2.4.0 or 2.3.8. The script is currently written to work on Cornell's BioHPC, and so may require some changes to run on other machines (editing at least lines 14-16 and 42-46).***
+
+To run this step, use the command:
+
+`./scripts/DataOrthofinder [version number, either 2.4.0 or 2.3.8]`
+
+This will infer orthogroups and sultiple-sequence alignment-based gene trees; MAFFT is used to generate the multiple sequence alignments and FastTree to generate the gene trees. Outputs will be found in a new subdirectory of `/FormicidaeMolecularEvolution/`, `./OrthoFinder/fasta/OrthoFinder`.
+
+If you use Orthofinder, please cite it:
+
+  + OrthoFinder’s orthogroup and ortholog inference are described here:
+      + Emms, D.M., Kelly, S. OrthoFinder: solving fundamental biases in whole genome comparisons dramatically improves orthogroup inference accuracy. Genome Biol 16, 157 (2015)
+      + Emms, D.M., Kelly, S. OrthoFinder: phylogenetic orthology inference for comparative genomics. Genome Biol 20, 238 (2019)
+  + If you use the OrthoFinder species tree then also cite:
+      + Emms D.M. & Kelly S. STRIDE: Species Tree Root Inference from Gene Duplication Events (2017), Mol Biol Evol 34(12): 3267-3278
+      + Emms D.M. & Kelly S. STAG: Species Tree Inference from All Genes (2018), bioRxiv https://doi.org/10.1101/267914
+
+Please also cite MAFFT: 
+
+  + K. Katoh, K. Misawa, K. Kuma, and T. Miyata. 2002. MAFFT: a novel method for rapid multiple sequence alignment based on fast Fourier transform. Nucleic Acids Res. 30(14): 3059-3066. 
+
 
 
 For the step where you must convert the outputs of OrthoFinder to be inputs for RERConverge, please see the [Comparative Genomics repository](https://github.com/mbarkdull/ComparativeGenomics)
