@@ -103,7 +103,7 @@ To run this step, use the command:
 
 `./scripts/DataOrthofinder [version number, either 2.4.0 or 2.3.8]`
 
-This will infer orthogroups and sultiple-sequence alignment-based gene trees; MAFFT is used to generate the multiple sequence alignments and FastTree to generate the gene trees. Outputs will be found in a new subdirectory of `/FormicidaeMolecularEvolution/`, `./OrthoFinder/fasta/OrthoFinder`.
+This will infer orthogroups and multiple-sequence alignment-based gene trees; MAFFT is used to generate the multiple sequence alignments and FastTree to generate the gene trees. Outputs will be found in a new subdirectory of `/FormicidaeMolecularEvolution/`, `./OrthoFinder/fasta/OrthoFinder`.
 
 If you use Orthofinder, please cite it:
 
@@ -117,6 +117,51 @@ If you use Orthofinder, please cite it:
 Please also cite MAFFT: 
 
   + K. Katoh, K. Misawa, K. Kuma, and T. Miyata. 2002. MAFFT: a novel method for rapid multiple sequence alignment based on fast Fourier transform. Nucleic Acids Res. 30(14): 3059-3066. 
+  
+## Reordering multiple sequence alignment files
+Orthofinder produces a single file for every individual orthogroup, containing the alignments for the sequences in that orthogroup. However, in order to create codon-aware alignments with PAL2NAL (implemented in Orthologr), we need files that contain all of the alignments for each individual species. 
+
+
+```{r, echo = FALSE, fig.align = 'center'}
+library(DiagrammeR)
+grViz("digraph flowchart {
+      # node definitions with substituted label text
+      node [fontname = Helvetica, shape = rectangle]        
+      tab1 [label = '@@1']
+      tab2 [label = '@@2']
+      tab3 [label = '@@3']
+      tab4 [label = '@@4']
+      tab5 [label = '@@5']
+      tab6 [label = '@@6']
+      tab7 [label = '@@7']
+      # edge definitions with the node IDs
+      tab1 -> tab5;
+      tab1 -> tab6;
+      tab1 -> tab7;
+      tab2 -> tab5;
+      tab2 -> tab6;
+      tab2 -> tab7;
+      tab3 -> tab5;
+      tab3 -> tab6;
+      tab3 -> tab7;
+      tab4 -> tab5;
+      tab4 -> tab6;
+      tab4 -> tab7;
+      }
+      [1]: 'Orthofinder file: \\n Locus1 Species1 \\n Locus1 Species2 \\n Locus1 Species3'
+      [2]: 'Orthofinder file: \\n Locus2 Species1 \\n Locus2 Species2 \\n Locus2 Species3'
+      [3]: 'Orthofinder file: \\n Locus3 Species1 \\n Locus3 Species2 \\n Locus3 Species3'
+      [4]: 'Orthofinder file: \\n Locus4 Species1 \\n Locus4 Species2 \\n Locus4 Species3'
+      [5]: 'Reshuffled file: \\n Locus1 Species1 \\n Locus2 Species1 \\n Locus3 Species1 \\n Locus4 Species1'
+      [6]: 'Reshuffled file: \\n Locus1 Species2 \\n Locus2 Species2 \\n Locus3 Species2 \\n Locus4 Species2'
+      [7]: 'Reshuffled file: \\n Locus1 Species3 \\n Locus2 Species3 \\n Locus3 Species3 \\n Locus4 Species3'
+      ")
+```
+
+
+The Bash script `DataMSA` will recombine the Orthofinder outputs so that they can be input to PAL2NAL. Note that this script is currently pretty slow; I'm working to rewrite it so that it can be run in a multi-threaded fashion. To run the script, you'll need to get the path to the MSA files created by Orthofinder in the previous step (it will be something like `./FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_Oct26/MultipleSequenceAlignments`). Then use the command:
+
+`./scripts/DataMSA ./scripts/inputurls ./PathToMSAFiles`
 
 
 

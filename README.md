@@ -106,7 +106,7 @@ To run this step, use the command:
 
 `./scripts/DataOrthofinder [version number, either 2.4.0 or 2.3.8]`
 
-This will infer orthogroups and sultiple-sequence alignment-based gene
+This will infer orthogroups and multiple-sequence alignment-based gene
 trees; MAFFT is used to generate the multiple sequence alignments and
 FastTree to generate the gene trees. Outputs will be found in a new
 subdirectory of `/FormicidaeMolecularEvolution/`,
@@ -131,6 +131,28 @@ Please also cite MAFFT:
   - K. Katoh, K. Misawa, K. Kuma, and T. Miyata. 2002. MAFFT: a novel
     method for rapid multiple sequence alignment based on fast Fourier
     transform. Nucleic Acids Res. 30(14): 3059-3066.
+
+## Reordering multiple sequence alignment files
+
+Orthofinder produces a single file for every individual orthogroup,
+containing the alignments for the sequences in that orthogroup. However,
+in order to create codon-aware alignments with PAL2NAL (implemented in
+Orthologr), we need files that contain all of the alignments for each
+individual
+species.
+
+<img src="README_files/figure-gfm/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
+
+The Bash script `DataMSA` will recombine the Orthofinder outputs so that
+they can be input to PAL2NAL. Note that this script is currently pretty
+slow; I’m working to rewrite it so that it can be run in a
+multi-threaded fashion. To run the script, you’ll need to get the path
+to the MSA files created by Orthofinder in the previous step (it will be
+something like
+`./FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_Oct26/MultipleSequenceAlignments`).
+Then use the command:
+
+`./scripts/DataMSA ./scripts/inputurls ./PathToMSAFiles`
 
 For the step where you must convert the outputs of OrthoFinder to be
 inputs for RERConverge, please see the [Comparative Genomics
