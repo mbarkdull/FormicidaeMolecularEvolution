@@ -11,7 +11,7 @@ do
   # This line creates the file name where we will be sending all of the aligned amino acid sequences for the species:
   export outfileName=proteins_$abbrev.fasta
 
-  cd /workdir/$USER/Proteins
+  cd /workdir/$USER/FormicidaeMolecularEvolution/Proteins
 
   # This loop reads through all of the files in the multiple sequence alignments directory:
   # For each file in the specified directory:
@@ -40,7 +40,7 @@ do
     done < $f
   done
 
-cd /workdir/$USER
+cd /workdir/$USER/FormicidaeMolecularEvolution
 
 done < $1
 
