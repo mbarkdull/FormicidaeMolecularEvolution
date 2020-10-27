@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# The command to run this is `./scripts/DataPAL2NALPrep ./scripts/inputurls.txt
+while read -r line;
+do
+  # Start setting up variables from the inputurls file:
+  # This will get the species abbreviation from the inputurls file:
+  export abbrev=`echo "$line" | awk -F',' '{print $2}' | awk -F'_' '{print $1}'`
+  echo This is the species abbreviation: $abbrev
+  # I want to get the cleaned nucleotide sequence (CDS) file and the aligned amino acid (MSA) file for each species:
+  # MSA: /FormicidaeMolecularEvolution/Proteins/proteins_acep.fasta
+  # CDS: /FormicidaeMolecularEvolution/CodingSequences/cds_acep_transcripts.fasta
+  export MSAfile=proteins_$abbrev.fasta
+  export CDSfile=cds_$abbrev"_transcripts.fasta"
+  echo This is the MSA file: $MSAfile
+
+
+  # Create an associative array containing all of the gene names from the MSA file (this is the subset of genes we want to keep from the CDS file):
+  # This creates an associative array named geneNames:
+  declare -A geneNames
+  # Now we're reading through the lines of the MSA file (which we get from the done statement at the end of this section):
+  while read -r MSAline;
+  do
+    # This checks each line to see if it starts with a > sign, meaning it's a gene name:
+    if (echo $MSAline |grep '^>') ; then
+      #echo this is the not-cleaned gene name $MSAline
+      #echo this is the cleaned gene name $MSAline | sed "s|>${abbrev}_transcripts_||g"
+      # This creates a variable, cleanGeneName, that will store the gene name extracted from that line:
+      export cleanGeneName=`echo $MSAline | sed "s|>${abbrev}_transcripts_||"`
+      echo cleanGeneName is $cleanGeneName
+      # This puts the cleanGeneName into the array:
+      geneNames[$cleanGeneName]=$cleanGeneName
+      #echo __________________________________________________
+    fi
+  done < ./Proteins/$MSAfile
+  echo __________________________________________________
+  echo the array containing all gene names: ${geneNames[*]}
+
+  export outfileName="filtered_"$abbrev"_cds.fasta"
+  echo This will be sent to the output file: $outfileName
+  export f="./CodingSequences/cds_"$abbrev"_transcripts.fasta"
+  echo the coding sequence file is: $f
+  echo __________________________________________________
+  # This loop will read through all of the lines in the multiple sequence alignment file:
+  export printMore=false
+  while read -r fline;
+  do
+    # This part will check if the line of the multiple sequence alignment file is a gene name (starts with an ">"):
+    if (echo $fline |grep '^>') ; then
+      # Now we want to filter the line so that it's just the gene name. This will entail removing the > AND the first space and everything after that:
+      export currentGeneName=`echo $fline | sed 's/>//' | sed 's/ .*//'`
+      echo The current gene name is: $currentGeneName
+      if [ -v geneNames[$currentGeneName] ] ; then
+        echo $currentGeneName is in the array.
+        echo __________________________________________________
+        export printMore=true
+      else
+        echo $currentGeneName is NOT in the array.
+        echo __________________________________________________
+        export printMore=false
+      fi
+    fi
+    if ($printMore -eq true); then
+      echo $fline >> $outfileName
+    fi
+  done < $f
+done < $1

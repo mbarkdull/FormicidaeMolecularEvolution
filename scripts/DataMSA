@@ -1,8 +1,9 @@
 #!/bin/bash
-# The command to run this script is ./DataMSA inputurls /DIRECTORYTOMSAFILES
+# The command to run this script is ./DataMSA inputurls.txt /DirectoryToMSAFiles
 mkdir /workdir/$USER/Proteins
 export directory=$2
 
+# While reading each line of inputurls.txt...
 while read -r line;
 do
   # This line extracts the species abbreviation from the information in the inputurls file:
@@ -14,22 +15,20 @@ do
   cd /workdir/$USER/FormicidaeMolecularEvolution/Proteins
 
   # This loop reads through all of the files in the multiple sequence alignments directory:
-  # For each file in the specified directory:
+  # For each file in the specified multiple sequence alignments directory:
   for f in $directory/*
   do
-    # echo the file name:
-    #echo $f
-    # This loop will read through all of the lines in the file:
+    # This loop will read through all of the lines in the multiple sequence alignment file:
     export printMore=false
     while read -r fline;
     do
-      # This part will check if the line of the file contains the species abbreviation:
-
+      # This part will check if the line of the multiple sequence alignment file is a gene name (starts with an ">"):
       if (echo $fline |grep '^>') ; then
+        # If the line is a gene name, it will check if the gene name contains a particular species abbreviation:
         if (echo $fline |grep $abbrev) ; then
           # If the line contains the species abbreviation, the script will tell us yes:
            export printMore=true
-           # Then it will send that line, and all the lines after it until the next less than sign (so the gene name and the protein sequence) to our file (outfileName):
+           # Then it will send that line, and all the lines after it until the next ">" (so the gene name and the protein sequence) to our file (outfileName):
         else
           export printMore=false
         fi

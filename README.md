@@ -2,7 +2,7 @@ Comparative Genomic Analysis Workflow
 ================
 Megan Barkdull
 
-## 1\. Introduction
+## Introduction
 
 This repository hosts the workflow for a comparative genomics analysis.
 The general overview
@@ -16,7 +16,7 @@ To use this workflow, simply clone this repository onto your own
 machine. You will run all Bash scripts in the main directory associated
 with this repository (i.e., in `/FormicidaeMolecularEvolution/`)
 
-## Downloading data:
+## 1\. Downloading data:
 
 For a project of this kind, you will need transcript data from your
 species of interest. The Bash script `DataDownload` can download these
@@ -38,7 +38,7 @@ following command in a Bash shell:
 This will create a new directory, `./RawData`, containing the downloaded
 transcript files.
 
-## Cleaning the raw data:
+## 2\. Cleaning the raw data:
 
 The raw data is likely to have several features that will make future
 steps difficult or annoying. To solve this problem, you’ll want to run
@@ -52,7 +52,7 @@ beginning of each gene name. To run this script, simply use the command:
 This will create a new directory, `./CleanedData`, that contains the
 cleaned transcript files.
 
-## Translating nucleotide sequences to amino acid sequences:
+## 3\. Translating nucleotide sequences to amino acid sequences:
 
 For many steps of this workflow, you’ll actually need amino acid
 sequences rather than protein sequences. Therefore, we’ll need to
@@ -91,7 +91,7 @@ contains the translated transcript files.
 If you use Transdecoder, please cite it as: Haas, B., and A.
 Papanicolaou. “TransDecoder.” (2017).
 
-## Running Orthofinder:
+## 4\. Running Orthofinder:
 
 Next, we will use [Orthofinder](https://davidemms.github.io) to identify
 groups of orthologous genes in our amino acid sequences, and to produce
@@ -132,7 +132,9 @@ Please also cite MAFFT:
     method for rapid multiple sequence alignment based on fast Fourier
     transform. Nucleic Acids Res. 30(14): 3059-3066.
 
-## Reordering multiple sequence alignment files
+## 5\. Preparing files for PAL2NAL:
+
+### Reordering multiple sequence alignment files for PAL2NAL
 
 Orthofinder produces a single file for every individual orthogroup,
 containing the alignments for the sequences in that orthogroup. However,
@@ -153,6 +155,14 @@ something like
 Then use the command:
 
 `./scripts/DataMSA ./scripts/inputurls ./PathToMSAFiles`
+
+### Filtering coding sequences for PAL2NAL:
+
+The nucleotide sequence file that is run through PAL2NAL can have only
+the genes that are also present in the protein alignment file. Since our
+protein alignment files contain only a subset of genes, we need to
+filter through the nucleotide sequence files so that they too contain
+only this subset. To do this, use the script `DataPAL2NALPrep`
 
 For the step where you must convert the outputs of OrthoFinder to be
 inputs for RERConverge, please see the [Comparative Genomics
