@@ -30,36 +30,45 @@ do
       echo cleanGeneName is $cleanGeneName
       # This puts the cleanGeneName into the array:
       geneNames[$cleanGeneName]=$cleanGeneName
+      echo Clean gene name is: [$cleanGeneName]
+      #echo Array is: $geneNames[$cleanGeneName]
+      #echo Array2 is: ${geneNames[$cleanGeneName]}
       #echo __________________________________________________
     fi
   done < ./Proteins/$MSAfile
   echo __________________________________________________
-  echo the array containing all gene names: ${geneNames[*]}
+  echo The gene names in the array are: ${geneNames[*]}
 
+  # Here we set the file to which our filtered output will be sent:
   export outfileName="filtered_"$abbrev"_cds.fasta"
   echo This will be sent to the output file: $outfileName
+  # Here we set the coding sequence file that we are working with:
   export f="./CodingSequences/cds_"$abbrev"_transcripts.fasta"
-  echo the coding sequence file is: $f
+  echo The coding sequence file is: $f
   echo __________________________________________________
-  # This loop will read through all of the lines in the multiple sequence alignment file:
   export printMore=false
+  # This loop will read through all of the lines in the coding sequence file:
   while read -r fline;
   do
-    # This part will check if the line of the multiple sequence alignment file is a gene name (starts with an ">"):
+    # This part will check if the line of the coding sequence file is a gene name (starts with an ">"):
     if (echo $fline |grep '^>') ; then
       # Now we want to filter the line so that it's just the gene name. This will entail removing the > AND the first space and everything after that:
       export currentGeneName=`echo $fline | sed 's/>//' | sed 's/ .*//'`
-      echo The current gene name is: $currentGeneName
-      if [ -v geneNames[$currentGeneName] ] ; then
+      echo The current gene name is: [$currentGeneName]
+      # This loop will check if the gene name is present in the corresponding multiple sequence alignment file:
+      if [ -v ${geneNames[$currentGeneName]} ] ; then
         echo $currentGeneName is in the array.
         echo __________________________________________________
+        # If the gene is present, then it will be sent to our output file.
         export printMore=true
       else
-        echo $currentGeneName is NOT in the array.
+        echo $currentGeneName is NOT PRESENT in the array.
         echo __________________________________________________
+        #If the gene name isn't present in the multiple sequence alignment file, then we will move on to the next gene name.
         export printMore=false
       fi
     fi
+    # This will continue printing the gene sequence to the output file.
     if ($printMore -eq true); then
       echo $fline >> $outfileName
     fi
