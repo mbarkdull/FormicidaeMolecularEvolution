@@ -73,4 +73,6 @@ do
       echo $fline >> $outfileName
     fi
   done < $f
+  mkdir ./filteredCDS
+  mv ./$outfileName ./filteredCDS
 done < $1
