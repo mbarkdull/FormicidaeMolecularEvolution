@@ -38,9 +38,9 @@
 
         # copy the created coding sequence file to a coding sequences folder:
         export cdsFile=$cleanName".transdecoder.cds"
-        mkdir ../CodingSequences
-        cp $cdsFile ../CodingSequences
-        mv ../CodingSequences/$cdsFile ../CodingSequences/cds_$rawName
+        mkdir ../TransdecoderCodingSequences
+        cp $cdsFile ../TransdecoderCodingSequences
+        mv ../TransdecoderCodingSequences/$cdsFile ../TransdecoderCodingSequences/cds_$rawName
 
     else
         echo "$transdecoderFile was not produced because the input file already consisted of coding sequences (CDS). Running TranscriptFilesTranslateScript.py on $cleanName to produce amino acid sequences"
