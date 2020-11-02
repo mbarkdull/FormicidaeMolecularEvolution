@@ -20,6 +20,6 @@ cdsFiltering <- function(cdsFile, msaFile, msaPrefix, output) {
   FilteredCodingSequences <- subset(CodingSequences, inMSA == "TRUE", select = c("name", "seq.text"))
   # Save the output
   dat2fasta(FilteredCodingSequences, outfile = output)
-  
-# Now I need to run this iteratively based on command line input:
 }
+
+# Now I need to run this iteratively based on command line input:
