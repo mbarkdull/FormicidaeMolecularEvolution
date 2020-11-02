@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# The command to run this is `./scripts/DataRunPAL2NAL ./scripts/inputurls.txt
+while read -r line;
+do
+  # Start setting up variables from the inputurls file:
+  # This will get the species abbreviation from the inputurls file:
+  export abbrev=`echo "$line" | awk -F',' '{print $2}' | awk -F'_' '{print $1}'`
+  echo This is the species abbreviation: $abbrev
+
+  export alnFile=./Proteins/proteins_$abbrev.fasta
+  export nucFile="./filteredCDS/filtered_"$abbrev"_cds.fasta"
+  export output=alignedCDS_$abbrev".fasta"
+
+  ./scripts/pal2nal.v14/pal2nal.pl  $alnFile  $nucFile  -output > $output
+
+  mkdir ./PAL2NALOutput
+  mv $output ./PAL2NALOutput/$output
+
+done < $1
