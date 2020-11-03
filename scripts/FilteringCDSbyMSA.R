@@ -7,6 +7,7 @@ speciesInfo <- separate(data = speciesInfo, col = V2, into = c("abbrev", "transc
 abbreviations <- speciesInfo$abbrev
 
 # I've written this function that will produce a subsetted nucleotide sequence file:
+# I should also add error messages into this function. 
 cdsFiltering <- function(cdsFile, msaFile, msaPrefix, output) {
   # Load packages:
   library(phylotools)
@@ -30,10 +31,9 @@ cdsFiltering <- function(cdsFile, msaFile, msaPrefix, output) {
 for (i in abbreviations)
 {
   print(i)
-  # The last thing I'll need to change is to make sure the paths to these things are correct in the context of the whole directory.
-  cdsFile <- (paste("cds_", i, "_transcripts.fasta", sep = ""))
+  cdsFile <- (paste("./CodingSequences/cds_", i, "_transcripts.fasta", sep = ""))
   print(cdsFile)
-  msaFile <- (paste("proteins_", i, ".fasta", sep = ""))
+  msaFile <- (paste("./Proteins/proteins_", i, ".fasta", sep = ""))
   print(msaFile)
   msaPrefix <- (paste(i, "_transcripts_", sep = ""))
   print(msaPrefix)
