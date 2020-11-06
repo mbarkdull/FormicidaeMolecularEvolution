@@ -32,18 +32,18 @@ cdsFiltering <- function(cdsFile, msaFile, msaPrefix, output) {
   library(plyr)
   library(tidyverse)
   # Read in coding sequences and split the sequence name column by the space:
-  CodingSequences <- read.fasta(file = "./CodingSequences/cds_mpha_transcripts.fasta")
+  CodingSequences <- read.fasta(file = cdsFile)
   CodingSequences <- separate(data = CodingSequences, col = seq.name, into = c("seq.name", "extraInfo"), sep = " ")
   CodingSequences <- select(CodingSequences, -c("extraInfo"))
   # Read in protein sequences and remove the string "mpha_transcripts_" from the sequence names:
-  MSAProteinSequences <- read.fasta(file = "./Proteins/proteins_mpha.fasta")
-  MSAProteinSequences$seq.name <- gsub("mpha_transcripts_", '', MSAProteinSequences$seq.name)
+  MSAProteinSequences <- read.fasta(file = msaFile)
+  MSAProteinSequences$seq.name <- gsub(msaPrefix, '', MSAProteinSequences$seq.name)
   # Create a column that checks if the coding sequence found in the protein sequence file?
   CodingSequences$inMSA <- CodingSequences$seq.name %in% MSAProteinSequences$seq.name
   # Subset the coding sequences based on the value in that column:
   FilteredCodingSequences <- subset(CodingSequences, inMSA == "TRUE", select = c("seq.name", "seq.text"))
   # Save the output
-  dat2fasta(FilteredCodingSequences, outfile = "test.fasta")
+  dat2fasta(FilteredCodingSequences, outfile = output)
 }
 
 # This for loop iterates the subsetting function on all species:
