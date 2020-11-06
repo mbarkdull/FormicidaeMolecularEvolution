@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# This script is nonfunctional and is replaced by the R script FilteringCDSbyMSA.R
 # The command to run this is `./scripts/DataPAL2NALPrep ./scripts/inputurls.txt
 while read -r line;
 do
