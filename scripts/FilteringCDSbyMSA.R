@@ -1,6 +1,24 @@
+#!/usr/bin/env Rscript
+
+args <- commandArgs(trailingOnly=TRUE)
+if (length(args)==0) {
+  stop("At least one argument must be supplied (input file).n", call.=FALSE)
+} else if (length(args)==1) {
+  # default output file
+  args[2] = "out.txt"
+}
+
+# Make a directory for outputs:
+dir.create("./FilteredCDS")
+
+# Load packages:
+library(phylotools)
+library(plyr)
+library(tidyverse)
+
 # Read in the input data:
 # The only thing left to do is figure out how to assign this at the command line:
-speciesInfo <- read.table(file = "./scripts/inputurls_partial", sep = ",")
+speciesInfo <- read.table(file = args[1], sep = ",")
 # Split the second column to get a column with only abbreviations:
 speciesInfo <- separate(data = speciesInfo, col = V2, into = c("abbrev", "transcript"), sep = "_")
 # Get a vector from that column:
@@ -27,18 +45,16 @@ cdsFiltering <- function(cdsFile, msaFile, msaPrefix, output) {
   dat2fasta(FilteredCodingSequences, outfile = output)
 }
 
-# This while loop iterates the subsetting function on all species:
+# This for loop iterates the subsetting function on all species:
 for (i in abbreviations)
 {
   print(i)
   cdsFile <- (paste("./CodingSequences/cds_", i, "_transcripts.fasta", sep = ""))
-  print(cdsFile)
   msaFile <- (paste("./Proteins/proteins_", i, ".fasta", sep = ""))
-  print(msaFile)
   msaPrefix <- (paste(i, "_transcripts_", sep = ""))
-  print(msaPrefix)
-  output <- (paste("filtered_", i, "_cds.fasta", sep = ""))
+  output <- (paste("./FilteredCDS/filtered_", i, "_cds.fasta", sep = ""))
   print(output)
+  print("__________________________________________________")
   
   cdsFiltering(cdsFile = cdsFile, msaFile = msaFile, msaPrefix = msaPrefix, output = output)
   }
