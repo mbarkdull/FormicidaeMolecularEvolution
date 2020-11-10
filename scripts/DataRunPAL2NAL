@@ -9,7 +9,7 @@ do
   echo This is the species abbreviation: $abbrev
 
   export alnFile=./Proteins/proteins_$abbrev.fasta
-  export nucFile="./filteredCDS/filtered_"$abbrev"_cds.fasta"
+  export nucFile="/FilteredCDS/filtered_"$abbrev"_cds.fasta"
   export output=alignedCDS_$abbrev".fasta"
 
   ./scripts/pal2nal.v14/pal2nal.pl  $alnFile  $nucFile  -output > $output
