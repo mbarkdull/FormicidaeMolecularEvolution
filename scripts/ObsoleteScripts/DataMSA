@@ -1,31 +1,33 @@
 #!/bin/bash
 # The command to run this script is ./DataMSA inputurls.txt /DirectoryToMSAFiles
-mkdir /workdir/$USER/Proteins
+mkdir /workdir/$USER/FormicidaeMolecularEvolution/Proteins
 export directory=$2
-
+echo Current Script: DataMSA
 # While reading each line of inputurls.txt...
 while read -r line;
 do
   # This line extracts the species abbreviation from the information in the inputurls file:
   export abbrev=`echo "$line" | awk -F',' '{print $2}' | awk -F'_' '{print $1}'`
-  echo $abbrev
+  echo This is the species abbrev: $abbrev
   # This line creates the file name where we will be sending all of the aligned amino acid sequences for the species:
   export outfileName=proteins_$abbrev.fasta
-
   cd /workdir/$USER/FormicidaeMolecularEvolution/Proteins
+  rm $outfileName
 
   # This loop reads through all of the files in the multiple sequence alignments directory:
   # For each file in the specified multiple sequence alignments directory:
   for f in $directory/*
   do
     # This loop will read through all of the lines in the multiple sequence alignment file:
+    # Somewhere in this loop, the value of $fline is getting set to $outfileName.
     export printMore=false
     while read -r fline;
     do
+      #echo this is the fline value------------------: $fline
       # This part will check if the line of the multiple sequence alignment file is a gene name (starts with an ">"):
-      if (echo $fline |grep '^>') ; then
+      if (echo $fline |grep '^>' >/dev/null); then
         # If the line is a gene name, it will check if the gene name contains a particular species abbreviation:
-        if (echo $fline |grep $abbrev) ; then
+        if (echo $fline |grep $abbrev >/dev/null); then
           # If the line contains the species abbreviation, the script will tell us yes:
            export printMore=true
            # Then it will send that line, and all the lines after it until the next ">" (so the gene name and the protein sequence) to our file (outfileName):
@@ -33,8 +35,13 @@ do
           export printMore=false
         fi
       fi
+      #if (echo $fline | grep proteins_mpha.fasta); then
+        #echo $fline
+      #fi
       if ($printMore -eq true); then
         echo $fline >> $outfileName
+        echo This is the fline value: $fline
+
       fi
     done < $f
   done
