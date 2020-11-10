@@ -17,7 +17,6 @@ library(plyr)
 library(tidyverse)
 
 # Read in the input data:
-# The only thing left to do is figure out how to assign this at the command line:
 speciesInfo <- read.table(file = args[1], sep = ",")
 # Split the second column to get a column with only abbreviations:
 speciesInfo <- separate(data = speciesInfo, col = V2, into = c("abbrev", "transcript"), sep = "_")
@@ -26,7 +25,7 @@ abbreviations <- speciesInfo$abbrev
 
 # I've written this function that will produce a subsetted nucleotide sequence file:
 # I should also add error messages into this function. 
-cdsFiltering <- function(cdsFile, msaFile, msaPrefix, output) {
+cdsFiltering <- function(cdsFile, msaFile, msaPrefix, filteredOutput, msaOutput) {
   # Load packages:
   library(phylotools)
   library(plyr)
@@ -43,7 +42,8 @@ cdsFiltering <- function(cdsFile, msaFile, msaPrefix, output) {
   # Subset the coding sequences based on the value in that column:
   FilteredCodingSequences <- subset(CodingSequences, inMSA == "TRUE", select = c("seq.name", "seq.text"))
   # Save the output
-  dat2fasta(FilteredCodingSequences, outfile = output)
+  dat2fasta(FilteredCodingSequences, outfile = filteredOutput)
+  dat2fasta(MSAProteinSequences, outfile = msaOutput)
 }
 
 # This for loop iterates the subsetting function on all species:
@@ -53,10 +53,12 @@ for (i in abbreviations)
   cdsFile <- (paste("./CodingSequences/cds_", i, "_transcripts.fasta", sep = ""))
   msaFile <- (paste("./Proteins/proteins_", i, ".fasta", sep = ""))
   msaPrefix <- (paste(i, "_transcripts_", sep = ""))
-  output <- (paste("./FilteredCDS/filtered_", i, "_cds.fasta", sep = ""))
-  print(output)
+  filteredOutput <- (paste("./FilteredCDS/filtered_", i, "_cds.fasta", sep = ""))
+  print(filteredOutput)
+  msaOutput <- (paste("./Proteins/proteins_", i, ".fasta", sep = ""))
+  print(msaOutput)
   print("__________________________________________________")
   
-  cdsFiltering(cdsFile = cdsFile, msaFile = msaFile, msaPrefix = msaPrefix, output = output)
+  cdsFiltering(cdsFile = cdsFile, msaFile = msaFile, msaPrefix = msaPrefix, filteredOutput = filteredOutput, msaOutput = msaOutput)
   }
 
