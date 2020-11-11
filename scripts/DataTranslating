@@ -52,8 +52,8 @@
         python ./TranscriptFilesTranslateScript.py CleanedNucleotideSequences.txt
         mv ./"translated"$rawName ./OutputFiles/"translated"$rawName
 
-        cp ../CleanedData/$cleanName ../CodingSequences
-        mv ../CodingSequences/$cleanName ../CodingSequences/cds_$rawName
+        cp ../CleanedData/$cleanName ../TransdecoderCodingSequences
+        mv ../TransdecoderCodingSequences/$cleanName ../TransdecoderCodingSequences/cds_$rawName
 
     fi
 
