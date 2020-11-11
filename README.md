@@ -97,14 +97,14 @@ Next, we will use [Orthofinder](https://davidemms.github.io) to identify
 groups of orthologous genes in our amino acid sequences, and to produce
 multiple sequence alignments with MAFFT. To run Orthofinder
 automatically, you can use the Bash script `DataOrthofinder`. ***This
-script takes a version number as a command line option to run either
-version 2.4.0 or 2.3.8. The script is currently written to work on
-Cornell’s BioHPC, and so may require some changes to run on other
-machines (editing at least lines 14-16 and 42-46).***
+script takes a version number as a command line option to run either the
+most recent version (“current”) or version 2.3.8. The script is
+currently written to work on Cornell’s BioHPC, and so may require some
+changes to run on other machines (editing at least lines 14-16 and
+42-46).***
 
-To run this step, use the command:
-
-`./scripts/DataOrthofinder [version number, either 2.4.0 or 2.3.8]`
+To run this step, use the command: " `./scripts/DataOrthofinder [version
+number, either "current" or 2.3.8]`
 
 This will infer orthogroups and multiple-sequence alignment-based gene
 trees; MAFFT is used to generate the multiple sequence alignments and

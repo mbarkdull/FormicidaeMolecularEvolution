@@ -1,14 +1,11 @@
 #!/bin/bash
 
 # This is structured as an if/elif/then statement to allow you to choose the version of OrthoFinder you want to run on Cornell's BioHPC.
-if [[ $1 == '2.4.0' ]]; then
+if [[ $1 == 'current' ]]; then
   echo Running OrthoFinder v. $1
   cd /workdir/$USER/FormicidaeMolecularEvolution
 
-  wget https://github.com/davidemms/OrthoFinder/releases/latest/download/OrthoFinder.tar.gz
-
-  tar xvfz OrthoFinder.tar.gz
-  rm OrthoFinder.tar.gz
+  git clone https://github.com/davidemms/OrthoFinder.git
 
   # set environment
   export PATH=/programs/python2_link:$PATH
@@ -23,7 +20,7 @@ if [[ $1 == '2.4.0' ]]; then
   cd ../
 
   ## command, using diamond for alignment, use "-I 5" for tight cluster, run 4 jobs at a time, use /workdir/tmp as the tmp directory. "-f fasta": the directory name of input fasta files; -og stop after get ortholog groups.
-  ./orthofinder -S diamond -I 5 -t 32 -a 4 -f /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta -M msa -p /workdir/tmp
+  ./orthofinder.py -S diamond -I 5 -t 32 -a 4 -f /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta -M msa -p /workdir/tmp
 
   echo Finished running OrthoFinder v. $1
 
