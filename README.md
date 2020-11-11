@@ -138,23 +138,20 @@ Please also cite MAFFT:
 
 Orthofinder produces a single file for every individual orthogroup,
 containing the alignments for the sequences in that orthogroup. However,
-in order to create codon-aware alignments with PAL2NAL (implemented in
-Orthologr), we need files that contain all of the alignments for each
-individual
+in order to create codon-aware alignments with PAL2NAL, we need files
+that contain all of the alignments for each individual
 species.
 
 <img src="README_files/figure-gfm/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
 
-The Bash script `DataMSA` will recombine the Orthofinder outputs so that
-they can be input to PAL2NAL. Note that this script is currently pretty
-slow; I’m working to rewrite it so that it can be run in a
-multi-threaded fashion. To run the script, you’ll need to get the path
-to the MSA files created by Orthofinder in the previous step (it will be
-something like
-`./FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_Oct26/MultipleSequenceAlignments`).
+The R script `DataMSA.R` will recombine the Orthofinder outputs so that
+they can be input to PAL2NAL. To run the script, you’ll need to get the
+full path to the MSA files created by Orthofinder in the previous step
+(it will be something like
+`/workdir/mb2337/FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_Oct26/MultipleSequenceAlignments`).
 Then use the command:
 
-`./scripts/DataMSA ./scripts/inputurls ./PathToMSAFiles`
+`./scripts/DataMSA.R ./scripts/inputurls /FullPathToMSAFiles`
 
 ### Filtering coding sequences for PAL2NAL:
 
