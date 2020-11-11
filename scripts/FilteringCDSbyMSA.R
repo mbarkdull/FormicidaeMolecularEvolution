@@ -51,11 +51,11 @@ for (i in abbreviations)
 {
   print(i)
   cdsFile <- (paste("./TransdecoderCodingSequences/cds_", i, "_transcripts.fasta", sep = ""))
-  msaFile <- (paste("./Proteins/proteins_", i, ".fasta", sep = ""))
+  msaFile <- (paste("./SpeciesMSA/proteins_", i, ".fasta", sep = ""))
   msaPrefix <- (paste(i, "_transcripts_", sep = ""))
   filteredOutput <- (paste("./FilteredCDS/filtered_", i, "_cds.fasta", sep = ""))
   print(filteredOutput)
-  msaOutput <- (paste("./Proteins/proteins_", i, ".fasta", sep = ""))
+  msaOutput <- (paste("./SpeciesMSA/proteins_", i, ".fasta", sep = ""))
   print(msaOutput)
   print("__________________________________________________")
   
