@@ -7,12 +7,13 @@ do
   # This will get the species abbreviation from the inputurls file:
   export abbrev=`echo "$line" | awk -F',' '{print $2}' | awk -F'_' '{print $1}'`
   echo This is the species abbreviation: $abbrev
+  export output=$abbrev"_codon_alignment.fasta"
 
-  export alnFile=./Proteins/proteins_$abbrev.fasta
-  export nucFile="/FilteredCDS/filtered_"$abbrev"_cds.fasta"
+  export alnFile=./SpeciesMSA/proteins_$abbrev.fasta
+  export nucFile="./FilteredCDS/filtered_"$abbrev"_cds.fasta"
   export output=alignedCDS_$abbrev".fasta"
 
-  ./scripts/pal2nal.v14/pal2nal.pl  $alnFile  $nucFile  -output > $output
+  ./scripts/pal2nal.v14/pal2nal.pl  $alnFile  $nucFile  -output fasta > $output
 
   mkdir ./PAL2NALOutput
   mv $output ./PAL2NALOutput/$output
