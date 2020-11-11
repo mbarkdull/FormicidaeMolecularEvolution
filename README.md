@@ -162,13 +162,13 @@ The nucleotide sequence file that is run through PAL2NAL can have only
 the genes that are also present in the protein alignment file. Since our
 protein alignment files contain only a subset of genes, we need to
 filter through the nucleotide sequence files so that they too contain
-only this subset. To do this, use the Bash script `DataPAL2NALPrep`.
-This script constructs an associative array of gene names that are
-present in the multiple sequence alignment file, then pulls the
-corresponding nucleotide sequences from the coding sequence file into a
-new, filtered output.
+only this subset. To do this, use the R script `FilteringCDSbyMSA.R`.
+This script checks whether genes in the coding sequence file are present
+in the multiple sequence alignment file, then pulls the corresponding
+nucleotide sequences from the coding sequence file into a new, filtered
+output.
 
-To run this step, just use the command: `/scripts/DataPAL2NALPrep
+To run this step, just use the command: `/scripts/FilteringCDSbyMSA.R
 ./scripts/inputurls`
 
 This script will output filtered coding sequence files to the
