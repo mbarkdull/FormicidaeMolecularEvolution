@@ -1,0 +1,1 @@
+# This script will generate a tree for BUSTED based on an input tree and a set of tips to retain. 
