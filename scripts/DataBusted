@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Now I need to figure out how to run BUSTED[S] from the command line on all of my files.
+
+while read -r line;
+do
+  # This creates a variable, abbrev, that holds the taxon abbreviation for species:
+  export abbrev=`echo "$line" | awk -F',' '{print tolower($2)}' | awk -F'_' '{print tolower($1)}'`
+  echo $abbrev
+
+  # Create variables for the input and output files:
+  # Aligned nucleotide file:
+
+  # Aligned amino acid file:
+
+  # Output file:
+done < $1
