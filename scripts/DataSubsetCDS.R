@@ -5,7 +5,7 @@ if (length(args)==0) {
   stop("At least one argument must be supplied (input file).n", call.=FALSE)
 } else if (length(args)==1) {
   # default output file
-  args[1] = "/workdir/mb2337/FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_*/OrthogroupSequences"
+  args[1] = "/workdir/mb2337/FormicidaeMolecularEvolution//OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/"
 }
 
 # The command to run this script is `Rscript ./scripts/DataMSA.R [path to Orthofinder MSA files]`, for example: `./scripts/DataMSA.R /workdir/mb2337/FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_Oct26/MultipleSequenceAlignments`
@@ -16,17 +16,37 @@ library(phylotools)
 library(plyr)
 library(tidyverse)
 
-# First make a working directory and copy the folder with the cds files there. 
+# Read in the abbreviation data:
+speciesInfo <- read.table(file = args[1], sep = ",")
+#speciesInfo <- read.table(file = "./scripts/inputurls_partial", sep = ",")
+# Split the second column to get a column with only abbreviations:
+speciesInfo <- separate(data = speciesInfo, col = V2, into = c("abbrev", "transcript"), sep = "_")
+# Get a vector from that column:
+abbreviations <- speciesInfo$abbrev
+
+# Make a working directory:
 dir.create("./CDSOrthogroups")
+# Copy the nucleotide alignments to the working directory:
 file.copy("./PAL2NALOutput", "./CDSOrthogroups", recursive = TRUE)
-file.copy(args[1], "./CDSOrthogroups", recursive = TRUE)
+# Copy the multiple sequence alignments to the directory:
+file.copy("./MultipleSequenceAlignments", "./CDSOrthogroups", recursive = TRUE)
+#file.copy(args[1], "./CDSOrthogroups", recursive = TRUE)
 setwd("./CDSOrthogroups/PAL2NALOutput")
 
 # Concatenate all of the cds files into a single file:
 cdsFiles <- list.files(pattern = "*.fasta")
 allCDSFiles <- bind_rows(lapply(cdsFiles, read.fasta))
-allCDSFiles <- separate(data = allCDSFiles, col = seq.name, into = c("seq.name", "extraInfo"), sep = " ")
-allCDSFiles <- select(allCDSFiles, -c("extraInfo"))
+
+# Fix the prefixes of the genes names in the coding sequences:
+for (i in abbreviations)
+{
+  print(i)
+  currentPrefix <- (paste(i, "_", sep = ""))
+  print(currentPrefix)
+  newPrefix <- (paste(i, "_transcripts_", i, "_", sep = ""))
+  print (newPrefix)
+  allCDSFiles$seq.name <- gsub(currentPrefix, newPrefix, allCDSFiles$seq.name)
+}
 
 setwd("../")
 
@@ -34,16 +54,14 @@ cdsSubsetting <- function(orthogroup, outfile){
   # Then check if the gene names in an MSA file are in the CDS file. 
   OrthogroupSequences <- read.fasta(orthogroup)
   allCDSFiles$OrthogroupMatch <- allCDSFiles$seq.name %in% OrthogroupSequences$seq.name
-  
   # If they are, subset the cds sequences to a new file. 
   CDSOrthogroup <- subset(allCDSFiles, OrthogroupMatch == "TRUE", select = c("seq.name", "seq.text"))
   dat2fasta(CDSOrthogroup, outfile = outfile)
-  # Iterate that over all of the MSA files. 
 }
 
 # Now run this function over all orthogroups with a for loop. 
 # Construct a list of all orthogroup files:
-OrthogroupList <- list.files(path = "./OrthogroupSequences", pattern = "*.fa(?!\S)", full.names = TRUE)
+OrthogroupList <- list.files(path = "./MultipleSequenceAlignments", pattern = "*.fa", full.names = TRUE)
 for (i in OrthogroupList)
 {
   print(i)
