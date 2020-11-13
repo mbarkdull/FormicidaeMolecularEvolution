@@ -64,6 +64,7 @@ For a project of this kind, you will need transcript data from your species of i
 
   + Download URLs in the first column
   + The file names that you want your data downloaded to in the second column, formatted like: `FOURLETTERTAXONABBREVIATION_transcripts.fasta`.
+  + The full species names, in the format Genus_species, in the third column. 
   
 See `./scripts/inputurls.txt` for an example. 
 
@@ -172,7 +173,7 @@ The R script `DataMSA.R` will recombine the Orthofinder outputs so that they can
 The nucleotide sequence file that is run through PAL2NAL can have only the genes that are also present in the protein alignment file. Since our protein alignment files contain only a subset of genes, we need to filter through the nucleotide sequence files so that they too contain only this subset. To do this, use the R script `FilteringCDSbyMSA.R`. This script checks whether genes in the coding sequence file are present in the multiple sequence alignment file, then pulls the corresponding nucleotide sequences from the coding sequence file into a new, filtered output. 
 
 To run this step, just use the command:
-`/scripts/FilteringCDSbyMSA.R ./scripts/inputurls`
+`./scripts/FilteringCDSbyMSA.R ./scripts/inputurls`
 
 This script will output filtered coding sequence files to the subdirectory `./FilteredCDS`.
 
@@ -181,7 +182,7 @@ PAL2NAL will generate codon-aware nucleotide alignments, based on an input of an
 
 Now, to run PAL2NAL, use the Bash script `./scripts/DataRunPAL2NAL` by executing the command:
 
-`./scripts/DataRunPAL2NAL ./inputurls.txt`
+`./scripts/DataRunPAL2NAL ./scripts/inputurls`
 
 This will produce a new directory, `./PAL2NALOutput`, containing an aligned nucleotide sequence file for each species. 
 
