@@ -8,7 +8,7 @@ if (length(args)==0) {
   args[1] = "/workdir/mb2337/FormicidaeMolecularEvolution//OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/"
 }
 
-# The command to run this script is `Rscript ./scripts/inputurls_partial [path to Orthofinder MSA files]`, for example: `Rscript ./scripts/DataSubsetCDS.R ./scripts/inputurls_partial ./OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/`
+# The command to run this script is `Rscript ./scripts/inputurls_partial ./scripts/DataSubsetCDS.R [path to Orthofinder MSA files]`, for example: `Rscript ./scripts/DataSubsetCDS.R ./scripts/inputurls_partial ./OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/`
 
 # I need to break up nucleotide sequence files into many small files, like the orthogroup MSA files. 
 
