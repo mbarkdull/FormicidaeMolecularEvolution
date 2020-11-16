@@ -186,7 +186,19 @@ Now, to run PAL2NAL, use the Bash script `./scripts/DataRunPAL2NAL` by executing
 
 This will produce a new directory, `./PAL2NALOutput`, containing an aligned nucleotide sequence file for each species. 
 
-## Testing for positive selection with BUSTED[S]
+## 7. Testing for positive selection with BUSTED[S]
+
+### 7.1 Preparing nucleotide sequence orthogroups for input to BUSTED[S]. 
+
+To run BUSTED[S], we will need files that contain orthologous nucleotide sequences from each species. Therefore, we must recombine our codon-aware alignments in a step that is the inverse of step 5.1. To do this, use the R script `./scripts/DataSubsetCDS.R`. Run with the command:
+
+`Rscript ./scripts/DataSubsetCDS.R ./scripts/inputurls_partial [path to multiple sequence alignments from Orthofinder]`
+
+This will produce a new directory, `./CDSOrthogroups/MultipleSequenceAlignments/Output` that will contain files of orthologous nucleotide sequences for input to BUSTED[S].
+
+### 7.2 Removing terminal stop codons from nucleotide sequences. 
+
+### 7.3 Running BUSTED[S]
 
 For the step where you must convert the outputs of OrthoFinder to be inputs for RERConverge, please see the [Comparative Genomics repository](https://github.com/mbarkdull/ComparativeGenomics)
 
