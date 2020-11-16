@@ -8,7 +8,7 @@ if (length(args)==0) {
   args[1] = "/workdir/mb2337/FormicidaeMolecularEvolution//OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/"
 }
 
-# The command to run this script is `Rscript ./scripts/DataMSA.R [path to Orthofinder MSA files]`, for example: `./scripts/DataMSA.R /workdir/mb2337/FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_Oct26/MultipleSequenceAlignments`
+# The command to run this script is `Rscript ./scripts/inputurls_partial [path to Orthofinder MSA files]`, for example: `Rscript ./scripts/DataSubsetCDS.R ./scripts/inputurls_partial ./OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/`
 
 # I need to break up nucleotide sequence files into many small files, like the orthogroup MSA files. 
 
@@ -29,8 +29,8 @@ dir.create("./CDSOrthogroups")
 # Copy the nucleotide alignments to the working directory:
 file.copy("./PAL2NALOutput", "./CDSOrthogroups", recursive = TRUE)
 # Copy the multiple sequence alignments to the directory:
-file.copy("./MultipleSequenceAlignments", "./CDSOrthogroups", recursive = TRUE)
-#file.copy(args[1], "./CDSOrthogroups", recursive = TRUE)
+file.copy(args[2], "./CDSOrthogroups", recursive = TRUE)
+#file.copy("./MultipleSequenceAlignments", "./CDSOrthogroups", recursive = TRUE)
 setwd("./CDSOrthogroups/PAL2NALOutput")
 
 # Concatenate all of the cds files into a single file:
@@ -59,6 +59,9 @@ cdsSubsetting <- function(orthogroup, outfile){
   dat2fasta(CDSOrthogroup, outfile = outfile)
 }
 
+# Make a directory for output:
+dir.create("./MultipleSequenceAlignments/Output")
+
 # Now run this function over all orthogroups with a for loop. 
 # Construct a list of all orthogroup files:
 OrthogroupList <- list.files(path = "./MultipleSequenceAlignments", pattern = "*.fa", full.names = TRUE)
@@ -68,8 +71,9 @@ for (i in OrthogroupList)
   orthogroup <- i
   # Split up the value of i so it's just the orthogroup name, not with .fa 
   orthogoupName <- sapply(strsplit(i, "\\."), `[`, 2)
+  orthogoupName <- sapply(strsplit(orthogoupName, "\\/"), `[`, 3)
   print(orthogoupName)
-  outfile <- (paste(".", orthogoupName, "_cds.fasta", sep = ""))
+  outfile <- (paste("./MultipleSequenceAlignments/Output/", orthogoupName, "_cds.fasta", sep = ""))
   print(outfile)
   cdsSubsetting(orthogroup = orthogroup, outfile = outfile)
 }
