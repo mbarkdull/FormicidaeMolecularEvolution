@@ -11,7 +11,7 @@ do
 # Let's copy the downloaded raw data to a directory for cleaning:
   echo Making a directory for the cleaned data files.
   mkdir ./CleanedData
-  cp ./RawData/$name ./CleanedData/$name
+  cp ./1_RawData/$name ./CleanedData/$name
   cd ./CleanedData
 
 # Now I want to use sed to insert the taxon abbreviation code in front of every gene name:

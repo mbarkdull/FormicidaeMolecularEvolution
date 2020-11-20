@@ -17,8 +17,8 @@
         export zipFn=$name.gz
     fi
 
-    mkdir ./RawData
-    cd ./RawData
+    mkdir ./1_RawData
+    cd ./1_RawData
 
     # These lines print the file name variable information to the console so you can see it:
     echo __________________________________________________
