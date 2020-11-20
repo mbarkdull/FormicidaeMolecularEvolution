@@ -9,7 +9,7 @@ if (length(args)==0) {
 }
 
 # Make a directory for outputs:
-dir.create("./FilteredCDS")
+dir.create("./5_2_FilteredCDS")
 
 # Load packages:
 library(phylotools)
@@ -50,12 +50,12 @@ cdsFiltering <- function(cdsFile, msaFile, msaPrefix, filteredOutput, msaOutput)
 for (i in abbreviations)
 {
   print(i)
-  cdsFile <- (paste("./TransdecoderCodingSequences/cds_", i, "_transcripts.fasta", sep = ""))
-  msaFile <- (paste("./SpeciesMSA/", i, "_msa.fasta", sep = ""))
+  cdsFile <- (paste("./4_TransdecoderCodingSequences/cds_", i, "_transcripts.fasta", sep = ""))
+  msaFile <- (paste("./5_1_SpeciesMSA/", i, "_msa.fasta", sep = ""))
   msaPrefix <- (paste(i, "_transcripts_", sep = ""))
-  filteredOutput <- (paste("./FilteredCDS/filtered_", i, "_cds.fasta", sep = ""))
+  filteredOutput <- (paste("./5_2_FilteredCDS/filtered_", i, "_cds.fasta", sep = ""))
   print(filteredOutput)
-  msaOutput <- (paste("./SpeciesMSA/proteins_", i, ".fasta", sep = ""))
+  msaOutput <- (paste("./5_1_SpeciesMSA/proteins_", i, ".fasta", sep = ""))
   print(msaOutput)
   print("__________________________________________________")
   

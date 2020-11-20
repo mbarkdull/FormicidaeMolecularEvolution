@@ -24,10 +24,10 @@ speciesInfo <- separate(data = speciesInfo, col = V2, into = c("abbrev", "transc
 abbreviations <- speciesInfo$abbrev
 
 # First make a working directory and copy the folder with the MSA files there (THIS WILL NEED TO BE A VALUE SET ON THE COMMAND LINE). 
-dir.create("./6_SpeciesMSA")
-file.copy(args[2], "./6_SpeciesMSA", recursive = TRUE)
+dir.create("./5_1_SpeciesMSA")
+file.copy(args[2], "./5_1_SpeciesMSA", recursive = TRUE)
 # Concatenate all of the MSA files into a single file:
-setwd("./6_SpeciesMSA/MultipleSequenceAlignments")
+setwd("./5_1_SpeciesMSA/MultipleSequenceAlignments")
 msaFiles <- list.files(pattern = "*.fa")
 allMSAFiles <- bind_rows(lapply(msaFiles, read.fasta))
 
