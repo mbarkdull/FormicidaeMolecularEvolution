@@ -38,9 +38,9 @@
 
         # copy the created coding sequence file to a coding sequences folder:
         export cdsFile=$cleanName".transdecoder.cds"
-        mkdir ../TransdecoderCodingSequences
-        cp $cdsFile ../TransdecoderCodingSequences
-        mv ../TransdecoderCodingSequences/$cdsFile ../TransdecoderCodingSequences/cds_$rawName
+        mkdir ../4_TransdecoderCodingSequences
+        cp $cdsFile ../4_TransdecoderCodingSequences
+        mv ../4_TransdecoderCodingSequences/$cdsFile ../4_TransdecoderCodingSequences/cds_$rawName
 
     else
         echo "$transdecoderFile was not produced because the input file already consisted of coding sequences (CDS). Running TranscriptFilesTranslateScript.py on $cleanName to produce amino acid sequences"
@@ -52,8 +52,8 @@
         python ./TranscriptFilesTranslateScript.py CleanedNucleotideSequences.txt
         mv ./"translated"$rawName ./OutputFiles/"translated"$rawName
 
-        cp ../2_CleanedData/$cleanName ../TransdecoderCodingSequences
-        mv ../TransdecoderCodingSequences/$cleanName ../TransdecoderCodingSequences/cds_$rawName
+        cp ../2_CleanedData/$cleanName ../4_TransdecoderCodingSequences
+        mv ../4_TransdecoderCodingSequences/$cleanName ../4_TransdecoderCodingSequences/cds_$rawName
 
     fi
 

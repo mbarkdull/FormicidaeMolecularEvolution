@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# The command to run this script is ./scripts/DataOrthofinder [version of OrthFinder, either current or 2.3.8] [Date that results directory was created, probably the date you are running this script, in the format Nov11] [Full path to correct species tree]
+# The command to run this script is ./scripts/DataOrthofinder [version of OrthFinder, either current or 2.3.8] [Full path to correct species tree]
 # This is structured as an if/elif/then statement to allow you to choose the version of OrthoFinder you want to run on Cornell's BioHPC.
 if [[ $1 == 'current' ]]; then
   echo Running OrthoFinder v. $1
@@ -15,7 +15,7 @@ if [[ $1 == 'current' ]]; then
 
   mkdir /workdir/tmp
   mkdir /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta
-  cp ./TranslatedData/OutputFiles/translated* ./OrthoFinder/fasta
+  cp ./3_TranslatedData/OutputFiles/translated* ./OrthoFinder/fasta
   cd ./OrthoFinder/fasta
   rename translated '' translated*
   cd ../
@@ -46,7 +46,7 @@ cd /workdir/$USER/FormicidaeMolecularEvolution
   mkdir /workdir/tmp
 
   # Copy the input files to the primary_transcripts directory:
-  cp /workdir/$USER/FormicidaeMolecularEvolution/TranslatedData/OutputFiles/translated* /workdir/$USER/OrthoFinder/fasta
+  cp /workdir/$USER/FormicidaeMolecularEvolution/3_TranslatedData/OutputFiles/translated* /workdir/$USER/OrthoFinder/fasta
   cd /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta
   rename translated '' translated*
   cd ../
