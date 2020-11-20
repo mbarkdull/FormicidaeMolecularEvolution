@@ -26,6 +26,7 @@ if [[ $1 == 'current' ]]; then
   # ./orthofinder.py -S diamond -I 5 -t 32 -a 4 -M msa -p /workdir/tmp -ft /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_"$2"  -s $3
 
   echo Finished running OrthoFinder v. $1
+  mv /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/ /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/
 
 elif [[ $1 == '2.3.8' ]]; then
 echo Running OrthoFinder v. $1
