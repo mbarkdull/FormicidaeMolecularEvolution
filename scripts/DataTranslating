@@ -24,7 +24,7 @@
     # Now we can run Transdecoder on the cleaned file:
     echo "First, attempting TransDecoder run on $cleanName"
     /programs/TransDecoder-v5.5.0/TransDecoder.LongOrfs -t $cleanName
-    /programs/TransDecoder-v5.5.0/TransDecoder.Predict -t $cleanName
+    /programs/TransDecoder-v5.5.0/TransDecoder.Predict -t $cleanName --single_best_only
 
     # Now we need to run the TranscriptFilesTranslateScript.py script just on those files that didn't successfully go through TransDecoder.
     mkdir ./OutputFiles
