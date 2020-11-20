@@ -20,7 +20,7 @@ if [[ $1 == 'current' ]]; then
   rename translated '' translated*
   cd ../
 
-  ## command, using diamond for alignment, use "-I 5" for tight cluster, run 4 jobs at a time, use /workdir/tmp as the tmp directory. "-f fasta": the directory name of input fasta files; -og stop after get ortholog groups.
+  # Run Orthofinder:
   ./orthofinder.py -S diamond -I 5 -t 32 -a 4 -f /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta -M msa -p /workdir/tmp -s $2
   # We then need to reanlyze, supplying the known species tree: To reanalyse with a different species tree use the options
   # ./orthofinder.py -S diamond -I 5 -t 32 -a 4 -M msa -p /workdir/tmp -ft /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_"$2"  -s $3
