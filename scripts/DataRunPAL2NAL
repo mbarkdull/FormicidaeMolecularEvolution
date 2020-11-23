@@ -9,13 +9,14 @@ do
   echo This is the species abbreviation: $abbrev
   export output=$abbrev"_codon_alignment.fasta"
 
-  export alnFile=./SpeciesMSA/proteins_$abbrev.fasta
-  export nucFile="./FilteredCDS/filtered_"$abbrev"_cds.fasta"
+  export alnFile=./5_1_SpeciesMSA/proteins_$abbrev.fasta
+  export nucFile="./5_2_FilteredCDS/filtered_"$abbrev"_cds.fasta"
   export output=alignedCDS_$abbrev".fasta"
 
+  echo Running PAL2NAL on $alnFile and $nucFile
   ./scripts/pal2nal.v14/pal2nal.pl  $alnFile  $nucFile  -output fasta > $output
 
-  mkdir ./PAL2NALOutput
-  mv $output ./PAL2NALOutput/$output
+  mkdir ./6_PAL2NALOutput
+  mv $output ./6_PAL2NALOutput/$output
 
 done < $1
