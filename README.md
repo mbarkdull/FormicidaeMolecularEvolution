@@ -106,13 +106,13 @@ changes to run on other machines (editing at least lines 14-16 and
 42-46).***
 
 To run this step, use the command: " `./scripts/DataOrthofinder [version
-number, either "current" or 2.3.8]`
+number, either 'current' or '2.3.8'] [full path to a species tree where
+tip names correspond to file names, for example 'acep_transcripts']`
 
-This will infer orthogroups and multiple-sequence alignment-based gene
-trees; MAFFT is used to generate the multiple sequence alignments and
-FastTree to generate the gene trees. Outputs will be found in a new
-subdirectory of `/FormicidaeMolecularEvolution/`,
-`./OrthoFinder/fasta/OrthoFinder`.
+This will infer orthogroups and multiple-sequence alignments of amino
+acid sequences; MAFFT is used to generate the multiple sequence
+alignments. Outputs will be found in a new subdirectory of
+`/FormicidaeMolecularEvolution/`, `./OrthoFinder/fasta/OrthoFinder`.
 
 If you use Orthofinder, please cite it:
 
@@ -205,9 +205,25 @@ This will produce a new directory,
 `./CDSOrthogroups/MultipleSequenceAlignments/Output` that will contain
 files of orthologous nucleotide sequences for input to BUSTED\[S\].
 
-### 7.2 Removing terminal stop codons from nucleotide sequences.
+### 7.2 Running BUSTED\[S\]
 
-### 7.3 Running BUSTED\[S\]
+To run BUSTED\[S\], use the Bash script `./scripts/DataRunningBusted`.
+This script will mask any stop codons in the aligned, nucleotide
+orthogroups files (should be only terminal stop codons after step 6) and
+then run BUSTED\[S\] to test for positive selection on the sequences.
+
+BUSTED\[S\] might only work on single-copy orthogroups? So I need to
+figure out how to deal with that. I think instead of using the species
+tree I could use the orthogroup gene trees inferred by Orthofinder; I
+need to figure out how to constrain them to match the known species tree
+topology.
+
+From Orthofinder documentation- “If the species tree is not correct then
+this will not impact the orthogroup inference, but it might affect the
+orthologue inference in some of the gene trees which have gene
+duplication events. In this case, you’ll probably want to run the very
+last bit of the OrthoFinder analysis again with the corrected species
+tree (-ft and -s options).”
 
 For the step where you must convert the outputs of OrthoFinder to be
 inputs for RERConverge, please see the [Comparative Genomics
