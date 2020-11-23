@@ -24,7 +24,7 @@
     # Now we can run Transdecoder on the cleaned file:
     echo "First, attempting TransDecoder run on $cleanName"
     /programs/TransDecoder-v5.5.0/TransDecoder.LongOrfs -t $cleanName
-    # I had coped that adding --single_best_only would remove the .p1, .p2 etc from the end of gene names, but it did not. 
+    # I had coped that adding --single_best_only would remove the .p1, .p2 etc from the end of gene names, but it did not.
     /programs/TransDecoder-v5.5.0/TransDecoder.Predict -t $cleanName --single_best_only
 
     # Now we need to run the TranscriptFilesTranslateScript.py script just on those files that didn't successfully go through TransDecoder.
@@ -32,17 +32,25 @@
     export transdecoderFile=$cleanName".transdecoder.pep"
     echo "Checking for $transdecoderFile"
 
+    #Check if the Transdecoder file exists; if it does, move the amino acid and nucleotide files to appropriate directories.
     if [ -f "$transdecoderFile" ]; then
         echo "TransDecoder run successful; $transdecoderFile exists"
         cp $transdecoderFile ./OutputFiles/translated$rawName
         echo "Copying $transdecoderFile to ./OutputFiles/translated$rawName"
+        cat ./OutputFiles/translated$rawName | tr  "."  "_" > temp.fasta
+        mv temp.fasta ./OutputFiles/translated$rawName
+        rm temp.fasta
 
         # copy the created coding sequence file to a coding sequences folder:
         export cdsFile=$cleanName".transdecoder.cds"
         mkdir ../4_TransdecoderCodingSequences
         cp $cdsFile ../4_TransdecoderCodingSequences
         mv ../4_TransdecoderCodingSequences/$cdsFile ../4_TransdecoderCodingSequences/cds_$rawName
+        cat ../4_TransdecoderCodingSequences/cds_$rawName | tr  "."  "_" > temp.fasta
+        mv temp.fasta ../4_TransdecoderCodingSequences/clean_cds_$rawName
+        rm temp.fasta
 
+    # If the Transdecoder file does not exist, run my translating script on the file instead. 
     else
         echo "$transdecoderFile was not produced because the input file already consisted of coding sequences (CDS). Running TranscriptFilesTranslateScript.py on $cleanName to produce amino acid sequences"
         # This will make a list of all of the cleaned names and pass them into a text file; then that text file is the input for the python script.
