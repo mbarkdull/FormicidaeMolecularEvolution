@@ -8,7 +8,7 @@ if (length(args)==0) {
   args[1] = "/workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/"
 }
 
-# The command to run this script is `Rscript ./scripts/inputurls_partial ./scripts/DataSubsetCDS.R [path to Orthofinder MSA files]`, for example: `Rscript ./scripts/DataSubsetCDS.R ./scripts/inputurls_partial ./5_OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/`
+# The command to run this script is `Rscript ./scripts/DataSubsetCDS.R ./scripts/inputurls_partial [path to Orthofinder MSA files]`, for example: `Rscript ./scripts/DataSubsetCDS.R ./scripts/inputurls_partial ./5_OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/`
 
 # I need to break up nucleotide sequence files into many small files, like the orthogroup MSA files. 
 
@@ -30,8 +30,8 @@ dir.create("./7_1_CDSOrthogroups")
 file.copy("./6_PAL2NALOutput", "./7_1_CDSOrthogroups", recursive = TRUE)
 # Copy the multiple sequence alignments to the directory:
 file.copy(args[2], "./7_1_CDSOrthogroups", recursive = TRUE)
-#file.copy("./MultipleSequenceAlignments", "./CDSOrthogroups", recursive = TRUE)
-setwd("./7_1_CDSOrthogroups/PAL2NALOutput")
+#file.copy("./MultipleSequenceAlignments", "./7_1_CDSOrthogroups", recursive = TRUE)
+setwd("./7_1_CDSOrthogroups/6_PAL2NALOutput")
 
 # Concatenate all of the cds files into a single file:
 cdsFiles <- list.files(pattern = "*.fasta")

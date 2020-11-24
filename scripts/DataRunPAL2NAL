@@ -9,7 +9,7 @@ do
   echo This is the species abbreviation: $abbrev
   export output=$abbrev"_codon_alignment.fasta"
 
-  export alnFile=./5_1_SpeciesMSA/proteins_$abbrev.fasta
+  export alnFile=./5_1_SpeciesMSA/"$abbrev"_msa.fasta 
   export nucFile="./5_2_FilteredCDS/filtered_"$abbrev"_cds.fasta"
   export output=alignedCDS_$abbrev".fasta"
 

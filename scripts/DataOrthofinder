@@ -15,7 +15,7 @@ if [[ $1 == 'current' ]]; then
 
   mkdir /workdir/tmp
   mkdir /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta
-  cp ./3_TranslatedData/OutputFiles/translated* ./OrthoFinder/fasta
+  cp ./3_1_TranslatedData/OutputFiles/translated* ./OrthoFinder/fasta
   cd ./OrthoFinder/fasta
   rename translated '' translated*
   cd ../
@@ -47,7 +47,7 @@ cd /workdir/$USER/FormicidaeMolecularEvolution
   mkdir /workdir/tmp
 
   # Copy the input files to the primary_transcripts directory:
-  cp /workdir/$USER/FormicidaeMolecularEvolution/3_TranslatedData/OutputFiles/translated* /workdir/$USER/OrthoFinder/fasta
+  cp /workdir/$USER/FormicidaeMolecularEvolution/3_1_TranslatedData/OutputFiles/translated* /workdir/$USER/OrthoFinder/fasta
   cd /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta
   rename translated '' translated*
   cd ../

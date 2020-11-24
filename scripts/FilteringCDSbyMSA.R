@@ -50,7 +50,7 @@ cdsFiltering <- function(cdsFile, msaFile, msaPrefix, filteredOutput, msaOutput)
 for (i in abbreviations)
 {
   print(i)
-  cdsFile <- (paste("./4_TransdecoderCodingSequences/cds_", i, "_transcripts.fasta", sep = ""))
+  cdsFile <- (paste("./3_2_TransdecoderCodingSequences/cds_", i, "_transcripts.fasta", sep = ""))
   msaFile <- (paste("./5_1_SpeciesMSA/", i, "_msa.fasta", sep = ""))
   msaPrefix <- (paste(i, "_transcripts_", sep = ""))
   filteredOutput <- (paste("./5_2_FilteredCDS/filtered_", i, "_cds.fasta", sep = ""))
