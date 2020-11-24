@@ -47,10 +47,10 @@
         cp $cdsFile ../4_TransdecoderCodingSequences
         mv ../4_TransdecoderCodingSequences/$cdsFile ../4_TransdecoderCodingSequences/cds_$rawName
         cat ../4_TransdecoderCodingSequences/cds_$rawName | tr  "."  "_" > temp.fasta
-        mv temp.fasta ../4_TransdecoderCodingSequences/clean_cds_$rawName
+        mv temp.fasta ../4_TransdecoderCodingSequences/cds_$rawName
         rm temp.fasta
 
-    # If the Transdecoder file does not exist, run my translating script on the file instead. 
+    # If the Transdecoder file does not exist, run my translating script on the file instead.
     else
         echo "$transdecoderFile was not produced because the input file already consisted of coding sequences (CDS). Running TranscriptFilesTranslateScript.py on $cleanName to produce amino acid sequences"
         # This will make a list of all of the cleaned names and pass them into a text file; then that text file is the input for the python script.
