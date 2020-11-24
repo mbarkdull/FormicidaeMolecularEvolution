@@ -18,6 +18,7 @@ library(tidyverse)
 
 # Read in the input data:
 speciesInfo <- read.table(file = args[1], sep = ",")
+#speciesInfo <- read.table(file = "./scripts/inputurls_partial", sep = ",")
 # Split the second column to get a column with only abbreviations:
 speciesInfo <- separate(data = speciesInfo, col = V2, into = c("abbrev", "transcript"), sep = "_")
 # Get a vector from that column:
