@@ -21,9 +21,9 @@ do
 
   # Example cds file: ./7_2_BustedResults/cleaned_OG0013039_cds.fasta
   # Example gene tree file: /workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Nov19_1/Resolved_Gene_Trees/OG0013039_cds.fasta
-  #hyphy busted --alignment /workdir/mb2337/FormicidaeMolecularEvolution/7_2_BustedResults/cleaned_OG0002307_cds.fasta --tree /workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Nov24/Resolved_Gene_Trees/OG0002307_tree.txt --srv Yes
-  echo Running BUSTED[S] on $cdsFile and $treeFile.
-  hyphy busted --alignment $cdsFile --tree $1$treeFile --srv Yes --output "./7_3_BustedResults/"$orthogroupNumber"_busted.json"
+  #hyphy busted --alignment /workdir/mb2337/FormicidaeMolecularEvolution/7_2_RemovedStops/cleaned_OG0002307_cds.fasta --tree /workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Nov24/Resolved_Gene_Trees/OG0002307_tree.txt --srv Yes CPU=8
+  echo Running BUSTED[S] on $cdsFile and $treeFile with $2 CPUS.
+  hyphy busted --alignment $cdsFile --tree $1$treeFile --srv Yes --output "./7_3_BustedResults/"$orthogroupNumber"_busted.json" CPU="$2"
   echo __________________________________________________
 
 done
