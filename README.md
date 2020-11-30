@@ -190,7 +190,7 @@ species.
 
 ## 7\. Testing for positive selection with BUSTED\[S\]
 
-### 7.1 Preparing nucleotide sequence orthogroups for input to BUSTED\[S\].
+### 7.1 Assembling nucleotide sequence orthogroups for input to BUSTED\[S\].
 
 To run BUSTED\[S\], we will need files that contain orthologous
 nucleotide sequences from each species. Therefore, we must recombine our
@@ -205,25 +205,22 @@ This will produce a new directory,
 `./CDSOrthogroups/MultipleSequenceAlignments/Output` that will contain
 files of orthologous nucleotide sequences for input to BUSTED\[S\].
 
-### 7.2 Running BUSTED\[S\]
+### 7.2 Masking stop codons from orthogroup sequences
+
+BUSTED\[S\] will not run on sequences which contain stop codons, even if
+these are reasonable, terminal stop codons. Hyphy includes a utility
+which will mask these these terminal stop codons in the orthogroups
+(there should be few-to-no other stop codons, because our alignments are
+codon-aware). To execute this step, use the script
+`/scripts/DataRemoveStopCodons`.
+
+### 7.3 Running BUSTED\[S\]
 
 To run BUSTED\[S\], use the Bash script `./scripts/DataRunningBusted`.
-This script will mask any stop codons in the aligned, nucleotide
-orthogroups files (should be only terminal stop codons after step 6) and
-then run BUSTED\[S\] to test for positive selection on the sequences.
+This script will run BUSTED\[S\] to test for positive selection on the
+sequences.
 
-BUSTED\[S\] might only work on single-copy orthogroups? So I need to
-figure out how to deal with that. I think instead of using the species
-tree I could use the orthogroup gene trees inferred by Orthofinder; I
-need to figure out how to constrain them to match the known species tree
-topology.
-
-From Orthofinder documentation- “If the species tree is not correct then
-this will not impact the orthogroup inference, but it might affect the
-orthologue inference in some of the gene trees which have gene
-duplication events. In this case, you’ll probably want to run the very
-last bit of the OrthoFinder analysis again with the corrected species
-tree (-ft and -s options).”
+### To do:
 
 For the step where you must convert the outputs of OrthoFinder to be
 inputs for RERConverge, please see the [Comparative Genomics
