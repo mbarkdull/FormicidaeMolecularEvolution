@@ -32,18 +32,20 @@ grViz("digraph flowchart {
       tab10 [label = '@@10']
       tab11 [label = '@@11']
       tab12 [label = '@@12']
+      tab13 [label = '@@13']
       
       # edge definitions with the node IDs
       tab1 -> tab2 -> tab3 -> tab4 -> tab5 -> tab9;
       tab2 -> tab6 -> tab7 -> tab8 -> tab9;
       tab3 -> tab8;
       tab2 -> tab12 -> tab10 -> tab11;
-      tab4 -> tab11;
+      tab3 -> tab11;
       tab3 -> tab12;
+      tab13 -> tab3;
       }
       [1]: '1) Download the coding sequences for each species'
       [2]: '2) Clean data; 3) translate coding sequences to amino acid sequences'
-      [3]: '4) Run Orthofinder on the amino acid sequences'
+      [3]: '4) Run Orthofinder on the amino acid sequences, inferring orthogroups and gene trees'
       [4]: 'Infer gene trees with Rubin pipeline using the coding sequences'
       [5]: 'Run RERconverge on the gene trees'
       [6]: 'Annotate genes with InterProScan'
@@ -53,6 +55,7 @@ grViz("digraph flowchart {
       [10]: '6) Create codon-aware nucleotide alignments with PAL2NAL'
       [11]: 'Used BustedS to test for positive selection'
       [12]: '5) Prepare inputs for PAL2NAL'
+      [13]: 'Generate species tree'
       ")
 ```
 
