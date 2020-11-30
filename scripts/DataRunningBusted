@@ -4,35 +4,26 @@
 export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
 
 # Make a directory for BUSTED[S] outputs:
-mkdir ./bustedResults
+mkdir ./7_3_BustedResults
 
 # Download the newest version of HyPhy:
 export PATH=/home/$USER/miniconda3/bin:$PATH
 conda install -c bioconda hyphy
 
-for f in CDSOrthogroups/MultipleSequenceAlignments/Output/*
+for f in 7_2_RemovedStops/*
 do
-  #echo $f
-  export orthogroup=`echo "$f" | awk -F'/' '{print ($4)}' | awk -F'.' '{print ($1)}'`
-  echo $orthogroup
-  # This looks like: OG0000711_cds
-  export cleanedFile="cleaned_"$orthogroup".fasta"
-  echo __________________________________________________
-  #(echo 1; echo "./"$f; echo 1; echo ./bustedResults/$cleanedFile) | /programs/hyphy-2.5.15/bin/hyphy /programs/hyphy-2.5.15/share/hyphy/TemplateBatchFiles/CleanStopCodons.bf
-  echo __________________________________________________
-
-  export cdsFile="./bustedResults/busted_"$orthogroup".fasta"
-  # The tree file needs to look like OG0002680_tree.txt
-  export orthogroupNumber=`echo "$f" | awk -F'/' '{print ($4)}' | awk -F'.' '{print ($1)}' | awk -F'_' '{print ($1)}'`
+  export cdsFile=$f
+  echo the coding sequence alignment file is $cdsFile
+  # The tree file needs to look like OG0002680_tree.txt. $f looks like  /7_2_RemovedStops/cleaned_OG0002680_cds.fasta.
+  export orthogroupNumber=`echo "$f" | awk -F'_' '{print ($4)}'`
   export treeFile=$orthogroupNumber"_tree.txt"
-  echo path to tree file is $1$treeFile
+  echo The path to tree file is $1$treeFile
 
-  # Example cds file: ./bustedResults/cleaned_OG0013039_cds.fasta
-  # Example gene tree file: /workdir/mb2337/FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_Nov19_1/Resolved_Gene_Trees/OG0013039_cds.fasta
-  #hyphy busted --alignment /workdir/mb2337/FormicidaeMolecularEvolution/bustedResults/cleaned_OG0001344_cds.fasta --tree /workdir/mb2337/FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_Nov19_1/Resolved_Gene_Trees/OG0001344_tree.txt --srv Yes
-  hyphy busted --alignment $cdsFile --tree $1$treeFile --srv Yes
-
-  # The problem is that some gene names in the tree have periods (ex end in .p1) while in the alignment they have underscores (ex end in _p1). That suffix comes from Transdecoder. Hyphy only accepts letters, numbers and underscores, so it's changing .p1 to _p1. 
-#-------
+  # Example cds file: ./7_2_BustedResults/cleaned_OG0013039_cds.fasta
+  # Example gene tree file: /workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Nov19_1/Resolved_Gene_Trees/OG0013039_cds.fasta
+  #hyphy busted --alignment /workdir/mb2337/FormicidaeMolecularEvolution/7_2_BustedResults/cleaned_OG0002307_cds.fasta --tree /workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Nov24/Resolved_Gene_Trees/OG0002307_tree.txt --srv Yes
+  echo Running BUSTED[S] on $cdsFile and $treeFile.
+  hyphy busted --alignment $cdsFile --tree $1$treeFile --srv Yes --output "./7_3_BustedResults/"$orthogroupNumber"_busted.json"
+  echo __________________________________________________
 
 done
