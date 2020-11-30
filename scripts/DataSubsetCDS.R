@@ -5,10 +5,10 @@ if (length(args)==0) {
   stop("At least one argument must be supplied (input file).n", call.=FALSE)
 } else if (length(args)==1) {
   # default output file
-  args[1] = "/workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/"
+  args[1] = "/workdir/mb2337/FormicidaeMolecularEvolution/4_OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/"
 }
 
-# The command to run this script is `Rscript ./scripts/DataSubsetCDS.R ./scripts/inputurls_partial [path to Orthofinder MSA files]`, for example: `Rscript ./scripts/DataSubsetCDS.R ./scripts/inputurls_partial ./5_OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/`
+# The command to run this script is `Rscript ./scripts/DataSubsetCDS.R ./scripts/inputurls_partial [path to Orthofinder MSA files]`, for example: `Rscript ./scripts/DataSubsetCDS.R ./scripts/inputurls_partial ./4_OrthoFinder/fasta/OrthoFinder/Results_Nov12/MultipleSequenceAlignments/`
 
 # I need to break up nucleotide sequence files into many small files, like the orthogroup MSA files. 
 

@@ -5,10 +5,10 @@ if (length(args)==0) {
   stop("At least one argument must be supplied (input file).n", call.=FALSE)
 } else if (length(args)==1) {
   # default output file
-  args[2] = "/workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_*/MultipleSequenceAlignments"
+  args[2] = "/workdir/mb2337/FormicidaeMolecularEvolution/4_OrthoFinder/fasta/OrthoFinder/Results_*/MultipleSequenceAlignments"
 }
 
-# The command to run this script is `Rscript ./scripts/DataMSA.R [inputurls file] [path to Orthofinder MSA files]`, for example: `./scripts/DataMSA.R ./scripts/inputurls_partial /workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Oct26/MultipleSequenceAlignments`
+# The command to run this script is `Rscript ./scripts/DataMSA.R [inputurls file] [path to Orthofinder MSA files]`, for example: `./scripts/DataMSA.R ./scripts/inputurls_partial /workdir/mb2337/FormicidaeMolecularEvolution/4_OrthoFinder/fasta/OrthoFinder/Results_Oct26/MultipleSequenceAlignments`
 
 # This script will reshuffle the Orthofinder MSA files so that instead of one file per orthogroup with all species present, we have one file per specise with all orthogroups present. 
 
