@@ -25,7 +25,7 @@
     echo "First, attempting TransDecoder run on $cleanName"
     /programs/TransDecoder-v5.5.0/TransDecoder.LongOrfs -t $cleanName
     # I had coped that adding --single_best_only would remove the .p1, .p2 etc from the end of gene names, but it did not.
-    /programs/TransDecoder-v5.5.0/TransDecoder.Predict -t $cleanName --single_best_only
+    /programs/TransDecoder-v5.5.0/TransDecoder.Predict -t $cleanName 
 
     # Now we need to run the TranscriptFilesTranslateScript.py script just on those files that didn't successfully go through TransDecoder.
     mkdir ./OutputFiles
