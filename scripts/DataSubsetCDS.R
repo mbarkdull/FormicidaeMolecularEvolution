@@ -26,12 +26,12 @@ abbreviations <- speciesInfo$abbrev
 
 # Make a working directory:
 dir.create("./7_1_CDSOrthogroups")
-# Copy the nucleotide alignments to the working directory:
-file.copy("./6_PAL2NALOutput", "./7_1_CDSOrthogroups", recursive = TRUE)
+# Copy the filtered nucleotide sequences to the working directory:
+file.copy("./5_2_FilteredCDS", "./7_1_CDSOrthogroups", recursive = TRUE)
 # Copy the multiple sequence alignments to the directory:
 file.copy(args[2], "./7_1_CDSOrthogroups", recursive = TRUE)
 #file.copy("./MultipleSequenceAlignments", "./7_1_CDSOrthogroups", recursive = TRUE)
-setwd("./7_1_CDSOrthogroups/6_PAL2NALOutput")
+setwd("./7_1_CDSOrthogroups/5_2_FilteredCDS")
 
 # Concatenate all of the cds files into a single file:
 cdsFiles <- list.files(pattern = "*.fasta")
