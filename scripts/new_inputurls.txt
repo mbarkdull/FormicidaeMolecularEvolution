@@ -1,0 +1,3 @@
+https://antgenomes.org/downloads/transcripts/Linepithema_humile/lhum_genome.OGS.1.2.maker.transcripts.fasta.gz,lhum_transcripts.fasta,Linepithema_humile
+http://www.insect-genome.com/data/genome_download/Wasmannia_auropunctata/Wasmannia_auropunctata_rna.fasta.gz,waur_transcripts.fasta,Wasmannia_auropunctata
+https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/594/055/GCF_001594055.1_Tzet1.0/GCF_001594055.1_Tzet1.0_rna.fna.gz,tzet_transcripts.fasta,Trachymyrmex_zeteki
