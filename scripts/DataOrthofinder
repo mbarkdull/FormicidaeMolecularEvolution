@@ -3,7 +3,9 @@
 # The command to run this script is ./scripts/DataOrthofinder [version of OrthFinder, either current or 2.3.8] [Full path to correct species tree]
 # This is structured as an if/elif/then statement to allow you to choose the version of OrthoFinder you want to run on Cornell's BioHPC.
 if [[ $1 == 'current' ]]; then
-  echo Running OrthoFinder v. $1
+  echo __________________________________________________
+  echo Running the most recent version of OrthoFinder.
+  echo __________________________________________________
   cd /workdir/$USER/FormicidaeMolecularEvolution
 
   git clone https://github.com/davidemms/OrthoFinder.git
