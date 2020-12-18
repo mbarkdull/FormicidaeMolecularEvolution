@@ -1,14 +1,18 @@
 #!/bin/bash
 
-# The command to run this script is ./scripts/DataOrthofinder [version of OrthFinder, either current or 2.3.8] [Full path to correct species tree]
+# The command to run this script is ./scripts/DataOrthofinder [version of OrthFinder, either 2.4.1 or 2.3.8] [Full path to correct species tree]
 # This is structured as an if/elif/then statement to allow you to choose the version of OrthoFinder you want to run on Cornell's BioHPC.
-if [[ $1 == 'current' ]]; then
+if [[ $1 == '2.4.1' ]]; then
   echo __________________________________________________
   echo Running the most recent version of OrthoFinder.
   echo __________________________________________________
   cd /workdir/$USER/FormicidaeMolecularEvolution
 
-  git clone https://github.com/davidemms/OrthoFinder.git
+  # I think I actually want to use https://github.com/davidemms/OrthoFinder/releases/tag/2.4.1
+   wget https://github.com/davidemms/OrthoFinder/archive/2.4.1.tar.gz
+   tar -xzvf 2.4.1.tar.gz
+   mv ./OrthoFinder-2.4.1 ./OrthoFinder
+  #  git clone https://github.com/davidemms/OrthoFinder.git
 
   # set environment
   export PATH=/programs/python2_link:$PATH
@@ -63,6 +67,6 @@ cd /workdir/$USER/FormicidaeMolecularEvolution
 
 # If no version number is given, produce an error
 else
-  echo 'Please provide the version of OrthoFinder you want to run, either 2.4.0 or 2.3.8'
+  echo 'Please provide the version of OrthoFinder you want to run, either 2.4.1 or 2.3.8'
 
 fi
