@@ -2,47 +2,112 @@
 
 # I am going to have an input file that is a tab-delimited text file with data urls and desired file names to send the download.
 
-# The command to run this is `./DataDownload [input file]`. This will read in each line of the input file; create a variable that is the url from which to download the data, based on the first field of the line of the input file; it will create a temporary file that holds the individual tree for that gene; and will then send those pieces of information to HyPhy to be run.
+# The command to run this script is `./DataDownload [input file]`. This will read in the input urls file and download the transcripts, proteins, and GFF files for each species.
   while read -r line;
   do
     # This creates a variable, url, that holds the information about the download url on this line of the input file:
-    export url=`echo "$line" | awk -F',' '{print $1}'`
+    export transcriptUrl=`echo "$line" | awk -F',' '{print $1}'`
+    export proteinUrl=`echo "$line" | awk -F',' '{print $2}'`
+    export gffUrl=`echo "$line" | awk -F',' '{print $3}'`
+
     # This uses the second field on that line to get the file name where that data should ultimately be sent:
-    export name=`echo "$line" | awk -F',' '{print $2}'`
-    # This tells us what the zipped, downloaded file should be sent to:
-    if [[ $url == *.zip ]]
-      then
-        export zipFn=$name.zip
-      else [[ $url == *.gz ]]
-        export zipFn=$name.gz
-    fi
+    export name=`echo "$line" | awk -F',' '{print $4}'`
+    export transcriptName=$name'_transcripts.fasta'
+    export proteinName=$name'_proteins.faa'
+    export gffName=$name'_GFF.gff'
 
     mkdir ./1_RawData
     cd ./1_RawData
 
+    # This tells us what the zipped, downloaded file should be sent to:
+    if [[ $transcriptUrl == *.zip ]]
+      then
+        export zipFn=$name.zip
+      else [[ $transcriptUrl == *.gz ]]
+        export zipFn=$name.gz
+    fi
+
     # These lines print the file name variable information to the console so you can see it:
     echo __________________________________________________
-    echo Dowloading data from the url: $url
+    echo Dowloading data from the url: $transcriptUrl
     echo Downloading the zipped data to $zipFn
-    echo wget $url -O $zipFn
+    echo wget $transcriptUrl -O $zipFn
 
     # This sends the download url to wget, unzips the downloaded file, and renames it to the name you indicated in the input file.
-    wget $url -O $zipFn
+    wget $transcriptUrl -O $zipFn
 
     if [[ $zipFn == *.zip ]]
       then
-        unzip -p $zipFn > $name
-        echo Unzipping $zipFn to $name
+        unzip -p $zipFn > $transcriptName
+        echo Unzipping $zipFn to $transcriptName
       else [[ $zipFn == *.gz ]]
-        gunzip -f $zipFn > $name
-        echo Unzipping $zipFn to $name
+        gunzip -c $zipFn > $transcriptName
+        echo Unzipping $zipFn to $transcriptName
     fi
 
     rm $zipFn
+    echo ________________________Done with transcripts download__________________________
+
+    # This tells us what the zipped, downloaded file should be sent to:
+    if [[ $proteinUrl == *.zip ]]
+      then
+        export zipFn=$name.zip
+      else [[ $proteinUrl == *.gz ]]
+        export zipFn=$name.gz
+    fi
+
+    # These lines print the file name variable information to the console so you can see it:
     echo __________________________________________________
+    echo Dowloading data from the url: $proteinUrl
+    echo Downloading the zipped data to $zipFn
+    echo wget $proteinUrl -O $zipFn
+
+    # This sends the download url to wget, unzips the downloaded file, and renames it to the name you indicated in the input file.
+    wget $proteinUrl -O $zipFn
+
+    if [[ $zipFn == *.zip ]]
+      then
+        unzip -p $zipFn > $proteinName
+        echo Unzipping $zipFn to $proteinName
+      else [[ $zipFn == *.gz ]]
+        gunzip -c $zipFn > $proteinName
+        echo Unzipping $zipFn to $proteinName
+    fi
+
+    rm $zipFn
+    echo _____________________Done with proteins download_____________________________
+    # This tells us what the zipped, downloaded file should be sent to:
+    if [[ $gffUrl == *.zip ]]
+      then
+        export zipFn=$name.zip
+      else [[ $gffUrl == *.gz ]]
+        export zipFn=$name.gz
+    fi
+
+    # These lines print the file name variable information to the console so you can see it:
+    echo __________________________________________________
+    echo Dowloading data from the url: $gffUrl
+    echo Downloading the zipped data to $zipFn
+    echo wget $gffUrl -O $zipFn
+
+    # This sends the download url to wget, unzips the downloaded file, and renames it to the name you indicated in the input file.
+    wget $gffUrl -O $zipFn
+
+    if [[ $zipFn == *.zip ]]
+      then
+        unzip -p $zipFn > $gffName
+        echo Unzipping $zipFn to $gffName
+      else [[ $zipFn == *.gz ]]
+        gunzip -c $zipFn > $gffName
+        echo Unzipping $zipFn to $gffName
+    fi
+
+    rm $zipFn
+    echo _____________________Done with GFF download_____________________________
+
 
     cd ../
 
   done < $1
 
-  # The command to run this script is `./DataDownload [input file]`. This will read in each line of the big tree file; create a variable that is the name of the alignment file, based on the first field of the line of the big tree file; it will create a temporary file that holds the individual tree for that gene; and will then send those pieces of information to HyPhy to be run.
+  # The command to run this script is `./DataDownload [input file]`. This will read in the input urls file and download the transcripts, proteins, and GFF files for each species.

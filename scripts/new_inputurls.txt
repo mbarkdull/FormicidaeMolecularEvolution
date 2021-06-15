@@ -1,3 +1,2 @@
-https://antgenomes.org/downloads/transcripts/Linepithema_humile/lhum_genome.OGS.1.2.maker.transcripts.fasta.gz,lhum_transcripts.fasta,Linepithema_humile
-http://www.insect-genome.com/data/genome_download/Wasmannia_auropunctata/Wasmannia_auropunctata_rna.fasta.gz,waur_transcripts.fasta,Wasmannia_auropunctata
-https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/001/594/055/GCF_001594055.1_Tzet1.0/GCF_001594055.1_Tzet1.0_rna.fna.gz,tzet_transcripts.fasta,Trachymyrmex_zeteki
+https://antgenomes.org/downloads/transcripts/Acromyrmex_echinatior/Aech_v3.8.cds.gz,ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/204/515/GCF_000204515.1_Aech_3.9/GCF_000204515.1_Aech_3.9_protein.faa.gz,ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/204/515/GCF_000204515.1_Aech_3.9/GCF_000204515.1_Aech_3.9_genomic.gff.gz,aech
+https://antgenomes.org/downloads/transcripts/Atta_cephalotes/acep_genome.OGS.1.2.maker.transcripts.fasta.gz,ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/143/395/GCF_000143395.1_Attacep1.0/GCF_000143395.1_Attacep1.0_protein.faa.gz,ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/143/395/GCF_000143395.1_Attacep1.0/GCF_000143395.1_Attacep1.0_genomic.gff.gz,acep
