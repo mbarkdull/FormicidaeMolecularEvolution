@@ -33,6 +33,7 @@ if [[ $1 == '2.4.1' ]]; then
 
   echo Finished running OrthoFinder v. $1
   mv /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/ /workdir/$USER/FormicidaeMolecularEvolution/4_OrthoFinder/
+  rm 2.4.1.tar.gz
 
 elif [[ $1 == '2.3.8' ]]; then
 echo Running OrthoFinder v. $1
