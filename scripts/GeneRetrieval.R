@@ -17,7 +17,7 @@ library(data.table)
 # Read in the input urls file based on the command line argument:
 speciesInfo <- read.table(file = args[1], sep = ",")
 # If testing locally, can use this line:
-#speciesInfo <- read.table(file = "./inputurls_full.txt", sep = ",")
+# speciesInfo <- read.table(file = "./inputurls_full.txt", sep = ",")
 # Filter to only include species where the "FilterIsoforms" attribute is yes. 
 speciesInfo <- filter(speciesInfo, speciesInfo$V5 == "yes")
 # Get a list of species abbreviations:
