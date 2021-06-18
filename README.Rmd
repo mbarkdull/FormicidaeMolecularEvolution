@@ -35,27 +35,23 @@ grViz("digraph flowchart {
       tab13 [label = '@@13']
       
       # edge definitions with the node IDs
-      tab1 -> tab2 -> tab3 -> tab4 -> tab5 -> tab9;
-      tab2 -> tab6 -> tab7 -> tab8 -> tab9;
-      tab3 -> tab8;
-      tab2 -> tab12 -> tab10 -> tab11;
-      tab3 -> tab11;
-      tab3 -> tab12;
-      tab13 -> tab3;
+      tab1 -> tab2 -> tab3 -> tab4 -> tab5 -> tab6 -> tab7 -> tab8 -> tab13;
+      tab5 -> tab9 -> tab10 -> tab13;
+      tab3 -> tab11 -> tab12 -> tab13;
       }
-      [1]: '1) Download the coding sequences for each species'
-      [2]: '2) Clean data; 3) translate coding sequences to amino acid sequences'
-      [3]: '4) Run Orthofinder on the amino acid sequences, inferring orthogroups and gene trees'
-      [4]: 'Infer gene trees with Rubin pipeline using the coding sequences'
-      [5]: 'Run RERconverge on the gene trees'
-      [6]: 'Annotate genes with InterProScan'
-      [7]: 'Concatenate InterProScan results'
-      [8]: 'Run Kinfin on the Orthofinder results'
-      [9]: 'Test for enrichment with GOATOOLS'
-      [10]: '6) Create codon-aware nucleotide alignments with PAL2NAL'
-      [11]: 'Used BustedS to test for positive selection'
-      [12]: '5) Prepare inputs for PAL2NAL'
-      [13]: 'Generate species tree'
+      [1]: '1) Download the coding sequences, protein sequences, and annotation file for each species'
+      [2]: '2) Filter for the longest isoform for each gene'
+      [3]: '3) Clean gene names'
+      [4]: '4) Translate coding sequences to amino acid sequences'
+      [5]: '5) Run Orthofinder on amino acid sequences, generating orthogroups and multiple sequence alignments'
+      [6]: '6) Prepare coding and amino acid sequences for PAL2NAL'
+      [7]: '7) Generate nucleotide alignments with PAL2NAL'
+      [8]: '8) Run BUSTED[S] on nucleotide alignments to test for positive selection'
+      [9]: '9) Scale gene trees with Rubin pipeline'
+      [10]: '10) Run RERConverge to correlate phenotypes and relative evolutionary rate'
+      [11]: '11) Annotate coding sequences with InterProScan'
+      [12]: '12) Concatenate InterProScan results'
+      [13]: '13) Test for GO term enrichment with GOATOOLS'
       ")
 ```
 
@@ -63,11 +59,13 @@ grViz("digraph flowchart {
 To use this workflow, simply clone this repository onto your own machine. You will run all Bash scripts in the main directory associated with this repository (i.e., in `/FormicidaeMolecularEvolution/`)
 
 ##  1. Downloading data:
-For a project of this kind, you will need transcript data from your species of interest. The Bash script `DataDownload` can download these data for you. This script requires an input file, which should be a tab-delimited text file with:
+For a project of this kind, you will need coding sequence and protein data, as well as GFF-formatted annotations, from your species of interest. The Bash script `DataDownload` can download these data for you. This script requires an input file, which should be a comma-delimited text file with:
 
-  + Download URLs in the first column
-  + The file names that you want your data downloaded to in the second column, formatted like: `FOURLETTERTAXONABBREVIATION_transcripts.fasta`.
-  + The full species names, in the format Genus_species, in the third column. 
+  + Coding sequence download URLs in the first column
+  + Protein sequence download URLs in the second column
+  + GFF-formatted annotation download URLs in the third column
+  + Species abbreviation codes in the fourth column; I suggest something like first letter of gene and first three letters of species. 
+  + yes/no values in the fifth column; the indicates whether or not longest isoforms ought to be calculated for this species. See section 2 for details. 
   
 See `./scripts/inputurls.txt` for an example. 
 
@@ -75,9 +73,32 @@ Once you have an input URLs file, simply run the script by executing the followi
 
 `./scripts/DataDownload ./scripts/inputurls.txt`
 
-This will create a new directory, `./RawData`, containing the downloaded transcript files. 
+This will create a new directory, `./1_RawData`, containing the downloaded input files. 
 
-## 2. Cleaning the raw data:
+## 2. Selecting longest isoforms:
+Protein and coding sequence datasets are likely to include multiple isoforms for many genes. This project makes use of just the single longest isoform for each gene. To filter down to just the longest isoforms, you'll use the script `GeneRetrieval`. This is an R script which uses the R package [orthologr](https://drostlab.github.io/orthologr/index.html) to filter for longest isoforms based on a protein sequence file and a GFF-formatted annotation file. The script then matches protein names to gene names in order to subset the coding sequence file to just the longest isoforms. 
+
+Crucially, in order for this script to work properly, the script expects transcript gene names to look like this:
+  
+  + `>lcl|NW_012130065.1_cds_XP_012054525.1_1 [gene=LOC105617575] [db_xref=GeneID:105617575] [protein=proton-coupled amino acid transporter 4-like] [frame=2] [partial=5'] [protein_id=XP_012054525.1] [location=join(<125..532,740..1100,1848..2438)] [gbkey=CDS]`
+
+And processes them to look like:
+  
+  + `XP_012054525.1`
+
+Where `XP_012054525.1` is the name of a protein in the proteins file. 
+
+To run this script, simply use the command:
+
+`./scripts/GeneRetrieval /scripts/inputurls.txt`
+
+This will create two files for each species, one with the longest protein isoforms and one with the longest coding sequence isoforms, in the directory `1_RawData`. 
+
+**If you use this step, please cite orthologr as follows:**
+
+Drost et al. 2015. Evidence for Active Maintenance of Phylotranscriptomic Hourglass Patterns in Animal and Plant Embryogenesis. Mol. Biol. Evol. 32 (5): 1221-1231. doi:10.1093/molbev/msv012
+
+## 3. Cleaning the raw data:
 The raw data is likely to have several features that will make future steps difficult or annoying. To solve this problem, you'll want to run the script `DataCleaning`. This will remove any special characters from gene names (for example, _ or (), which Orthofinder will change, causing errors) and add your four-letter taxon abbreviation to the beginning of each gene name. To run this script, simply use the command:
 
 `./scripts/DataCleaning ./scripts/inputurls.txt`

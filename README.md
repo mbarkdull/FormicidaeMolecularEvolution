@@ -18,17 +18,20 @@ with this repository (i.e., in `/FormicidaeMolecularEvolution/`)
 
 ## 1\. Downloading data:
 
-For a project of this kind, you will need transcript data from your
-species of interest. The Bash script `DataDownload` can download these
-data for you. This script requires an input file, which should be a
-tab-delimited text file with:
+For a project of this kind, you will need coding sequence and protein
+data, as well as GFF-formatted annotations, from your species of
+interest. The Bash script `DataDownload` can download these data for
+you. This script requires an input file, which should be a
+comma-delimited text file with:
 
-  - Download URLs in the first column
-  - The file names that you want your data downloaded to in the second
-    column, formatted like:
-    `FOURLETTERTAXONABBREVIATION_transcripts.fasta`.
-  - The full species names, in the format Genus\_species, in the third
-    column.
+  - Coding sequence download URLs in the first column
+  - Protein sequence download URLs in the second column
+  - GFF-formatted annotation download URLs in the third column
+  - Species abbreviation codes in the fourth column; I suggest something
+    like first letter of gene and first three letters of species.
+  - yes/no values in the fifth column; the indicates whether or not
+    longest isoforms ought to be calculated for this species. See
+    section 2 for details.
 
 See `./scripts/inputurls.txt` for an example.
 
@@ -37,10 +40,53 @@ following command in a Bash shell:
 
 `./scripts/DataDownload ./scripts/inputurls.txt`
 
-This will create a new directory, `./RawData`, containing the downloaded
-transcript files.
+This will create a new directory, `./1_RawData`, containing the
+downloaded input files.
 
-## 2\. Cleaning the raw data:
+## 2\. Selecting longest isoforms:
+
+Protein and coding sequence datasets are likely to include multiple
+isoforms for many genes. This project makes use of just the single
+longest isoform for each gene. To filter down to just the longest
+isoforms, you’ll use the script `GeneRetrieval`. This is an R script
+which uses the R package
+[orthologr](https://drostlab.github.io/orthologr/index.html) to filter
+for longest isoforms based on a protein sequence file and a
+GFF-formatted annotation file. The script then matches protein names to
+gene names in order to subset the coding sequence file to just the
+longest isoforms.
+
+Crucially, in order for this script to work properly, the script expects
+transcript gene names to look like this:
+
+  - `>lcl|NW_012130065.1_cds_XP_012054525.1_1 [gene=LOC105617575]
+    [db_xref=GeneID:105617575] [protein=proton-coupled amino acid
+    transporter 4-like] [frame=2] [partial=5']
+    [protein_id=XP_012054525.1]
+    [location=join(<125..532,740..1100,1848..2438)] [gbkey=CDS]`
+
+And processes them to look like:
+
+  - `XP_012054525.1`
+
+Where `XP_012054525.1` is the name of a protein in the proteins file.
+
+To run this script, simply use the command:
+
+`./scripts/GeneRetrieval /scripts/inputurls.txt`
+
+This will create two files for each species, one with the longest
+protein isoforms and one with the longest coding sequence isoforms, in
+the directory `1_RawData`.
+
+**If you use this step, please cite orthologr as follows:**
+
+Drost et al. 2015. Evidence for Active Maintenance of
+Phylotranscriptomic Hourglass Patterns in Animal and Plant
+Embryogenesis. Mol. Biol. Evol. 32 (5): 1221-1231.
+<doi:10.1093/molbev/msv012>
+
+## 3\. Cleaning the raw data:
 
 The raw data is likely to have several features that will make future
 steps difficult or annoying. To solve this problem, you’ll want to run
