@@ -92,7 +92,7 @@ To run this script, simply use the command:
 
 `./scripts/GeneRetrieval /scripts/inputurls.txt`
 
-This will create two files for each species, one with the longest protein isoforms and one with the longest coding sequence isoforms, in the directory `1_RawData`. 
+This will create two files for each species, one with the longest protein isoforms and one with the longest coding sequence isoforms, in the directory `2_LongestIsoforms`. 
 
 **If you use this step, please cite orthologr as follows:**
 
@@ -103,9 +103,9 @@ The raw data is likely to have several features that will make future steps diff
 
 `./scripts/DataCleaning ./scripts/inputurls.txt`
 
-This will create a new directory, `./CleanedData`, that contains the cleaned transcript files. 
+This will create a new directory, `./3_CleanedData`, that contains the cleaned transcript files. 
 
-## 3. Translating nucleotide sequences to amino acid sequences:
+## 4. Translating nucleotide sequences to amino acid sequences:
 For many steps of this workflow, you'll actually need amino acid sequences rather than protein sequences. Therefore, we'll need to translate the data we downloaded. This will be done in one of two ways:
 
   + If the data you downloaded are raw transcript data, meaning for example that they don't start with a start codon, then we'll use Transdecoder to process and translate them into meaningful amino acid sequences. 

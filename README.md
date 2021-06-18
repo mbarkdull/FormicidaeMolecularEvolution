@@ -77,7 +77,7 @@ To run this script, simply use the command:
 
 This will create two files for each species, one with the longest
 protein isoforms and one with the longest coding sequence isoforms, in
-the directory `1_RawData`.
+the directory `2_LongestIsoforms`.
 
 **If you use this step, please cite orthologr as follows:**
 
@@ -97,10 +97,10 @@ beginning of each gene name. To run this script, simply use the command:
 
 `./scripts/DataCleaning ./scripts/inputurls.txt`
 
-This will create a new directory, `./CleanedData`, that contains the
+This will create a new directory, `./3_CleanedData`, that contains the
 cleaned transcript files.
 
-## 3\. Translating nucleotide sequences to amino acid sequences:
+## 4\. Translating nucleotide sequences to amino acid sequences:
 
 For many steps of this workflow, you’ll actually need amino acid
 sequences rather than protein sequences. Therefore, we’ll need to
