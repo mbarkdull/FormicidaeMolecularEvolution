@@ -50,7 +50,7 @@ for (i in species) {
                               annotation_format = "gff")
     
     # Get the name of the file to which the longest isoforms file should be saved:
-    longestIsoformsFile <- paste("../2_LongestIsoforms/",i,"_longestIsoforms.fasta", sep = "")
+    longestIsoformsFile <- paste("./2_LongestIsoforms/",i,"_longestIsoforms.fasta", sep = "")
     print(longestIsoformsFile)
     # Get the name of the transcripts file that has been downloaded:
     transcriptsFile <- paste("./1_RawData/",i,"_transcripts.fasta", sep = "")
