@@ -11,9 +11,9 @@ do
 
 # Let's copy the downloaded raw data to a directory for cleaning:
   echo Making a directory for the cleaned data files.
-  mkdir ./2_CleanedData
-  cp ./1_RawData/$name ./2_CleanedData/$name
-  cd ./2_CleanedData
+  mkdir ./3_CleanedData
+  cp ./2_LongestIsoforms/$name ./3_CleanedData/$name
+  cd ./3_CleanedData
 
 # Now I want to use sed to insert the taxon abbreviation code in front of every gene name:
 # The problem with this is that sed works a little differently on the cluster than on my computer. I'd prefer to replace this code switching with an if then structure.
