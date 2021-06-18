@@ -3,10 +3,11 @@
 # The second field of inputurls has the file names for each file; we can extract from the file name the code that needs to be appended to each gene:
 while read -r line;
 do
-  # This uses the second field from the input url file to get the file name where the genome data is stored:
-  export name=`echo "$line" | awk -F',' '{print $2}'`
+
   # This creates a variable, code, that holds taxon abbreviation code for that genome file:
-  export abbrev=`echo "$line" | awk -F',' '{print tolower($2)}' | awk -F'_' '{print tolower($1)}'`
+  export abbrev=`echo "$line" | awk -F',' '{print $4}'`
+  # This constructs the file name where the longest transcript data is stored:
+  export name=$abbrev'_filteredTranscripts.fasta'
 
 # Let's copy the downloaded raw data to a directory for cleaning:
   echo Making a directory for the cleaned data files.
