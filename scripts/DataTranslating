@@ -8,23 +8,23 @@
 # The command to run this is `./DataTransdecoder [input file]`. This will read in each line of the input file; create a variable that is the url from which to download the data, based on the first field of the line of the input file; it will create a temporary file that holds the individual tree for that gene; and will then send those pieces of information to HyPhy to be run.
   while read -r line;
   do
-    # This uses the second field on each line of the input urls file to get the file name where the raw data was sent, ex. acep_transcripts:
-    export rawName=`echo "$line" | awk -F',' '{print $2}'`
+    # This uses the second field on each line of the input urls file to get the file name where the filtered, longest transcripts data was sent, ex. nful_filteredTranscripts.fasta:
+    export abbrev=`echo "$line" | awk -F',' '{print $4}'`
+    export rawName=$abbrev'_filteredTranscripts.fasta'
     # Now we construct the cleaned file name, which is the one that we want to run Transdecoder on, ex. cleanedacept_transcripts:
     export cleanName=cleaned$rawName
 
     echo "Translating the nucleotide sequences in $cleanName"
 
     # Now we can make a directory for translating the inputs and copy the cleaned files there:
-    mkdir ./3_1_TranslatedData
-    cd ./3_1_TranslatedData
-    cp ../2_CleanedData/$cleanName ./$cleanName
+    mkdir ./4_1_TranslatedData
+    cd ./4_1_TranslatedData
+    cp ../3_CleanedData/$cleanName ./$cleanName
     cp ../scripts/TranscriptFilesTranslateScript.py ./
 
     # Now we can run Transdecoder on the cleaned file:
     echo "First, attempting TransDecoder run on $cleanName"
     /programs/TransDecoder-v5.5.0/TransDecoder.LongOrfs -t $cleanName
-    # I had coped that adding --single_best_only would remove the .p1, .p2 etc from the end of gene names, but it did not.
     /programs/TransDecoder-v5.5.0/TransDecoder.Predict -t $cleanName --single_best_only
 
     # Now we need to run the TranscriptFilesTranslateScript.py script just on those files that didn't successfully go through TransDecoder.
@@ -38,18 +38,18 @@
         # Copy the TranDecoder file to something with a more readable name, ex. translatedacep_transcripts
         cp $transdecoderFile ./OutputFiles/translated$rawName
         echo "Copying $transdecoderFile to ./OutputFiles/translated$rawName"
-        #cat ./OutputFiles/translated$rawName | tr  "."  "_" > temp.fasta
-        #mv temp.fasta ./OutputFiles/translated$rawName
-        #rm temp.fasta
+        cat ./OutputFiles/translated$rawName | tr  "."  "_" > temp.fasta
+        mv temp.fasta ./OutputFiles/translated$rawName
+        rm temp.fasta
 
         # copy the created coding sequence file to a coding sequences folder:
         export cdsFile=$cleanName".transdecoder.cds"
-        mkdir ../3_2_TransdecoderCodingSequences
-        cp $cdsFile ../3_2_TransdecoderCodingSequences
-        mv ../3_2_TransdecoderCodingSequences/$cdsFile ../3_2_TransdecoderCodingSequences/cds_$rawName
-        #cat ../3_2_TransdecoderCodingSequences/cds_$rawName | tr  "."  "_" > temp.fasta
-        #mv temp.fasta ../3_2_TransdecoderCodingSequences/cds_$rawName
-        #rm temp.fasta
+        mkdir ../4_2_TransdecoderCodingSequences
+        cp $cdsFile ../4_2_TransdecoderCodingSequences
+        mv ../4_2_TransdecoderCodingSequences/$cdsFile ../4_2_TransdecoderCodingSequences/cds_$rawName
+        cat ../4_2_TransdecoderCodingSequences/cds_$rawName | tr  "."  "_" > temp.fasta
+        mv temp.fasta ../4_2_TransdecoderCodingSequences/cds_$rawName
+        rm temp.fasta
 
     # If the Transdecoder file does not exist, run my translating script on the file instead.
     else
@@ -62,8 +62,9 @@
         python ./TranscriptFilesTranslateScript.py CleanedNucleotideSequences.txt
         mv ./"translated"$rawName ./OutputFiles/"translated"$rawName
 
-        cp ../2_CleanedData/$cleanName ../3_2_TransdecoderCodingSequences
-        mv ../3_2_TransdecoderCodingSequences/$cleanName ../3_2_TransdecoderCodingSequences/cds_$rawName
+        mkdir ../4_2_TransdecoderCodingSequences
+        cp ../3_CleanedData/$cleanName ../4_2_TransdecoderCodingSequences
+        mv ../4_2_TransdecoderCodingSequences/$cleanName ../4_2_TransdecoderCodingSequences/cds_$rawName
 
     fi
 
