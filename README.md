@@ -121,7 +121,9 @@ each cleaned transcripts file; if the data is unprocessed, this will
 give us a translated output file. If the data is already processed,
 Transdecoder will fail to run and the script will instead translate the
 file with my Python script,
-`./scripts/TranscriptFilesTranslateScript.py`.
+`./scripts/TranscriptFilesTranslateScript.py`. Note that the Python
+script **will fail in it’s entirety** if it told to run on any species
+that does not have data present in the directory `./3_CleanedData`.
 
 ***This step uses the path to Transdecoder on Cornell’s BioHPC. I plan
 to update the script in future so that it is more portabe. In the
