@@ -125,7 +125,7 @@ If you use Transdecoder, please cite it as:
 Haas, B., and A. Papanicolaou. "TransDecoder." (2017).
 
 ## 4. Running Orthofinder:
-Next, we will use [Orthofinder](https://davidemms.github.io) to identify groups of orthologous genes in our amino acid sequences, and to produce multiple sequence alignments with MAFFT. To run Orthofinder automatically, you can use the Bash script `DataOrthofinder`. ***This script takes a version number as a command line option to run either the most recent version ("current") or version 2.3.8. The script is currently written to work on Cornell's BioHPC, and so may require some changes to run on other machines (editing at least lines 14-16 and 42-46).***
+Next, we will use [Orthofinder](https://davidemms.github.io) to identify groups of orthologous genes in our amino acid sequences, and to produce multiple sequence alignments with MAFFT. To run Orthofinder automatically, you can use the Bash script `DataOrthofinder`. ***This script takes a version number as a command line option to run either version 2.4.1 or version 2.3.8. The script is currently written to work on Cornell's BioHPC, and so may require some changes to run on other machines (editing at least lines 14-16 and 42-46).***
 
 To run this step, use the command:
 "
