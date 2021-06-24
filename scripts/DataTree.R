@@ -1,45 +1,97 @@
-#!/usr/bin/env Rscript
-
-args <- commandArgs(trailingOnly=TRUE)
-if (length(args)==0) {
-  stop("At least one argument must be supplied (input file).n", call.=FALSE)
-} else if (length(args)==1) {
-  # default output file
-  args[2] = "out.txt"
-}
-
-# This script will generate a tree for Orthofinder and BUSTED based on an input tree and a set of tips to retain. 
-# The command to run this is `Rscript ./scripts/DataTree.R [path to full tree] [path to inputurls file]`
-
 library(ape)
 library(phylotools)
+library(ggtree)
+library(tidyverse)
 
 # Read in the large tree file:
-FullTree <- read.tree(file = args[1])
+#FullTree <- read.tree(file = args[1])
+fullTree <- read.nexus(file = "./Tree/BlanchardMoreau_ConcatenatedMatrix_MCCTree_Combined")
 
-# Construct a vector of species to retain:
-speciesInfo <- read.table(file = args[2], sep = ",")
-StudySpecies <- speciesInfo$V3
+# Get list of tips to keep:
+tipsToKeep <- c("Lasius_californicus",
+                "Monomorium_pharaonis",
+                "Acromyrmex_versicolor",
+                "Atta_texana",
+                "Camponotus_maritimus",
+                "Cardiocondyla_mauritanica",
+                "Eciton_vagans",
+                "Harpegnathos_saltator",
+                "Linepithema_humile",
+                "Pogonomyrmex_angustus",
+                "Solenopsis_molesta",
+                "Cerapachys_dohertyi_Dohertyi_grp",
+                "Formica_moki",
+                "Vollenhovia_emeryi",
+                "Wasmannia_auropunctata",
+                "Cephalotes_texanus",
+                "Pseudomyrmex_gracilis",
+                "Nylanderia_hystrix",
+                "Cyphomyrmex_cornutus",
+                "Temnothorax_poeyi",
+                "Dinoponera_australis",
+                "Trachymyrmex_arizonensis",
+                "Odontomachus_coquereli"
+)
+# Trim the tree to retain only those tips:
+trimmedTree <- keep.tip(fullTree, tip = tipsToKeep)
+# Plot the trimmed tree:
+ggtree(trimmedTree) + 
+  geom_tiplab(size = 5) +
+  xlim(-100, 1000)
+
+# Switch the tip labels to reflect the actual species in my study:
+# Note it is CRUCIAL that they are in the same order as in the data structure for the first tree! In the first tree, they will be alphabetical, so if any genus names are changing, you'll need to take that into account (that is why Oocera here is out of place, because in the original tree it is Cerapachys).
+newTipLabels <- c("Acromyrmex_echinatior",
+                  "Atta_colombica",
+                  "Camponotus_floridanus",
+                  "Cardiocondyla_obscurior",
+                  "Cephalotes_varians",
+                  "Ooceraea_biroi",
+                  "Cyphomyrmex_costatus",
+                  "Dinoponera_quadriceps",
+                  "Eciton_burchellii",
+                  "Formica_exsecta",
+                  "Harpegnathos_saltator",
+                  "Lasius_niger",
+                  "Linepithema_humile",
+                  "Monomorium_pharaonis",
+                  "Nylanderia_fulva",
+                  "Odontomachus_brunneus",
+                  "Pogonomyrmex_barbatus",
+                  "Pseudomyrmex_gracilis",
+                  "Solenopsis_invicta",
+                  "Temnothorax_curvispinosus",
+                  "Trachymyrmex_septentrionalis",
+                  "Vollenhovia_emeryi",
+                  "Wasmannia_auropunctata"
+)
+# Create a new tree object so you don't overwrite the original one:
+trimmedTreeMySpecies <- trimmedTree
+# Replace the original tip labels with my new vector of tip labels:
+trimmedTreeMySpecies$tip.label <- newTipLabels
+# Plot the new tree:
+ggtree(trimmedTreeMySpecies) + 
+  geom_tiplab(size = 5) +
+  xlim(-100, 500)
+
+# Export the species pruned tree:
+write.tree(trimmedTreeMySpecies, file = "./Tree/StudyTree.tre")
 
 #Construct a vector of file names corresponding to the species (for use with Orthofinder, and potentially with BUSTED)
-# Split the second column by period (.) to get a column with just abbrev_transcripts:
-speciesInfo <- separate(data = speciesInfo, col = V2, into = c("transcripts", ".fasta"), sep = "\\.")
+#speciesInfo <- read.table(file = args[2], sep = ",")
+speciesInfo <- read.table(file = "./scripts/inputurls_full.txt", sep = ",")
+
+# Construct the filenames:
+speciesInfo$transcripts <- paste(speciesInfo$V4, "_filteredTranscripts.fasta", sep = "")
+# Sort the dataframe by the species so that we can use the filenames as new tip labels:
+speciesInfo <- plyr::arrange(speciesInfo, V6)
 filenames <- speciesInfo$transcripts
+filenameTree <- trimmedTreeMySpecies
 
-# Construct the species pruned tree:
-StudyTree <- keep.tip(FullTree, StudySpecies)
-# Export the species pruned tree:
-write.tree(StudyTree, file = "./Tree/StudyTree.tre")
+filenameTree$tip.label <- tolower(filenameTree$tip.label)
+filenameTree$tip.label <- paste(str_sub(filenameTree$tip.label, 1, 1), substring(filenameTree$tip.label, regexpr("_", filenameTree$tip.label) + 1, regexpr("_", filenameTree$tip.label) + 3), "_filteredTranscripts.fasta", sep = "")
 
-# Construct the filename pruned tree:
-rename.tips <- function(phy, old_names, new_names) {
-  mpos <- match(old_names,phy$tip.label)
-  phy$tip.label[mpos] <- new_names
-  return(phy)
-}
-
-FilenameTree <-  StudyTree
-FilenameTree <-  rename.tips(phy = FilenameTree, old_names = StudySpecies, new_names = filenames)
-# Export the filename pruned tree:
+ggtree(filenameTree) + 
+  geom_tiplab(size = 5) +
+  xlim(-100, 1000)
 write.tree(FilenameTree, file = "./Tree/FilenameTree.tree")
-
