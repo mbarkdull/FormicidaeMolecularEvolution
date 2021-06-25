@@ -6,12 +6,12 @@ if [[ $1 == '2.4.1' ]]; then
   echo __________________________________________________
   echo Running the most recent version of OrthoFinder.
   echo __________________________________________________
-  cd /workdir/$USER/FormicidaeMolecularEvolution
+  # cd /workdir/$USER/FormicidaeMolecularEvolution
 
   # I think I actually want to use https://github.com/davidemms/OrthoFinder/releases/tag/2.4.1
    wget https://github.com/davidemms/OrthoFinder/archive/2.4.1.tar.gz
    tar -xzvf 2.4.1.tar.gz
-   mv ./OrthoFinder-2.4.1 ./OrthoFinder
+   mv ./OrthoFinder-2.4.1 ./5_OrthoFinder
   #  git clone https://github.com/davidemms/OrthoFinder.git
 
   # set environment
@@ -20,19 +20,19 @@ if [[ $1 == '2.4.1' ]]; then
   export PATH=/workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/orthofinder:/workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/orthofinder/bin:/programs/muscle:/programs/RAxML-8.2.12:/programs/raxml-ng_v0.8.1:/programs/iqtree-1.6.10-Linux/bin:/programs/mafft/bin:$PATH
 
   mkdir /workdir/tmp
-  mkdir /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta
-  cp ./3_1_TranslatedData/OutputFiles/translated* ./OrthoFinder/fasta
-  cd ./OrthoFinder/fasta
+  mkdir ./5_OrthoFinder/fasta
+  cp ./4_1_TranslatedData/OutputFiles/translated* ./5_OrthoFinder/fasta
+  cd ./5_OrthoFinder/fasta
   rename translated '' translated*
   cd ../
 
   # Run Orthofinder:
-  ./orthofinder.py -S diamond -I 5 -t 32 -a 4 -f /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta -M msa -p /workdir/tmp -s $2
+  ./orthofinder.py -S diamond -I 5 -t 32 -a 4 -f /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/fasta -M msa -p /workdir/tmp -s $2
   # We then need to reanlyze, supplying the known species tree: To reanalyse with a different species tree use the options
   # ./orthofinder.py -S diamond -I 5 -t 32 -a 4 -M msa -p /workdir/tmp -ft /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_"$2"  -s $3
 
   echo Finished running OrthoFinder v. $1
-  mv /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/ /workdir/$USER/FormicidaeMolecularEvolution/4_OrthoFinder/
+  #mv /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/ /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/
   rm 2.4.1.tar.gz
 
 elif [[ $1 == '2.3.8' ]]; then
@@ -42,8 +42,8 @@ cd /workdir/$USER/FormicidaeMolecularEvolution
   # This script will run Orthofinder 2.3.8 on all of the genomes, identifying orthogroups (genes descended from a common gene in the common ancestor).
 
   # Make a directory in which to run OrthoFinder:
-  mkdir ./OrthoFinder
-  cd ./OrthoFinder
+  mkdir ./5_OrthoFinder
+  cd ./5_OrthoFinder
   mkdir ./fasta
 
   # First set up the BioHPC to run OrthoFinder:
@@ -54,15 +54,15 @@ cd /workdir/$USER/FormicidaeMolecularEvolution
   mkdir /workdir/tmp
 
   # Copy the input files to the primary_transcripts directory:
-  cp /workdir/$USER/FormicidaeMolecularEvolution/3_1_TranslatedData/OutputFiles/translated* /workdir/$USER/OrthoFinder/fasta
-  cd /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta
+  cp /workdir/$USER/FormicidaeMolecularEvolution/4_1_TranslatedData/OutputFiles/translated* /workdir/$USER/5_OrthoFinder/fasta
+  cd /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/fasta
   rename translated '' translated*
   cd ../
 
 
   # Now run OrthoFinder:
   #for f in *.fasta ; do python /programs/OrthoFinder-2.3.8_source/orthofinder/tools/primary_transcript.py $f ; done
-  orthofinder.py -S diamond -I 5 -t 32 -a 4 -f /workdir/$USER/FormicidaeMolecularEvolution/OrthoFinder/fasta -M msa -p /workdir/tmp
+  orthofinder.py -S diamond -I 5 -t 32 -a 4 -f /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/fasta -M msa -p /workdir/tmp
 
   echo Finished running OrthoFinder v. $1
 
