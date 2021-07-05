@@ -5,7 +5,7 @@ if (length(args)==0) {
   stop("At least one argument must be supplied (input file).n", call.=FALSE)
 } else if (length(args)==1) {
   # default output file
-  args[2] = "/workdir/mb2337/FormicidaeMolecularEvolution/4_OrthoFinder/fasta/OrthoFinder/Results_*/MultipleSequenceAlignments"
+  args[2] = "/workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_*/MultipleSequenceAlignments"
 }
 
 # The command to run this script is `Rscript ./scripts/DataMSA.R [inputurls file] [path to Orthofinder MSA files]`, for example: `./scripts/DataMSA.R ./scripts/inputurls_partial /workdir/mb2337/FormicidaeMolecularEvolution/4_OrthoFinder/fasta/OrthoFinder/Results_Oct26/MultipleSequenceAlignments`
@@ -18,16 +18,16 @@ library(tidyverse)
 
 # Read in the inputurl file:
 speciesInfo <- read.table(file = args[1], sep = ",")
-# Split the second column to get a column with only abbreviations:
-speciesInfo <- separate(data = speciesInfo, col = V2, into = c("abbrev", "transcript"), sep = "_")
+#speciesInfo <- read.table(file = "./scripts/inputurls_full.txt", sep = ",")
+
 # Get a vector from that column:
-abbreviations <- speciesInfo$abbrev
+abbreviations <- speciesInfo$V4
 
 # First make a working directory and copy the folder with the MSA files there (THIS WILL NEED TO BE A VALUE SET ON THE COMMAND LINE). 
-dir.create("./5_1_SpeciesMSA")
-file.copy(args[2], "./5_1_SpeciesMSA", recursive = TRUE)
+dir.create("./6_1_SpeciesMSA")
+file.copy(args[2], "./6_1_SpeciesMSA", recursive = TRUE)
 # Concatenate all of the MSA files into a single file:
-setwd("./5_1_SpeciesMSA/MultipleSequenceAlignments")
+setwd("./6_1_SpeciesMSA/MultipleSequenceAlignments")
 msaFiles <- list.files(pattern = "*.fa")
 allMSAFiles <- bind_rows(lapply(msaFiles, read.fasta))
 
