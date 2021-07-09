@@ -141,17 +141,16 @@ contains the translated transcript files.
 If you use Transdecoder, please cite it as: Haas, B., and A.
 Papanicolaou. “TransDecoder.” (2017).
 
-## 4\. Running Orthofinder:
+## 5\. Running Orthofinder:
 
 Next, we will use [Orthofinder](https://davidemms.github.io) to identify
 groups of orthologous genes in our amino acid sequences, and to produce
 multiple sequence alignments with MAFFT. To run Orthofinder
 automatically, you can use the Bash script `DataOrthofinder`. ***This
-script takes a version number as a command line option to run either the
-most recent version (“current”) or version 2.3.8. The script is
-currently written to work on Cornell’s BioHPC, and so may require some
-changes to run on other machines (editing at least lines 14-16 and
-42-46).***
+script takes a version number as a command line option to run either
+version 2.4.1 or version 2.3.8. The script is currently written to work
+on Cornell’s BioHPC, and so may require some changes to run on other
+machines (editing at least lines 14-16 and 42-46).***
 
 To run this step, use the command: " `./scripts/DataOrthofinder [version
 number, either 'current' or '2.3.8'] [full path to a species tree where
@@ -182,9 +181,9 @@ Please also cite MAFFT:
     method for rapid multiple sequence alignment based on fast Fourier
     transform. Nucleic Acids Res. 30(14): 3059-3066.
 
-## 5\. Preparing files for PAL2NAL:
+## 6\. Preparing files for PAL2NAL:
 
-### 5.1 Reordering multiple sequence alignment files for PAL2NAL
+### 6.1 Reordering multiple sequence alignment files for PAL2NAL
 
 Orthofinder produces a single file for every individual orthogroup,
 containing the alignments for the sequences in that orthogroup. However,
@@ -198,12 +197,15 @@ The R script `DataMSA.R` will recombine the Orthofinder outputs so that
 they can be input to PAL2NAL. To run the script, you’ll need to get the
 full path to the MSA files created by Orthofinder in the previous step
 (it will be something like
-`/workdir/mb2337/FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_Oct26/MultipleSequenceAlignments`).
+`/workdir/mb2337/FormicidaeMolecularEvolution/OrthoFinder/fasta/OrthoFinder/Results_*/MultipleSequenceAlignments`).
 Then use the command:
 
 `./scripts/DataMSA.R ./scripts/inputurls /FullPathToMSAFiles`
 
-### 5.2 Filtering coding sequences for PAL2NAL:
+The recombined output files can be found in the directory
+`6_1_SpeciesMSA`.
+
+### 6.2 Filtering coding sequences for PAL2NAL:
 
 The nucleotide sequence file that is run through PAL2NAL can have only
 the genes that are also present in the protein alignment file. Since our
@@ -219,9 +221,9 @@ To run this step, just use the command: `./scripts/FilteringCDSbyMSA.R
 ./scripts/inputurls`
 
 This script will output filtered coding sequence files to the
-subdirectory `./FilteredCDS`.
+subdirectory `6_2_FilteredCDS`.
 
-## 6\. Generating codon-aware nucleotide alignments with PAL2NAL:
+## 7\. Generating codon-aware nucleotide alignments with PAL2NAL:
 
 PAL2NAL will generate codon-aware nucleotide alignments, based on an
 input of an amino acid multiple sequence alignment and a nucleotide
@@ -232,13 +234,13 @@ executing the command:
 
 `./scripts/DataRunPAL2NAL ./scripts/inputurls`
 
-This will produce a new directory, `./PAL2NALOutput`, containing an
+This will produce a new directory, `7_PAL2NALOutput`, containing an
 aligned nucleotide sequence file for each
 species.
 
-## 7\. Testing for positive selection with BUSTED\[S\]
+## 8\. Testing for positive selection with BUSTED\[S\]
 
-### 7.1 Assembling nucleotide sequence orthogroups for input to BUSTED\[S\].
+### 8.1 Assembling nucleotide sequence orthogroups for input to BUSTED\[S\].
 
 To run BUSTED\[S\], we will need files that contain orthologous
 nucleotide sequences from each species. Therefore, we must recombine our
@@ -250,10 +252,10 @@ command:
 multiple sequence alignments from Orthofinder]`
 
 This will produce a new directory,
-`./CDSOrthogroups/MultipleSequenceAlignments/Output` that will contain
+`8_1_CDSOrthogroups/MultipleSequenceAlignments/Output` that will contain
 files of orthologous nucleotide sequences for input to BUSTED\[S\].
 
-### 7.2 Masking stop codons from orthogroup sequences
+### 8.2 Masking stop codons from orthogroup sequences
 
 BUSTED\[S\] will not run on sequences which contain stop codons, even if
 these are reasonable, terminal stop codons. Hyphy includes a utility
@@ -262,7 +264,11 @@ which will mask these these terminal stop codons in the orthogroups
 codon-aware). To execute this step, use the script
 `/scripts/DataRemoveStopCodons`.
 
-### 7.3 Running BUSTED\[S\]
+This will produce a new directory, `8_2_RemovedStops` that will contain
+files of orthologous nucleotide sequences with stop codons masked, ready
+for input to BUSTED\[S\].
+
+### 8.3 Running BUSTED\[S\]
 
 To run BUSTED\[S\], use the Bash script `./scripts/DataRunningBusted`.
 This script will run BUSTED\[S\] to test for positive selection on the
