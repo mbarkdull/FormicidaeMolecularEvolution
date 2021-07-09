@@ -223,7 +223,7 @@ To run BUSTED[S], we will need files that contain orthologous nucleotide sequenc
 This will produce a new directory, `8_1_CDSOrthogroups/MultipleSequenceAlignments/Output` that will contain files of orthologous nucleotide sequences for input to BUSTED[S].
 
 ### 8.2 Masking stop codons from orthogroup sequences
-BUSTED[S] will not run on sequences which contain stop codons, even if these are reasonable, terminal stop codons. Hyphy includes a utility which will mask these these terminal stop codons in the orthogroups (there should be few-to-no other stop codons, because our alignments are codon-aware). To execute this step, use the script `/scripts/DataRemoveStopCodons`. 
+BUSTED[S] will not run on sequences which contain stop codons, even if these are reasonable, terminal stop codons. Hyphy includes a utility which will mask these these terminal stop codons in the orthogroups (there should be few-to-no other stop codons, because our alignments are codon-aware). To execute this step, use the script `/scripts/DataRemoveStopCodons` by simply runnng the command `./scripts/DataRemoveStopCodons` (no need for any additional arguments. 
 
 This will produce a new directory, `8_2_RemovedStops` that will contain files of orthologous nucleotide sequences with stop codons masked, ready for input to BUSTED[S].
 

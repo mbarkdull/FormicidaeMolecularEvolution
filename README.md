@@ -262,7 +262,8 @@ these are reasonable, terminal stop codons. Hyphy includes a utility
 which will mask these these terminal stop codons in the orthogroups
 (there should be few-to-no other stop codons, because our alignments are
 codon-aware). To execute this step, use the script
-`/scripts/DataRemoveStopCodons`.
+`/scripts/DataRemoveStopCodons` by simply runnng the command
+`./scripts/DataRemoveStopCodons` (no need for any additional arguments.
 
 This will produce a new directory, `8_2_RemovedStops` that will contain
 files of orthologous nucleotide sequences with stop codons masked, ready
