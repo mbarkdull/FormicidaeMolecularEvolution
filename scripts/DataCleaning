@@ -16,7 +16,6 @@ do
   cd ./3_CleanedData
 
 # Now I want to use sed to insert the taxon abbreviation code in front of every gene name:
-# The problem with this is that sed works a little differently on the cluster than on my computer. I'd prefer to replace this code switching with an if then structure.
   # Cluster code:
     #sed '' "s/>/>${abbrev}_/g" $name > cleaned$name
   # My computer code:
