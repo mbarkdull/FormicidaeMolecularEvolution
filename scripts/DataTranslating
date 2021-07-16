@@ -41,6 +41,7 @@
         cat ./OutputFiles/translated$rawName | tr  "."  "_" > temp.fasta
         mv temp.fasta ./OutputFiles/translated$rawName
         rm temp.fasta
+        sed -i'.original' -e "s|\.|_|g" ./OutputFiles/translated$rawName
 
         # copy the created coding sequence file to a coding sequences folder:
         export cdsFile=$cleanName".transdecoder.cds"
@@ -50,6 +51,7 @@
         cat ../4_2_TransdecoderCodingSequences/cds_$rawName | tr  "."  "_" > temp.fasta
         mv temp.fasta ../4_2_TransdecoderCodingSequences/cds_$rawName
         rm temp.fasta
+        sed -i'.original' -e "s|\.|_|g" ../4_2_TransdecoderCodingSequences/cds_$rawName
 
     # If the Transdecoder file does not exist, run my translating script on the file instead.
     else
@@ -61,11 +63,12 @@
 
         python ./TranscriptFilesTranslateScript.py CleanedNucleotideSequences.txt
         mv ./"translated"$rawName ./OutputFiles/"translated"$rawName
+        sed -i'.original' -e "s|\.|_|g" ./OutputFiles/"translated"$rawName
 
         mkdir ../4_2_TransdecoderCodingSequences
         cp ../3_CleanedData/$cleanName ../4_2_TransdecoderCodingSequences
         mv ../4_2_TransdecoderCodingSequences/$cleanName ../4_2_TransdecoderCodingSequences/cds_$rawName
-
+        sed -i'.original' -e "s|\.|_|g" ../4_2_TransdecoderCodingSequences/cds_$rawName
     fi
 
     cd ../
