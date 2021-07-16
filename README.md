@@ -273,7 +273,10 @@ for input to BUSTED\[S\].
 
 To run BUSTED\[S\], use the Bash script `./scripts/DataRunningBusted`.
 This script will run BUSTED\[S\] to test for positive selection on the
-sequences.
+sequences. To run this step, use the command
+`./scripts/DataRunningBusted [absolute path to the gene tree files from
+Orthofinder, something like
+/workdir/mb2337/FormicidaeMolecularEvolution/5_Orthofinder/fasta/Orthofinder/Results*/Gene_Trees]`.
 
 ### To do:
 
