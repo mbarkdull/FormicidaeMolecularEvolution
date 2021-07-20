@@ -10,16 +10,20 @@ mkdir ./8_3_BustedResults
 export PATH=/home/$USER/miniconda3/bin:$PATH
 conda install -c bioconda hyphy
 
-#for f in 8_2_RemovedStops/*
-for f in test1/*
+ls -hSr 8_2_RemovedStops > fileList.txt
+while read -r line;
 do
-  export cdsFile=$f
+  export cdsFile=8_2_RemovedStops/"$line"
   echo the coding sequence alignment file is $cdsFile
   # The tree file needs to look like OG0002680_tree.txt. $f looks like  /8_2_RemovedStops/cleaned_OG0002680_cds.fasta.
-  export orthogroupNumber=`echo "$f" | awk -F'_' '{print ($2)}'`
+  export orthogroupNumber=`echo "$line" | awk -F'_' '{print ($2)}'`
   echo The orthogroup number is $orthogroupNumber
   export treeFile=$orthogroupNumber"_tree.txt"
   echo The path to tree file is $1$treeFile
+
+  echo Removing any special characters in $1$treeFile
+  sed -i'.original' -e "s|\||_|g" $1$treeFile
+  rm $1$treeFile.original
 
   # Example cds file: ./8_2_BustedResults/cleaned_OG0013039_cds.fasta
   # Example gene tree file: /workdir/mb2337/FormicidaeMolecularEvolution/4_OrthoFinder/fasta/OrthoFinder/Results_Nov19_1/Resolved_Gene_Trees/OG0013039_cds.fasta
@@ -29,4 +33,4 @@ do
   #hyphy busted --alignment 8_2_RemovedStops/cleaned_OG0008294_cds.fasta --tree 5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Gene_Trees/OG0008294_tree.txt --srv Yes --output ./8_3_BustedResults/OG0008294_busted.json
   echo __________________________________________________
 
-done
+done < fileList.txt
