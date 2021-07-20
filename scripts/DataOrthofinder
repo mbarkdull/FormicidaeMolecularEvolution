@@ -34,6 +34,8 @@ if [[ $1 == '2.4.1' ]]; then
   echo Finished running OrthoFinder v. $1
   sed -i'.original' -e "s|\||_|g" /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/Results*/Gene_Trees/*.txt
   rm /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/Results*/Gene_Trees/*.original
+  sed -i'.original' -e "s|\||_|g" /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/Results*/Resolved_Gene_Trees/*.txt
+  rm /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/Results*/Resolved_Gene_Trees/*.original
   #mv /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/ /workdir/$USER/FormicidaeMolecularEvolution/5_OrthoFinder/
   rm 2.4.1.tar.gz
 
