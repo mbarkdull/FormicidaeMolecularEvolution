@@ -6,10 +6,9 @@ library(rjson)
 # Construct a list of all of the json files:
 jsonFiles <- list.files(path = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/8_3_BustedResults", pattern = "*.json", full.names = TRUE)
 jsonFiles <- sort(jsonFiles, decreasing = TRUE)
-# bustedResults <- fromJSON(file = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/8_3_BustedResults/OG0011321_busted.json")
+# bustedResult <- fromJSON(file = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/8_3_BustedResults/OG0013390_busted.json")
 
-# If the value of bustedResults[["test results"]][["p-value"]] is less than 0.05, append the value of bustedResults[["input"]][["file name"]] to a list
-# Write a function that will process the json file:
+# Write a function that will process each individual json file and extract the file name, orthogroup number, p-value, and return a text description of the p-value:
 bustedJSONProcessing <- function(i) {
   bustedResults <- fromJSON(file = i)
   # Now run my if else statement:
@@ -35,5 +34,9 @@ bustedJSONProcessing <- function(i) {
 }
 # Create a version of the function that returns an error if there's an empty file (from https://www.r-bloggers.com/2017/12/skip-errors-in-r-loops-by-not-writing-loops/):
 possiblyBustedJSONProcessing <- possibly(bustedJSONProcessing, otherwise = "File empty.")
-# Run this function with map so as to avoid for loops (from https://www.r-bloggers.com/2017/12/skip-errors-in-r-loops-by-not-writing-loops/ and https://jennybc.github.io/purrr-tutorial/ls01_map-name-position-shortcuts.html):
-result <- map(jsonFiles, possiblyBustedJSONProcessing)
+# Run this function with purrr:map so as to avoid for loops (from https://www.r-bloggers.com/2017/12/skip-errors-in-r-loops-by-not-writing-loops/ and https://jennybc.github.io/purrr-tutorial/ls01_map-name-position-shortcuts.html):
+bustedResults <- map(jsonFiles, possiblyBustedJSONProcessing)
+
+# Convert the results to a dataframe:
+bustedResults <- as.data.frame(do.call(rbind, bustedResults))   
+bustedResults$V3 <- as.numeric(as.character(bustedResults$V3), scientific = FALSE)
