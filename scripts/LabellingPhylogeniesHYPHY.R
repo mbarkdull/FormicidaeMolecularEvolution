@@ -12,11 +12,13 @@ multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
   tree <- ape::read.tree(tree)
   plot(tree)
   
-  # Make your list of species of interest:
+  # Assign the list of species of interest:
   interest <- speciesOfInterest
   
   # Write a function that runs over the tip labels, splits them to extract the species abbreviation prefix, checks if that prefix is in the species of interest vector, and if it is, appends {Foreground} to the end of the tip label. 
   labellingFunction <- function(i) {
+    # i looks like: cvar_filteredTranscripts_cvar_CVAR_01478RA_p1
+    # we are extracting the species abbreviation, for example here cvar
     species <- sapply(strsplit(i, "\\_"), `[`, 1)
     if (species %in% interest) {
       new <- paste(i, "{Foreground}", sep = "")
