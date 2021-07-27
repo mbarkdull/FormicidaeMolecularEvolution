@@ -16,7 +16,7 @@ library(tidyverse)
 # List all of the unlabelled tree files:
 treeFiles <- list.files(path = args[1], full.names = TRUE)
 #tree <- ape::read.tree("/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt")
-#interest <- c("aech", "acol", "tsep", "obru", "hsal", "dqua")
+#interest <- read_csv(file = "WorkerPolymorphismLabelling.txt", col_names = FALSE)
 
 interest <- read_csv(file = args[2], col_names = FALSE)
 
