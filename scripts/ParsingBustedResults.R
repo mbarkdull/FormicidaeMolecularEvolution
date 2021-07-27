@@ -40,3 +40,6 @@ bustedResults <- map(jsonFiles, possiblyBustedJSONProcessing)
 # Convert the results to a dataframe:
 bustedResults <- as.data.frame(do.call(rbind, bustedResults))   
 bustedResults$V3 <- as.numeric(as.character(bustedResults$V3), scientific = FALSE)
+
+# Export the results:
+write_csv(bustedResults, "./bustedResults.csv")
