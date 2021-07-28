@@ -13,8 +13,12 @@ if (length(args)==0) {
 library(ape)
 library(tidyverse)
 
+# Create an output directory:
+dir.create("./9_1_LabelledPhylogenies")
+
 # List all of the unlabelled tree files:
 treeFiles <- list.files(path = args[1], full.names = TRUE)
+#treeFiles <- list.files(path = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees", full.names = TRUE)
 #tree <- ape::read.tree("/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt")
 #interest <- read_csv(file = "WorkerPolymorphismLabelling.txt", col_names = FALSE)
 
@@ -44,8 +48,6 @@ multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
   
   # Apply that to all of the tip labels with purrr:map.
   tree[["tip.label"]] <- map(tree[["tip.label"]], labellingFunction)
-  plot(tree)
-  
   
   selected_tips <- grep("\\{Foreground\\}", tree$tip.label)
   
@@ -58,18 +60,25 @@ multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
   #tree$node.label[-c(descendants-Ntip(tree))] <- ""
   
   ## Plotting the results
-  plot(tree, show.node.label = TRUE)
   ape::write.tree(tree, file = exportFile)
-  return(tree)
+  #return(tree)
 }
 
-test <- multiTreeLabelling(tree = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
-plot(test, show.node.label = TRUE)
+#test <- multiTreeLabelling(tree = "/workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
+#test <- multiTreeLabelling(tree = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
+
+#plot(test, show.node.label = TRUE)
+
+setwd("./9_1_LabelledPhylogenies")
+dir.create(args[3])
+setwd(args[3])
 
 for (i in treeFiles) {
   print(i)
-  orthogoupName <- sapply(strsplit(i, "\\/"), `[`, 11)
+  orthogoupName <- sapply(strsplit(i, "\\/"), tail, 1)
   orthogoupName <- paste(args[3], "Labelled_", orthogoupName, sep = "")
+  #orthogoupName <- paste("Labelled_", orthogoupName, sep = "")
+  
   print(orthogoupName)
-  multiTreeLabelling(tree = i, speciesOfInterest = interest, exportFile = orthogoupName)
+  multiTreeLabelling(tree = i, speciesOfInterest = interest$X1, exportFile = orthogoupName)
 }
