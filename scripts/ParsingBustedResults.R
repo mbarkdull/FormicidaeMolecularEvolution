@@ -41,5 +41,10 @@ bustedResults <- map(jsonFiles, possiblyBustedJSONProcessing)
 bustedResults <- as.data.frame(do.call(rbind, bustedResults))   
 bustedResults$V3 <- as.numeric(as.character(bustedResults$V3), scientific = FALSE)
 
+# Get the number of genes with and without positive selection:
+numberPositive <- sum(bustedResults$V4 == "yes, BUSTED found evidence for positive selection")
+numberNone <- sum(bustedResults$V4 == "no evidence for positive selection from BUSTED")
+percentPositive <- (numberPositive / (numberPositive + numberNone))*100
+
 # Export the results:
 write_csv(bustedResults, "./bustedResults.csv")
