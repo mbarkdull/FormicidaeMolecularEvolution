@@ -1,9 +1,17 @@
+#!/usr/bin/env Rscript
+
+args <- commandArgs(trailingOnly=TRUE)
+if (length(args)==0) {
+  stop("Must provide the path to BUSTED results as a command line argument.)", call.=FALSE)
+}
+
 # This script reads in the results JSON files produced by BUSTED, and creates a list of orthogroups with evidence for positive selection somewhere in the tree. 
 library(plyr)
 library(tidyverse)
 library(rjson)
 
 # Construct a list of all of the json files:
+jsonFiles <- list.files(path = args[1], pattern = "*.json", full.names = TRUE)
 jsonFiles <- list.files(path = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/8_3_BustedResults", pattern = "*.json", full.names = TRUE)
 jsonFiles <- sort(jsonFiles, decreasing = TRUE)
 # bustedResult <- fromJSON(file = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/8_3_BustedResults/OG0013390_busted.json")
