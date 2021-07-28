@@ -61,13 +61,22 @@ multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
   
   ## Plotting the results
   ape::write.tree(tree, file = exportFile)
-  #return(tree)
+  return(tree)
 }
 
 #test <- multiTreeLabelling(tree = "/workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
-#test <- multiTreeLabelling(tree = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
 
-#plot(test, show.node.label = TRUE)
+#test1 <- ape::read.tree(file = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt")
+#unlabelled <- ggtree(test1) + geom_tiplab() + geom_nodelab() + xlim(0, 2.5)
+#plot(unlabelled)
+
+#test <- multiTreeLabelling(tree = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
+#labelled <- ggtree(test) + geom_tiplab() + geom_nodelab() + xlim(0, 2.5)
+#plot(labelled)
+
+#combo <- ggarrange(unlabelled, labelled, ncol = 2, nrow = 1)
+#plot(combo)
+#ggsave(filename = "unlabelledAndLabelled.png")
 
 setwd("./9_1_LabelledPhylogenies")
 dir.create(args[3])
@@ -76,8 +85,8 @@ setwd(args[3])
 for (i in treeFiles) {
   print(i)
   orthogoupName <- sapply(strsplit(i, "\\/"), tail, 1)
-  orthogoupName <- paste(args[3], "Labelled_", orthogoupName, sep = "")
-  #orthogoupName <- paste("Labelled_", orthogoupName, sep = "")
+  #orthogoupName <- paste(args[3], "Labelled_", orthogoupName, sep = "")
+  orthogoupName <- paste("Labelled_", orthogoupName, sep = "")
   
   print(orthogoupName)
   multiTreeLabelling(tree = i, speciesOfInterest = interest$X1, exportFile = orthogoupName)
