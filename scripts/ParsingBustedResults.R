@@ -54,5 +54,7 @@ numberPositive <- sum(bustedResults$V4 == "yes, BUSTED found evidence for positi
 numberNone <- sum(bustedResults$V4 == "no evidence for positive selection from BUSTED")
 percentPositive <- (numberPositive / (numberPositive + numberNone))*100
 
+# Create an output directory:
+dir.create("./Results")
 # Export the results:
-write_csv(bustedResults, "./bustedResults.csv")
+write_csv(bustedResults, "./Results/bustedResults.csv")
