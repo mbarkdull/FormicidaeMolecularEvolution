@@ -333,6 +333,24 @@ will be the labelled phylogenies.
 
 ### 9.2 Running aBSREL
 
+aBSREL has more power when run on a subset of branches in a phylogeny.
+Therefore, for this workflow we will run it on a set of labelled
+foreground branches and on background branches separately. The script
+`DataRunningABSREL` will accomplish this for each orthogroup and gene
+tree. To run the script, use the command:
+
+`./scripts/DataRunningABSREL [full path to labelled phylogenies produced
+in step 9.1] [prefix used to label phylogenies in step 9.1]`
+
+This script will output results in the directory `./9_2/[prefix]`. Two
+subdirectories are created, one called `foreground` containing the
+results of runs assessing selection in foreground branches, and one
+called `background` containing the results of runs assessing selection
+in unlabelled, i.e. background, branches. Because not all orthogroups
+will contain sequences from foreground species, you should expect that
+the `background` directory will have more results files than the
+`foreground` directory.
+
 **If you use aBSREL, please cite:**
 
 Smith, MD et al. “Less is more: an adaptive branch-site random effects
