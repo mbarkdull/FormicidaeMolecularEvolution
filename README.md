@@ -235,10 +235,13 @@ executing the command:
 `./scripts/DataRunPAL2NAL ./scripts/inputurls`
 
 This will produce a new directory, `7_PAL2NALOutput`, containing an
-aligned nucleotide sequence file for each
-species.
+aligned nucleotide sequence file for each species.
 
 ## 8\. Testing for positive selection with BUSTED\[S\]
+
+BUSTED\[S\] assesses whether there is evidence for positive selection on
+a gene at any site along any branch in a
+phylogeny.
 
 ### 8.1 Assembling nucleotide sequence orthogroups for input to BUSTED\[S\].
 
@@ -277,6 +280,73 @@ sequences. To run this step, use the command
 `./scripts/DataRunningBusted [absolute path to the gene tree files from
 Orthofinder, something like
 /workdir/mb2337/FormicidaeMolecularEvolution/5_Orthofinder/fasta/Orthofinder/Results*/Gene_Trees]`.
+
+### 8.4 Parsing results from BUSTED\[S\]
+
+BUSTED\[S\] outputs results in the form of a JSON file. To parse these
+results, you can use the script `ParsingBustedResults.R`. This script
+runs over all of the output files from BUSTED and compiles a table with
+columns for the output filename, the orthogroup number, the p-value
+calculated by BUSTED\[S\], and a verbal description of whether or not
+selection was detected.
+
+To run this script, use the command
+
+`ParsingBustedResults.R [full path to BUSTED[S] results directory]`.
+
+The output will be the file `./Results/bustedResults.csv`, which can be
+further used for further analyses (for example, GO term enrichment).
+
+## 9\. Testing for positive selection with aBSREL
+
+aBSREL assesses evidence for selection for a gene on each individual
+branch of a phylogeny. In this workflow, we will use it to assess
+evidence for selection in a set of foreground branches (species of
+interest) vs. background branches (all other species). Like BUSTED\[S\],
+aBSREL will require some data preparation steps.
+
+### 9.1 Labelling phylogenies for input to aBSREL
+
+aBSREL requires two things as input: a set of aligned coding sequences,
+and a phylogeny- in our case, because we want to assess selection in
+foreground vs. background branches, a labelled phylogeny. We have
+inferred gene trees for all of our orthogroups, and now need to label
+them for input to aBSREL. This can be done using a [script included with
+HYPHY](https://github.com/veg/hyphy/issues/1357), or using the script
+`LabellingPhylogeniesHYPHY.R`. This script will label tips with the tag
+`{Foreground}` based on their match to a set of species abbreviations,
+and will label all internal nodes that are parent to labelled tips:
+
+![side-by-side labelled and unlabelled
+phylogeny](./unlabelledAndLabelled.png)
+
+`LabellingPhylogeniesHYPHY.R` can be run with the command:
+
+`LabellingPhylogeniesHYPHY.R [the full path to Orthofinder's gene trees]
+[a text file list of species abbreviations to label as foreground] [a
+prefix for the output files]`
+
+This will create a new directory, `./9_1_LabelledPhylogenies`, with
+subdirectories corresponding to each run of the script, named according
+to the prefix assigned to output files of that run. In that subdirectory
+will be the labelled phylogenies.
+
+### 9.2 Running aBSREL
+
+**If you use aBSREL, please cite:**
+
+Smith, MD et al. “Less is more: an adaptive branch-site random effects
+model for efficient detection of episodic diversifying selection.” Mol.
+Biol. Evol. 32, 1342–1353 (2015).
+
+## 10\. Testing for relaxed selection with RELAX
+
+### 10.1 Labelling phylogenies for input to RELAX
+
+As with aBSREL, RELAX requires labelled phylogenies. You can generate
+these with `LabellingPhylogeniesHYPHY.R` as described in section 9.1.
+
+### 10.2 Running RELAXED
 
 ### To do:
 
