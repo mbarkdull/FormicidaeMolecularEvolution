@@ -5,7 +5,7 @@
 # Export required paths:
 export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
 
-# Make a directory for BUSTED[S] outputs:
+# Make a directory for aBSREL outputs:
 mkdir ./9_2_ABSRELResults/
 mkdir ./9_2_ABSRELResults/$2/
 mkdir ./9_2_ABSRELResults/$2/foreground
@@ -15,19 +15,25 @@ mkdir ./9_2_ABSRELResults/$2/background
 export PATH=/home/$USER/miniconda3/bin:$PATH
 conda install -c bioconda hyphy
 
+# Construct a list of orthogroups, ordered from smallest to largest. This will ensure you start getting results ASAP and can tell if there are any issues.
 ls -hSr 8_2_RemovedStops > fileList.txt
+
+# While reading each line of the orthogroup list:
 while read -r line;
 do
+  # Construct the path to the coding sequences file:
   export cdsFile=8_2_RemovedStops/"$line"
   #echo the coding sequence alignment file is $cdsFile
-  # The tree file needs to look like OG0002680_tree.txt. $f looks like  /8_2_RemovedStops/cleaned_OG0002680_cds.fasta.
+  # Construct the orthgroup number so we can the the tree file, which needs to look like OG0002680_tree.txt. $f looks like  /8_2_RemovedStops/cleaned_OG0002680_cds.fasta.
   export orthogroupNumber=`echo "$line" | awk -F'_' '{print ($2)}'`
   #echo The orthogroup number is $orthogroupNumber
   export treeFile=$2"Labelled_"$orthogroupNumber"_tree.txt"
   #echo The path to tree file is $1$treeFile
 
+  # If there even is a tree file for this orthogroup (some will be missing because the orthogroup contains three or fewer sequences):
   if [ -f "$1$treeFile" ]; then
     echo "$1$treeFile exists."
+    # Make sure vertical bars are replaced with underscores:
     echo Removing any special characters in $1$treeFile
     sed -i'.original' -e "s|\||_|g" $1$treeFile
     rm $1$treeFile.original
@@ -38,6 +44,7 @@ do
 
     #Example command: hyphy absrel --alignment /Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/8_2_RemovedStops/cleaned_OG0001224_cds.fasta --tree  /Users/meganbarkdull/Projects/FormicidaeMolecularEvolution/test.txt --srv Yes --output absrelTest.json --branches Foreground
 
+    # Run aBSREL on the fore and background branches. 
     echo Running aBSREL on $cdsFile and $1$treeFile.
     hyphy absrel --alignment $cdsFile --tree $1$treeFile --branches Foreground --output "./9_2_ABSRELResults/"$2"/foreground/"$orthogroupNumber"_absrel.json"
     hyphy absrel --alignment $cdsFile --tree $1$treeFile --branches 'Unlabeled branches' --output "./9_2_ABSRELResults/"$2"/background/"$orthogroupNumber"_absrel.json"
