@@ -76,7 +76,7 @@ multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
 
 #combo <- ggarrange(unlabelled, labelled, ncol = 2, nrow = 1)
 #plot(combo)
-#ggsave(filename = "unlabelledAndLabelled.png")
+#ggsave(filename = "unlabelledAndLabelled.png", width = 15, height = 10, units = "in")
 
 setwd("./9_1_LabelledPhylogenies")
 dir.create(args[3])
@@ -85,8 +85,8 @@ setwd(args[3])
 for (i in treeFiles) {
   print(i)
   orthogoupName <- sapply(strsplit(i, "\\/"), tail, 1)
-  #orthogoupName <- paste(args[3], "Labelled_", orthogoupName, sep = "")
-  orthogoupName <- paste("Labelled_", orthogoupName, sep = "")
+  orthogoupName <- paste(args[3], "Labelled_", orthogoupName, sep = "")
+  #orthogoupName <- paste("Labelled_", orthogoupName, sep = "")
   
   print(orthogoupName)
   multiTreeLabelling(tree = i, speciesOfInterest = interest$X1, exportFile = orthogoupName)
