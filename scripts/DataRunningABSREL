@@ -59,8 +59,8 @@ do
 
       # Run aBSREL on the fore and background branches.
       echo Running aBSREL on $cdsFile and $1$treeFile.
-      hyphy absrel --alignment $cdsFile --tree $1$treeFile --branches Foreground --output "./9_2_ABSRELResults/"$2"/foreground/"$orthogroupNumber"_absrel.json"
-      hyphy absrel --alignment $cdsFile --tree $1$treeFile --branches "Unlabeled branches" --output "./9_2_ABSRELResults/"$2"/background/"$orthogroupNumber"_absrel.json"
+      HYPHYMPI absrel --alignment $cdsFile --tree $1$treeFile --branches Foreground CPU=40 --output "./9_2_ABSRELResults/"$2"/foreground/"$orthogroupNumber"_absrel.json"
+      HYPHYMPI absrel --alignment $cdsFile --tree $1$treeFile --branches "Unlabeled branches" CPU=40 --output "./9_2_ABSRELResults/"$2"/background/"$orthogroupNumber"_absrel.json"
       fi
     fi
   else
