@@ -51,7 +51,7 @@ do
 
       # Run aBSREL on the fore and background branches.
       echo Running RELAX on $cdsFile and $1$treeFile.
-      hyphy relax --alignment $cdsFile --tree $1$treeFile --test Foreground --output "./10_1_RelaxResults/"$2"/"$orthogroupNumber"_relax.json"
+      hyphy relax --alignment $cdsFile --tree $1$treeFile --test Foreground --srv Yes --output "./10_1_RelaxResults/"$2"/"$orthogroupNumber"_relax.json"
 
     fi
   else
