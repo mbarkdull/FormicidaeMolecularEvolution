@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Export required paths:
+export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
+
+# Make a directory for BUSTED[S] outputs:
+mkdir ./8_3_BustedResults
+
+# Download the newest version of HyPhy:
+export PATH=/home/$USER/miniconda3/bin:$PATH
+conda install -c bioconda hyphy
+
+export batchSize=30
+export currentBatch=0
+export batchFileNames=()
+
+ls -hSr 8_2_RemovedStops > fileList.txt
+#ls -hSr tmp | sort > fileList.txt
+
+while read -r line;
+do
+  export cdsFile=8_2_RemovedStops/"$line"
+  batchFileNames+=($cdsFile)
+  # Get the size of the array :  ${#batchFileNames[&]}
+  if [ ${#batchFileNames[@]} -eq $batchSize ]; then
+    echo Starting batch
+    for batchFile in ${batchFileNames[@]} ; do
+      echo $batchFile
+      ./scripts/SingleBustedRun $batchFile $1 &
+    done
+    echo Begin wait.
+    wait
+    echo Done waiting.
+    echo Finished batch
+    batchFileNames=()
+  fi
+
+  echo __________________________________________________
+
+done < fileList.txt
+
+if [ ${#batchFileNames[@]} -gt 0 ]; then
+  echo Starting batch
+  for batchFile in ${batchFileNames[@]} ; do
+    echo $batchFile
+    ./scripts/SingleBustedRun $batchFile &
+  done
+fi
