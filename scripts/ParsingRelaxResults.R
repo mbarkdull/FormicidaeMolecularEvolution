@@ -13,7 +13,7 @@ library(rjson)
 # A significant result of k>1 indicates that selection strength has been intensified along the test branches, and a significant result of k<1 indicates that selection strength has been relaxed along the test branches. (https://stevenweaver.github.io/hyphy-site/methods/selection-methods/)
 
 jsonFiles <- list.files(path = args[1], pattern = "*.json", full.names = TRUE)
-#jsonFiles <- list.files(path = "./9_3_RelaxResults/workerPolymorphism", pattern = "*.json", full.names = TRUE)
+#jsonFiles <- list.files(path = "./10_1_RelaxResults/workerPolymorphism", pattern = "*.json", full.names = TRUE)
 
 jsonFiles <- sort(jsonFiles, decreasing = TRUE)
 
@@ -21,18 +21,18 @@ relaxJSONProcessing <- function(i) {
   relaxResult <- fromJSON(file = i)
   if (relaxResult[["test results"]][["p-value"]] < 0.05) {
     if (relaxResult[["test results"]][["relaxation or intensification parameter"]] > 1) {
-      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "Significant difference in selective regime between foreground and background branches", "Intensification of selection along foreground branches")
+      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "Significant difference in selective regime between foreground and background branches", "Intensification of selection along foreground branches", args[2])
       return(data)
     } else {
-      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "Significant difference in selective regime between foreground and background branches", "Relaxation of selection along foreground branches")
+      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "Significant difference in selective regime between foreground and background branches", "Relaxation of selection along foreground branches", args[2])
       return(data)
     }
   } else {
     if (relaxResult[["test results"]][["relaxation or intensification parameter"]] > 1) {
-      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "No significant difference in selective regime between foreground and background branches", "Nonsignificant intensification")
+      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "No significant difference in selective regime between foreground and background branches", "Nonsignificant intensification", args[2])
       return(data)
     } else {
-      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "No significant difference in selective regime between foreground and background branches", "Nonsignificant relaxation")
+      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "No significant difference in selective regime between foreground and background branches", "Nonsignificant relaxation", args[2])
       return(data)
     }
   }
@@ -45,8 +45,9 @@ relaxResults <- map(jsonFiles, possiblyRelaxJSONProcessing)
 
 # Convert the results to a dataframe:
 relaxResults <- as.data.frame(do.call(rbind, relaxResults))   
-relaxResults$V2 <- as.numeric(as.character(relaxResults$V2), scientific = FALSE)
-relaxResults$V3 <- as.numeric(as.character(relaxResults$V3), scientific = FALSE)
+colnames(relaxResults) <- c("fileName", "pValue", "kValue", "description", "shortDescription", "traitTested")
+#relaxResults$V2 <- as.numeric(as.character(relaxResults$V2), scientific = FALSE)
+#relaxResults$V3 <- as.numeric(as.character(relaxResults$V3), scientific = FALSE)
 
 
 numberRelax <- sum(relaxResults$V5 == "Relaxation of selection along foreground branches")
@@ -59,7 +60,7 @@ percentIntensified <- (numberIntensified / (numberRelax + numberNonsignficant + 
 dir.create("./Results")
 outputDirectory <- paste("./Results/", args[2], sep = "")
 dir.create(outputDirectory)
-outputFile <- paste("./Results/", args[2], "/relaxResults.csv", sep = "")
+outputFile <- paste("./Results/", args[2], "/", args[2], "RelaxResults.csv", sep = "")
 print(outputFile)
 # Export the results:
 write_csv(relaxResults, outputFile)
