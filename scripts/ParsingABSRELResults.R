@@ -32,7 +32,7 @@ absrelJSONProcessing <- function(file, analysisType) {
 }
 
 # List all of the foreground analysis results files:
-foregroundFiles <- list.files(path = "/Users/meganbarkdull/Projects/FormicidaeMolecularEvolution/9_2_ABSRELResults/polygyny/foreground", pattern = "*.json", full.names = TRUE)
+foregroundFiles <- list.files(path = "/Users/meganbarkdull/Projects/FormicidaeMolecularEvolution/9_2_ABSRELResults/multilineage/foreground", pattern = "*.json", full.names = TRUE)
 # Drop any files with file size of zero:
 foregroundFiles <- foregroundFiles[sapply(foregroundFiles, file.size) > 0]
 
@@ -42,7 +42,7 @@ possiblyabsrelJSONProcessing <- possibly(absrelJSONProcessing, otherwise = "File
 foregroundaBSRELResults <- map_dfr(foregroundFiles, analysisType = "foreground", possiblyabsrelJSONProcessing)
 
 # Do the same for background files:
-backgroundFiles <- list.files(path = "/Users/meganbarkdull/Projects/FormicidaeMolecularEvolution/9_2_ABSRELResults/polygyny/background", pattern = "*.json", full.names = TRUE)
+backgroundFiles <- list.files(path = "/Users/meganbarkdull/Projects/FormicidaeMolecularEvolution/9_2_ABSRELResults/multilineage/background", pattern = "*.json", full.names = TRUE)
 # Drop any files with file size of zero:
 backgroundFiles <- backgroundFiles[sapply(backgroundFiles, file.size) > 0]
 backgroundaBSRELResults <- map_dfr(backgroundFiles, analysisType = "background", possiblyabsrelJSONProcessing)
@@ -64,11 +64,20 @@ countForeground <- function(allResults) {
   shuffledForegroundSignificant <- nrow(shuffled[ForegroundBackground == "foreground" & `Corrected P-value` < 0.05, ])
 }
 
-# If I shuffle 100 times, what is my distribution of counts?
-replicates <- replicate(500, {
+# If I shuffle 1000 times, what is my distribution of counts?
+replicates <- replicate(2000, {
   countForeground(allResults = allResults)
 })
 hist(replicates)
 mean <- mean(replicates)
-sd(replicates)
+standardDeviation <- sd(replicates)
+oneStandardDeviationHigher <- mean + standardDeviation
+oneStandardDeviationLower <- mean - standardDeviation
+twoStandardDeviationsHigher <- oneStandardDeviationHigher - standardDeviation
+twoStandardDeviationsLower <- oneStandardDeviationLower - standardDeviation
 
+# Group the data by foreground/background:
+groupedResults <- group_by(allResults, ForegroundBackground)
+groupedStats <- summarize(groupedResults,
+          meanpValue = mean(`Corrected P-value`),
+          standardDeviationpValue = sd(`Corrected P-value`))
