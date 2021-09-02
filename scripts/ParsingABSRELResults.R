@@ -7,12 +7,14 @@
   # for each species, calculate the proportion of genes under positive selection, then see if this proportion is higher for foreground species (https://academic.oup.com/gbe/article/13/7/evab103/6275684?login=true#267264559). 
     # "We coded species according to their diet (carnivore, omnivore, or herbivore), their microhabitat (terrestrial, arboreal, or semi-aquatic), and their reproductive output, (based on the number of mammae for each species, supplementary table S3, Supplementary Material online). Using the time-calibrated species tree inferred in MCMCtree, we performed phylogenetic generalized least squares (PGLS) regression and phylogenetic ANOVA with a Bonferroni correction in phytools (Revell 2012), to test the effects of diet, microhabitat, reproductive output, and body size on genome-wide positive selection."
 
-
+# Load necessary packages (I'm using RJSONIO here because rjson threw errors for one of my results files):
 library(RJSONIO)
-library(boot)
+library(tidyverse)
+
 
 # Write a function to read in the aBSREL JSON result file and transform it into a dataframe:
 absrelJSONProcessing <- function(file, analysisType) {
+  # Read in the JSON file:
   OG0008911_absrel <- RJSONIO::fromJSON(content = file)
   
   # Create a data frame with the information for each branch tested:
@@ -45,6 +47,8 @@ foregroundaBSRELResults <- map_dfr(foregroundFiles, analysisType = "foreground",
 backgroundFiles <- list.files(path = "/Users/meganbarkdull/Projects/FormicidaeMolecularEvolution/9_2_ABSRELResults/multilineage/background", pattern = "*.json", full.names = TRUE)
 # Drop any files with file size of zero:
 backgroundFiles <- backgroundFiles[sapply(backgroundFiles, file.size) > 0]
+
+# Map the function over all background results:
 backgroundaBSRELResults <- map_dfr(backgroundFiles, analysisType = "background", possiblyabsrelJSONProcessing)
 
 # Combine the foreground and background tables:
@@ -53,28 +57,39 @@ allResults <- rbind(backgroundaBSRELResults, foregroundaBSRELResults)
 # Remove rows with NAs in the corrected p-value columns
 allResults <- drop_na(allResults, `Corrected P-value`)
 
+# Make a quick histogram of the p-values, mostly for curiosity's sake:
 hist(allResults$`Corrected P-value`)
 
 # How many significant p-values are on foreground branches?
-ForegroundSignificant <- nrow(allResults[ForegroundBackground == "foreground" & `Corrected P-value` < 0.05, ])
+ForegroundSignificant <- nrow(filter(allResults, ForegroundBackground == "foreground" & `Corrected P-value` <= 0.05))
 
-# If I reshuffle the labels foreground/background, how many?
-countForeground <- function(allResults) {
-  shuffled <- transform(allResults, ForegroundBackground = sample(ForegroundBackground) )
-  shuffledForegroundSignificant <- nrow(shuffled[ForegroundBackground == "foreground" & `Corrected P-value` < 0.05, ])
+# Now I'll use a permutation test to see how extreme my number of significant foreground genes is:
+# If I reshuffle the labels foreground/background, how many significant foreground genes?shuffleForeground <- function(allResults) {
+  shuffled <- transform(allResults, ForegroundBackground = sample(ForegroundBackground, replace = FALSE))
+  shuffledForegroundSignificant <- nrow(filter(shuffled, ForegroundBackground == "foreground" & `Corrected P-value` <= 0.05))
 }
 
-# If I shuffle 1000 times, what is my distribution of counts?
-replicates <- replicate(2000, {
-  countForeground(allResults = allResults)
+# If I shuffle 10000 times, what is my distribution of counts?
+replicates <- replicate(1000, {
+  shuffleForeground(allResults = allResults)
 })
+replicates <- sort(replicates)
+
+# Plot the distribution of replicates:
 hist(replicates)
+
+# Get the mean and standard deviation of the distribution of replicates:
 mean <- mean(replicates)
 standardDeviation <- sd(replicates)
 oneStandardDeviationHigher <- mean + standardDeviation
 oneStandardDeviationLower <- mean - standardDeviation
 twoStandardDeviationsHigher <- oneStandardDeviationHigher - standardDeviation
 twoStandardDeviationsLower <- oneStandardDeviationLower - standardDeviation
+
+# How many times did the replication process generate values more extreme than my real data:
+ForegroundSignificant <- as.integer(ForegroundSignificant)
+replicatesGreater <- sum(replicates > ForegroundSignificant)
+replicatesLess <- sum(replicates < ForegroundSignificant)
 
 # Group the data by foreground/background:
 groupedResults <- group_by(allResults, ForegroundBackground)
