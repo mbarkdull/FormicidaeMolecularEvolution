@@ -274,12 +274,26 @@ for input to BUSTED\[S\].
 
 ### 8.3 Running BUSTED\[S\]
 
-To run BUSTED\[S\], use the Bash script `./scripts/DataRunningBusted`.
-This script will run BUSTED\[S\] to test for positive selection on the
-sequences. To run this step, use the command
-`./scripts/DataRunningBusted [absolute path to the gene tree files from
-Orthofinder, something like
+#### Running BUSTED\[S\] single-threaded
+
+Natively, HyPhy analyses will attempt to use as many threads as
+possible; however, only some steps can be run in a mult-threaded manner.
+This method of running BUSTED\[S\] will run on a single orthogroup at a
+time. To run BUSTED\[S\], use the Bash script
+`./scripts/DataRunningBusted`. This script will run BUSTED\[S\] to test
+for positive selection on the sequences. To run this step, use the
+command `./scripts/DataRunningBusted [absolute path to the gene tree
+files from Orthofinder, something like
 /workdir/mb2337/FormicidaeMolecularEvolution/5_Orthofinder/fasta/Orthofinder/Results*/Gene_Trees]`.
+
+#### Running BUSTED\[S\] multi-threaded
+
+To speed up analysis, different orthogroups can be run simultaneously.
+To run BUSTED\[S\] in this manner, use the command
+`./scripts/BUSTEDmultithreaded [absolute path to the gene tree files
+from Orthofinder, something like
+/workdir/mb2337/FormicidaeMolecularEvolution/5_Orthofinder/fasta/Orthofinder/Results*/Gene_Trees]`.
+I would recommend this approach.
 
 ### 8.4 Parsing results from BUSTED\[S\]
 
@@ -359,12 +373,13 @@ Biol. Evol. 32, 1342–1353 (2015).
 
 ## 10\. Testing for relaxed selection with RELAX
 
-### 10.1 Labelling phylogenies for input to RELAX
+### 10.0 Labelling phylogenies for input to RELAX
 
 As with aBSREL, RELAX requires labelled phylogenies. You can generate
-these with `LabellingPhylogeniesHYPHY.R` as described in section 9.1.
+these with `LabellingPhylogeniesHYPHY.R` as described in section 9.1;
+indeed, you can likely reuse the phylogenies you generated for aBSREL.
 
-### 10.2 Running RELAXED
+### 10.1 Running RELAXED
 
 ### To do:
 
