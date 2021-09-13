@@ -275,6 +275,8 @@ This script will output results in the directory `./9_2/[prefix]`. Two subdirect
 
 Smith, MD et al. "Less is more: an adaptive branch-site random effects model for efficient detection of episodic diversifying selection." Mol. Biol. Evol. 32, 1342–1353 (2015).
 
+### Parsing aBSREL results
+
 ## 10. Testing for relaxed selection with RELAX
 
 ### 10.0 Labelling phylogenies for input to RELAX
@@ -283,7 +285,8 @@ As with aBSREL, RELAX requires labelled phylogenies. You can generate these with
 
 ### 10.1 Running RELAXED
 
-
+RELAX is a method from HYPHY that asks whether the strength of natural selection has been increased or decreased along test branches. In order to run RELAX, as with aSBREL, you'll need a labelled phylogeny and a set of orthogroup sequences. Then, RELAX can be run with the command `./scripts/DataRunningRelax [full path to labelled phylogenies] [prefix used when labelling phylogenies].
+`
 
 ### To do:
 
