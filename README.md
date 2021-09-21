@@ -381,14 +381,26 @@ As with aBSREL, RELAX requires labelled phylogenies. You can generate
 these with `LabellingPhylogeniesHYPHY.R` as described in section 9.1;
 indeed, you can likely reuse the phylogenies you generated for aBSREL.
 
-### 10.1 Running RELAXED
+### 10.1 Running RELAX
 
 RELAX is a method from HYPHY that asks whether the strength of natural
 selection has been increased or decreased along test branches. In order
 to run RELAX, as with aSBREL, you’ll need a labelled phylogeny and a set
 of orthogroup sequences. Then, RELAX can be run with the command
-`./scripts/DataRunningRelax [full path to labelled phylogenies] [prefix
-used when labelling phylogenies].`
+\`./scripts/DataRunningRelax \[full path to labelled phylogenies\]
+\[prefix used when labelling phylogenies\].
+
+### 10.2 Parsing RELAX results
+
+I am interested in assessing whether species with a particular trait
+have more or fewer genes under relaxed selection than expected.
+Following Schneider, Adams, and Elmer (2019), I will assess this with a
+one-sided Fisher’s exact test. Results from RELAX can be compiled and
+analyzed using the script `ParsingRelaxResults.R`.
+
+Schneider, Kevin, Colin E. Adams, and Kathryn R. Elmer. “Parallel
+selection on ecologically relevant gene functions in the transcriptomes
+of highly diversifying salmonids.” BMC genomics 20.1 (2019): 1-23.
 
 ### To do:
 
