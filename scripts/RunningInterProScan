@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# I am going to have an input file that is a tab-delimited text file with data urls and desired file names to send the download.
+
+# The command to run this script is `./DataDownload [input file]`. This will read in the input urls file and download the transcripts, proteins, and GFF files for each species.
+  while read -r line;
+  do
+    # This uses the second field on that line to get the species abbreviation:
+    export name=`echo "$line" | awk -F',' '{print $4}'`
+    # Construct the name of the protein file:
+    export proteinName="$name"_filteredTranscripts.fasta
+
+    # Make a directory for these analyses:
+    mkdir ./11_InterProScan
+    cd ./11_InterProScan
+
+    # This will check if interproscan is installed and located
+    if [ -d "./interproscan-5.52-86.0" ]
+    then
+        echo "InterProScan installed."
+
+        FILE=./interproscan-5.52-86.0/out/$proteinName.tsv
+        if [ -f "$FILE" ]; then
+            echo "$FILE exists; moving to next species."
+        else
+          cp $2$proteinName ./interproscan-5.52-86.0/
+          sed -i'.original' -e "s|\*||g" ./interproscan-5.52-86.0/$proteinName
+          rm ./interproscan-5.52-86.0/*.original
+          echo __________________________________________________
+          cd ./interproscan-5.52-86.0
+          mkdir ./out
+          ./interproscan.sh -i $proteinName -d out/ -t p --goterms -appl Pfam -f TSV
+          cd ../
+        fi
+    else
+        echo "InterProScan not installed; installing now."
+        wget http://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.52-86.0/interproscan-5.52-86.0-64-bit.tar.gz
+        tar -xzvf interproscan-5.52-86.0-64-bit.tar.gz
+
+        cp $2$proteinName ./interproscan-5.52-86.0/
+        sed -i'.original' -e "s|\*||g" ./interproscan-5.52-86.0/$proteinName
+        rm ./interproscan-5.52-86.0/*.original
+        echo __________________________________________________
+        cd ./interproscan-5.52-86.0
+        mkdir ./out
+        ./interproscan.sh -i $proteinName -d out/ -t p --goterms -appl Pfam -f TSV
+        cd ../
+    fi
+    cd ../
+  done < $1
+
+  # The command to run this script is `./DataDownload [input file]`. This will read in the input urls file and download the transcripts, proteins, and GFF files for each species.
