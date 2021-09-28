@@ -20,7 +20,7 @@ dir.create("./9_1_LabelledPhylogenies")
 treeFiles <- list.files(path = args[1], full.names = TRUE)
 #treeFiles <- list.files(path = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees", full.names = TRUE)
 #tree <- ape::read.tree("/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt")
-#interest <- read_csv(file = "WorkerPolymorphismLabelling.txt", col_names = FALSE)
+#interest <- read_csv(file = "./ForegroundGroupings/WorkerPolymorphismLabelling.txt", col_names = FALSE)
 
 interest <- read_csv(file = args[2], col_names = FALSE)
 
@@ -38,6 +38,7 @@ multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
     # i looks like: cvar_filteredTranscripts_cvar_CVAR_01478RA_p1
     # we are extracting the species abbreviation, for example here cvar
     species <- sapply(strsplit(i, "\\_"), `[`, 1)
+    print(species)
     if (species %in% interest) {
       new <- paste(i, "{Foreground}", sep = "")
       print(new)
@@ -49,19 +50,25 @@ multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
   # Apply that to all of the tip labels with purrr:map.
   tree[["tip.label"]] <- map(tree[["tip.label"]], labellingFunction)
   
+  # Create a list of tip positions for the foreground tips:
   selected_tips <- grep("\\{Foreground\\}", tree$tip.label)
   
-  ## Finding the direct ancestor for each of these tips
-  descendants <- tree$edge[tree$edge[, 2] %in% selected_tips, 1]
-  
-  ## Adding the term "{Foreground}" to the selected descendants (the -Ntip(tree) part is because the node counting in the $edge table starts at the value Ntip(tree)).
-  tree$node.label[descendants-Ntip(tree)] <- paste(tree$node.label[descendants-Ntip(tree)], "{Foreground}")
-  ## Replacing all the non selected node labels by nothing ("")
-  #tree$node.label[-c(descendants-Ntip(tree))] <- ""
-  
-  ## Plotting the results
-  ape::write.tree(tree, file = exportFile)
-  return(tree)
+  # Now only produce an output tree if there are actually foreground tips present:
+  if (length(selected_tips) == 0) {
+    print("No foreground tips in this tree")
+  } else {
+    ## Finding the direct ancestor for each of these tips
+    descendants <- tree$edge[tree$edge[, 2] %in% selected_tips, 1]
+    
+    ## Adding the term "{Foreground}" to the selected descendants (the -Ntip(tree) part is because the node counting in the $edge table starts at the value Ntip(tree)).
+    tree$node.label[descendants-Ntip(tree)] <- paste(tree$node.label[descendants-Ntip(tree)], "{Foreground}")
+    ## Replacing all the non selected node labels by nothing ("")
+    #tree$node.label[-c(descendants-Ntip(tree))] <- ""
+    
+    ## Plotting the results
+    ape::write.tree(tree, file = exportFile)
+    #return(tree)
+  }
 }
 
 #test <- multiTreeLabelling(tree = "/workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
@@ -70,7 +77,7 @@ multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
 #unlabelled <- ggtree(test1) + geom_tiplab() + geom_nodelab() + xlim(0, 2.5)
 #plot(unlabelled)
 
-#test <- multiTreeLabelling(tree = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
+#test <- multiTreeLabelling(tree = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0013922_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
 #labelled <- ggtree(test) + geom_tiplab() + geom_nodelab() + xlim(0, 2.5)
 #plot(labelled)
 
