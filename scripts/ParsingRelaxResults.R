@@ -38,7 +38,6 @@ relaxJSONProcessing <- function(i) {
   }
 }
 
-
 possiblyRelaxJSONProcessing <- possibly(relaxJSONProcessing, otherwise = "File empty.")
 # Run this function with purrr:map so as to avoid for loops (from https://www.r-bloggers.com/2017/12/skip-errors-in-r-loops-by-not-writing-loops/ and https://jennybc.github.io/purrr-tutorial/ls01_map-name-position-shortcuts.html):
 relaxResults <- map(jsonFiles, possiblyRelaxJSONProcessing)
@@ -65,8 +64,6 @@ print(outputFile)
 # Export the results:
 write_csv(relaxResults, outputFile)
 
-outputFile <- read_csv("./workerPolymorphismRelaxResults.csv")
-
 # Assessing significance:
   # "The number of relaxed orthogroups in Coregonus and Salvelinus was significantly higher compared to the number of intensified orthogroups (one-sided Fisher’s Exact Test, p =0.035)." From Schneider, Kevin, Colin E. Adams, and Kathryn R. Elmer. "Parallel selection on ecologically relevant gene functions in the transcriptomes of highly diversifying salmonids." BMC genomics 20.1 (2019): 1-23. 	
 
@@ -75,7 +72,7 @@ outputFile <- read_csv("./workerPolymorphismRelaxResults.csv")
 
 library(ggplot2)
 
-relaxframe <- outputFile
+relaxframe <- relaxResults
 relaxframe <- subset(relaxframe, fileName != "File empty.")
 relaxframe$qval <- NA
 relaxframe$sig <- NA
@@ -156,18 +153,6 @@ fisher.test(frequencyTableWithNoCorrection)
 fisher.test(frequencyTableWithFDR)
 fisher.test(frequencyTableWithBonferroni)
 fisher.test(freq_table_below_or_above_1)
-
-relaxedWithNoCorrection
-relaxedWithFDR
-relaxedWithBonferroni
-intensifiedWithNoCorrection
-intensifiedWithFDR
-intensifiedWithBonferroni
-
-write.csv(relaxframe, "RELAX_R_dataframe.csv")
-
-median(relaxframe$kValue)
-mean(relaxframe$kValue)
 
 freq_table_selparam <- matrix(c((length(relaxframe$kValue[relaxframe$kValue != 1]) / 2), 
                                 (length(relaxframe$kValue[relaxframe$kValue != 1]) / 2), 
