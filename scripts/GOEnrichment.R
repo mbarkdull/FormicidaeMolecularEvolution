@@ -102,26 +102,189 @@ geneList <- tmp
 names(geneList) <- significanceInfo$orthogroup
 
 # Create the GOdata object:
-GOdata <- new("topGOdata",
-              ontology = "BP",
-              allGenes = geneList,
-              geneSelectionFun = function(x)(x == 1),
-              annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+GOdataBP <- new("topGOdata",
+                ontology = "BP",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
 # Run Fisher's exact test to check for enrichment:
-resultKS <- runTest(GOdata, algorithm = "elim", statistic = "fisher")
-resultsFisherTable <- GenTable(GOdata, raw.p.value = resultFisher, topNodes = length(resultFisher@score),
-                numChar = 120)
+resultFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
+resultFisherBP
+resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultFisherBP, topNodes = length(resultFisherBP@score),
+                                 numChar = 120)
+GOdataMF <- new("topGOdata",
+                ontology = "MF",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherMF <- runTest(GOdataMF, algorithm = "elim", statistic = "fisher")
+resultFisherMF
+resultsFisherMFTable <- GenTable(GOdataMF, raw.p.value = resultFisherMF, topNodes = length(resultFisherMF@score),
+                                 numChar = 120)
+
+GOdataCC <- new("topGOdata",
+                ontology = "CC",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherCC <- runTest(GOdataCC, algorithm = "elim", statistic = "fisher")
+resultFisherCC
+resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNodes = length(resultFisherCC@score),
+                                 numChar = 120)
 
 # Use the Kolomogorov-Smirnov test:
 geneList <- as.numeric(as.character(workerPolymorphismBustedPHResults$`test results p-value`))
 names(geneList) <- workerPolymorphismBustedPHResults$orthogroup
 # Create topGOData object
-GOdata <- new("topGOdata",
+GOdataBP <- new("topGOdata",
+                ontology = "BP",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSBP <- runTest(GOdataBP, algorithm = "weight01", statistic = "ks")
+resultKSBP
+resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
+
+# Create topGOData object
+GOdataMF <- new("topGOdata",
+                ontology = "MF",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSMF <- runTest(GOdataMF, algorithm = "weight01", statistic = "ks")
+resultKSMF
+resultKSMFTable <- GenTable(GOdataMF, raw.p.value = resultKSMF, topNodes = length(resultKSMF@score), numChar = 120)
+
+
+# Create topGOData object
+GOdataCC <- new("topGOdata",
+                ontology = "CC",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSCC <- runTest(GOdataCC, algorithm = "weight01", statistic = "ks")
+resultKSCC
+resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
+
+########################################################
+# Check for GO term enrichment of plain BUSTED results:
+########################################################
+
+jsonFiles <- list.files(path = "./8_3_BustedResults", pattern = "*.json", full.names = TRUE)
+jsonFiles <- sort(jsonFiles, decreasing = TRUE)
+
+i <- "./8_3_BustedResults/OG0014518_busted.json"
+
+# Write a function that will process each individual json file and extract the file name, orthogroup number, p-value, and return a text description of the p-value:
+bustedJSONProcessing <- function(i) {
+  bustedResults <- RJSONIO::fromJSON(content = i)
+  # Now run my if else statement:
+  # If the p value is less than 0.05, that means there is positive selection. 
+  if (bustedResults[["test results"]][["p-value"]] < 0.05) {
+    print("There is evidence for positive selection.")
+    orthogoupName <- sapply(strsplit(i, "\\/"), tail, 1)
+    orthogoupName <- sapply(strsplit(orthogoupName, "\\_"), `[`, 1)
+    
+    # Construct a vector of data containing the file name, the orthogroup number, the p-value, and the text "yes, evidence for positive selection":
+    data <- c(bustedResults[["input"]][["file name"]], orthogoupName, bustedResults[["test results"]][["p-value"]], "yes, BUSTED found evidence for positive selection")
+    return(data)
+    
+  } else {
+    print("No positive selection.")
+    orthogoupName <- sapply(strsplit(i, "\\/"), tail, 1)
+    orthogoupName <- sapply(strsplit(orthogoupName, "\\_"), `[`, 1)
+    
+    # Construct a vector of data containing the file name, the orthogroup number, the p-value, and the text "no evidence for positive selection":
+    data <- c(bustedResults[["input"]][["file name"]], orthogoupName, bustedResults[["test results"]][["p-value"]], "no evidence for positive selection from BUSTED")
+    return(data)
+  }
+}
+# Create a version of the function that returns an error if there's an empty file (from https://www.r-bloggers.com/2017/12/skip-errors-in-r-loops-by-not-writing-loops/):
+possiblyBustedJSONProcessing <- possibly(bustedJSONProcessing, otherwise = "File empty.")
+# Run this function with purrr:map so as to avoid for loops (from https://www.r-bloggers.com/2017/12/skip-errors-in-r-loops-by-not-writing-loops/ and https://jennybc.github.io/purrr-tutorial/ls01_map-name-position-shortcuts.html):
+bustedResults <- map(jsonFiles, possiblyBustedJSONProcessing)
+
+# Convert the results to a dataframe:
+bustedResults <- as.data.frame(do.call(rbind, bustedResults))   
+bustedResults$V3 <- as.numeric(as.character(bustedResults$V3), scientific = FALSE)
+
+# Define vector that is 1 if gene is significantly DE (`test results p-value` < 0.05) and 0 otherwise:
+significanceInfo <- dplyr::select(bustedResults, V2, V3)
+# Set each gene to 1 if adjP < cutoff, 0, otherwise
+pcutoff <- 0.05 
+tmp <- ifelse(significanceInfo$V3 < pcutoff , 1, 0)
+geneList <- tmp
+
+# Give geneList names:
+names(geneList) <- significanceInfo$V2
+
+# Create the GOdata object:
+GOdataBP <- new("topGOdata",
+              ontology = "BP",
+              allGenes = geneList,
+              geneSelectionFun = function(x)(x == 1),
+              annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
+resultFisherBP
+resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultFisherBP, topNodes = length(resultFisherBP@score),
+                               numChar = 120)
+GOdataMF <- new("topGOdata",
+                ontology = "MF",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherMF <- runTest(GOdataMF, algorithm = "elim", statistic = "fisher")
+resultFisherMF
+resultsFisherMFTable <- GenTable(GOdataMF, raw.p.value = resultFisherMF, topNodes = length(resultFisherMF@score),
+                                 numChar = 120)
+
+GOdataCC <- new("topGOdata",
+                ontology = "CC",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherCC <- runTest(GOdataCC, algorithm = "elim", statistic = "fisher")
+resultFisherCC
+resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNodes = length(resultFisherCC@score),
+                                 numChar = 120)
+# Use the Kolomogorov-Smirnov test:
+geneList <- as.numeric(as.character(bustedResults$V3))
+names(geneList) <- bustedResults$V2
+# Create topGOData object
+GOdataBP <- new("topGOdata",
               ontology = "BP",
               allGenes = geneList,
               geneSelectionFun = function(x)x,
               annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
-resultKS <- runTest(GOdata, algorithm = "weight01", statistic = "ks")
-resultKSTable <- GenTable(GOdata, raw.p.value = resultKS, topNodes = length(resultKS@score), numChar = 120)
+resultKSBP <- runTest(GOdataBP, algorithm = "weight01", statistic = "ks")
+resultKSBP
+resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
+
+# Create topGOData object
+GOdataMF <- new("topGOdata",
+                ontology = "MF",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSMF <- runTest(GOdataMF, algorithm = "weight01", statistic = "ks")
+resultKSMF
+resultKSMFTable <- GenTable(GOdataMF, raw.p.value = resultKSMF, topNodes = length(resultKSMF@score), numChar = 120)
+
+
+# Create topGOData object
+GOdataCC <- new("topGOdata",
+                ontology = "CC",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSCC <- runTest(GOdataCC, algorithm = "weight01", statistic = "ks")
+resultKSCC
+resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
+
 
 
