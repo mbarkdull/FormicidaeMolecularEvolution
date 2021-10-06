@@ -247,13 +247,13 @@ To run this script, use the command
 
 The output will be the file `./Results/bustedResults.csv`, which can be further used for further analyses (for example, GO term enrichment).
 
-## 9. Testing for positive selection with aBSREL
+## 9. Testing for positive selection with BUSTED-PH
 
-aBSREL assesses evidence for selection for a gene on each individual branch of a phylogeny. In this workflow, we will use it to assess evidence for selection in a set of foreground branches (species of interest) vs. background branches (all other species). Like BUSTED[S], aBSREL will require some data preparation steps. 
+[BUSTED-PH](https://github.com/veg/hyphy-analyses/tree/master/BUSTED-PH) determines whether there is evidence for selection occuring in association with a trait/phenotype. In this workflow, we will use it to assess evidence for selection in a set of foreground branches (species of interest) vs. background branches (all other species). Like BUSTED[S], BUSTED-PH will require some data preparation steps. 
 
-### 9.1 Labelling phylogenies for input to aBSREL
+### 9.1 Labelling phylogenies for input to BUSTED-PH
 
-aBSREL requires two things as input: a set of aligned coding sequences, and a phylogeny- in our case, because we want to assess selection in foreground vs. background branches, a labelled phylogeny. We have inferred gene trees for all of our orthogroups, and now need to label them for input to aBSREL. This can be done using a [script included with HYPHY](https://github.com/veg/hyphy/issues/1357), or using the script `LabellingPhylogeniesHYPHY.R`. This script will label tips with the tag `{Foreground}` based on their match to a set of species abbreviations, and will label all internal nodes that are parent to labelled tips: 
+[BUSTED-PH](https://github.com/veg/hyphy-analyses/tree/master/BUSTED-PH) requires two things as input: a set of aligned coding sequences, and a phylogeny- in our case, because we want to assess selection in foreground vs. background branches, a labelled phylogeny. We have inferred gene trees for all of our orthogroups, and now need to label them for input to BUSTED-PH. This can be done using a [script included with HYPHY](https://github.com/veg/hyphy/issues/1357), or using the script `LabellingPhylogeniesHYPHY.R`. This script will label tips with the tag `{Foreground}` based on their match to a set of species abbreviations, and will label all internal nodes that are parent to labelled tips: 
 
 ![side-by-side labelled and unlabelled phylogeny](./unlabelledAndLabelled.png)
 
@@ -263,17 +263,17 @@ aBSREL requires two things as input: a set of aligned coding sequences, and a ph
 
 This will create a new directory, `./9_1_LabelledPhylogenies`, with subdirectories corresponding to each run of the script, named according to the prefix assigned to output files of that run. In that subdirectory will be the labelled phylogenies. 
 
-### 9.2 Running aBSREL
+### 9.3 Running BUSTED-PH
 
-aBSREL has more power when run on a subset of branches in a phylogeny. Therefore, for this workflow we will run it on a set of labelled foreground branches and on background branches separately. The script `DataRunningABSREL` will accomplish this for each orthogroup and gene tree. To run the script, use the command:
+BUSTED-PH can be run with the script `./scripts/BUSTEDPHmultithreaded`. This script chunks the orthogroups into groups of fifty, then stars a background process for each orthogroup in a chunk, passing them to the script `./scripts/SingleBustedPHRun`, which creates an input file and runs BUSTED-PH. This allows you to take advantages of multiple cores on your machine, speeding up the run. To run BUSTED-PH, then, use the command:
+```
+./scripts/BUSTEDPHmultithreaded [full path to the directory containing labelled phylogenies from step 9.1] [prefix used when labelling phylogenies]
+```
 
-`./scripts/DataRunningABSREL [full path to labelled phylogenies produced in step 9.1] [prefix used to label phylogenies in step 9.1]`
+Results will be output in the directory `./9_3_BustedPHResults/[labelling prefix]`
 
-This script will output results in the directory `./9_2/[prefix]`. Two subdirectories are created, one called `foreground` containing the results of runs assessing selection in foreground branches, and one called `background` containing the results of runs assessing selection in unlabelled, i.e. background, branches. Because not all orthogroups will contain sequences from foreground species, you should expect that the `background` directory will have more results files than the `foreground` directory.  
+**BUSTED-PH is currently an unpublished method, with no paper to cite. Please check the [GitHub](https://github.com/veg/hyphy-analyses/tree/master/BUSTED-PH) to see if the method has been published, and cite accordingly.**
 
-**If you use aBSREL, please cite:**
-
-Smith, MD et al. "Less is more: an adaptive branch-site random effects model for efficient detection of episodic diversifying selection." Mol. Biol. Evol. 32, 1342–1353 (2015).
 
 ### Parsing aBSREL results
 
