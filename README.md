@@ -309,7 +309,7 @@ To run this script, use the command
 `ParsingBustedResults.R [full path to BUSTED[S] results directory]`.
 
 The output will be the file `./Results/bustedResults.csv`, which can be
-further used for further analyses (for example, GO term enrichment).
+used for further analyses (for example, GO term enrichment).
 
 ## 9\. Testing for positive selection with BUSTED-PH
 
