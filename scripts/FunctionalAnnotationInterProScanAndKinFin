@@ -2,7 +2,7 @@
 
 # I am going to have an input file that is a tab-delimited text file with data urls and desired file names to send the download.
 
-# The command to run this script is `./scripts/RunningInterProScan inputurls_full.txt /workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/`.
+# The command to run this script is `./scripts/FunctionalAnnotationInterProScanAndKinFin inputurls_full.txt /workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/`.
   while read -r line;
   do
     # This uses the second field on that line to get the species abbreviation:
