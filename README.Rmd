@@ -46,19 +46,19 @@ grViz("digraph flowchart {
       tab9 -> tab12; 
       tab10 -> tab12;
       }
-      [1]: 'Download the coding sequences, protein sequences, and annotation file for each species'
-      [2]: 'Filter for the longest isoform for each gene'
+      [1]: 'Download the coding sequences, \\n  protein sequences, and  \\n annotation file for each species'
+      [2]: 'Filter for the longest  \\n isoform for each gene'
       [3]: 'Clean gene names'
-      [4]: 'Translate coding sequences to amino acid sequences'
-      [5]: 'Run Orthofinder on amino acid sequences, generating orthogroups and multiple sequence alignments'
-      [6]: 'Prepare coding and amino acid sequences for PAL2NAL'
+      [4]: 'Translate coding sequences  \\n to amino acid sequences'
+      [5]: 'Run Orthofinder on amino acid sequences,  \\n generating orthogroups and  \\n multiple sequence alignments'
+      [6]: 'Prepare coding and amino acid  \\n sequences for PAL2NAL'
       [7]: 'Generate nucleotide alignments with PAL2NAL'
-      [8]: 'Run BUSTED[S] on nucleotide alignments to test for positive selection'
-      [9]: 'Run BUSTED-PH to check for positive selection in association with traits'
-      [10]: 'Run RELAX to test for relaxation/intensification of selection'
-      [11]: 'Annotate coding sequences with InterProScan and orthogroups with KinFin'
-      [12]: 'Test for GO term enrichment with topGO in R'
-      [13]: 'Use Fishers exact test for hypothesis testing'
+      [8]: 'Run BUSTED[S] on nucleotide alignments  \\n to test for positive selection'
+      [9]: 'Run BUSTED-PH to check for  \\n positive selection in association with traits'
+      [10]: 'Run RELAX to test for  \\n relaxation/intensification of selection'
+      [11]: 'Annotate coding sequences  \\n with InterProScan and orthogroups with KinFin'
+      [12]: 'Test for GO term enrichment with  \\n topGO in R'
+      [13]: 'Use Fishers exact test  \\n for hypothesis testing'
       [14]: 'Label gene trees for BUSTED-PH and RELAX'
       ")
 ```
@@ -185,13 +185,13 @@ grViz("digraph flowchart {
       tab4 -> tab6;
       tab4 -> tab7;
       }
-      [1]: 'Orthofinder file:  Locus1 Species1  Locus1 Species2  Locus1 Species3'
-      [2]: 'Orthofinder file:  Locus2 Species1  Locus2 Species2  Locus2 Species3'
-      [3]: 'Orthofinder file:  Locus3 Species1  Locus3 Species2  Locus3 Species3'
-      [4]: 'Orthofinder file:  Locus4 Species1  Locus4 Species2  Locus4 Species3'
-      [5]: 'Reshuffled file:  Locus1 Species1  Locus2 Species1  Locus3 Species1  Locus4 Species1'
-      [6]: 'Reshuffled file:  Locus1 Species2  Locus2 Species2  Locus3 Species2  Locus4 Species2'
-      [7]: 'Reshuffled file:  Locus1 Species3  Locus2 Species3  Locus3 Species3  Locus4 Species3'
+      [1]: 'Orthofinder file: \\n Locus1 Species1 \\n Locus1 Species2 \\n Locus1 Species3'
+      [2]: 'Orthofinder file: \\n Locus2 Species1 \\n Locus2 Species2 \\n Locus2 Species3'
+      [3]: 'Orthofinder file: \\n Locus3 Species1 \\n Locus3 Species2 \\n Locus3 Species3'
+      [4]: 'Orthofinder file: \\n Locus4 Species1 \\n Locus4 Species2 \\n Locus4 Species3'
+      [5]: 'Reshuffled file: \\n Locus1 Species1 \\n Locus2 Species1 \\n Locus3 Species1 \\n Locus4 Species1'
+      [6]: 'Reshuffled file: \\n Locus1 Species2 \\n Locus2 Species2 \\n Locus3 Species2 \\n Locus4 Species2'
+      [7]: 'Reshuffled file: \\n Locus1 Species3 \\n Locus2 Species3 \\n Locus3 Species3 \\n Locus4 Species3'
       ")
 ```
 
