@@ -400,7 +400,30 @@ analyzed using the script `ParsingRelaxResults.R`.
 
 Schneider, Kevin, Colin E. Adams, and Kathryn R. Elmer. “Parallel
 selection on ecologically relevant gene functions in the transcriptomes
-of highly diversifying salmonids.” BMC genomics 20.1 (2019): 1-23.
+of highly diversifying salmonids.” BMC genomics 20.1 (2019):
+1-23.
+
+### 11\. Annotating proteins with InterProScan and annotating orthogroups with KinFin
+
+If you’re interested in drawing conclusions about the function of genes
+evolving under a particular selection regime, you’ll need to get
+functional annotations. This can be accomplished with a combination of
+InterProScan, which will annotate individual genes, and KinFin, which
+will use gene-level annotations to assign a function to whole
+orthogroups (which are the level of analysis for BUSTED, BUSTED-PH and
+RELAX).
+
+You can run both InterProScan and KinFin with the script
+`RunningInterProScan`, using the
+    command:
+
+    ./scripts/RunningInterProScan [path to the input urls file] [full path to the Orthofinder fasta directory, something like inputurls_full.txt /workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/]
+
+This will output three files, `cluster_domain_annotation.Pfam.txt`,
+`cluster_domain_annotation.IPR.txt`, and
+`cluster_domain_annotation.GO.txt`, which can be combined with the
+results of tests for selection in order to understand which genes are
+under a particular selective regime.
 
 ### To do:
 
