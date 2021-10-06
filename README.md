@@ -387,8 +387,8 @@ RELAX is a method from HYPHY that asks whether the strength of natural
 selection has been increased or decreased along test branches. In order
 to run RELAX, as with aSBREL, you’ll need a labelled phylogeny and a set
 of orthogroup sequences. Then, RELAX can be run with the command
-\`./scripts/DataRunningRelax \[full path to labelled phylogenies\]
-\[prefix used when labelling phylogenies\].
+`./scripts/DataRunningRelax [full path to labelled phylogenies] [prefix
+used when labelling phylogenies]`.
 
 ### 10.2 Parsing RELAX results
 
@@ -403,7 +403,7 @@ selection on ecologically relevant gene functions in the transcriptomes
 of highly diversifying salmonids.” BMC genomics 20.1 (2019):
 1-23.
 
-### 11\. Annotating proteins with InterProScan and annotating orthogroups with KinFin
+## 11\. Annotating proteins with InterProScan and annotating orthogroups with KinFin
 
 If you’re interested in drawing conclusions about the function of genes
 evolving under a particular selection regime, you’ll need to get
@@ -419,7 +419,8 @@ You can run both InterProScan and KinFin with the script
 
     ./scripts/RunningInterProScan [path to the input urls file] [full path to the Orthofinder fasta directory, something like inputurls_full.txt /workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/]
 
-This will output three files, `cluster_domain_annotation.Pfam.txt`,
+This will output three files in the directory `./11_InterProScan`:
+`cluster_domain_annotation.Pfam.txt`,
 `cluster_domain_annotation.IPR.txt`, and
 `cluster_domain_annotation.GO.txt`, which can be combined with the
 results of tests for selection in order to understand which genes are
