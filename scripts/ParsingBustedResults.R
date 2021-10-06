@@ -48,6 +48,7 @@ bustedResults <- map(jsonFiles, possiblyBustedJSONProcessing)
 # Convert the results to a dataframe:
 bustedResults <- as.data.frame(do.call(rbind, bustedResults))   
 bustedResults$V3 <- as.numeric(as.character(bustedResults$V3), scientific = FALSE)
+colnames(bustedResults) <- c("file", "orthogroup", "test results p-value", "selectionOn")
 
 # Get the number of genes with and without positive selection:
 numberPositive <- sum(bustedResults$V4 == "yes, BUSTED found evidence for positive selection")
