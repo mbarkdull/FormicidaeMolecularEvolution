@@ -1,0 +1,54 @@
+#!/bin/bash
+
+# Export required paths:
+export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
+
+# Make a directory for BUSTED[S] outputs:
+mkdir ./9_3_BustedPHResults
+mkdir ./9_3_BustedPHResults/$2
+
+# Download the newest version of HyPhy:
+# Add HyPhy to your path:
+module load gcc/7.3.0
+export PATH=/programs/hyphy-20210923/bin:$PATH
+cd ./9_3_BustedPHResults
+git clone https://github.com/veg/hyphy-analyses.git
+cd ../
+
+ls -hSr 8_2_RemovedStops > fileList.txt
+while read -r line;
+do
+  export cdsFile=8_2_RemovedStops/"$line"
+  echo the coding sequence alignment file is $cdsFile
+  # The tree file needs to look like OG0002680_tree.txt. $f looks like  /8_2_RemovedStops/cleaned_OG0002680_cds.fasta.
+  export orthogroupNumber=`echo "$line" | awk -F'_' '{print ($2)}'`
+  #echo The orthogroup number is $orthogroupNumber
+  export treeFile=$2"Labelled_"$orthogroupNumber"_tree.txt"
+  export prefix=$2
+  #echo The path to tree file is $1$treeFile
+  export pathToTrees=$1$treeFile
+  # workerPolymorphism_OG0013348_BUSTEDPH.fas.BUSTED.json
+  export output="./9_3_BustedResults/"$prefix"/"$prefix"_"$orthogroupNumber"_BUSTEDPH.fas.BUSTED.json"
+  export catFile="./9_3_BustedPHResults/"$prefix"/"$prefix"_"$orthogroupNumber"_BUSTEDPH.fas"
+  if [ -f "$catFile" ]; then
+    echo "$catFile exists; this gene has been previously analysed."
+  else
+    if [ -f "$1$treeFile" ]; then
+      echo "$treeFile exists; running BUSTED-PH."
+      if [ -f "$cdsFile" ]; then
+          echo "$cdsFile exists."
+          cat $cdsFile $1$treeFile >> "./9_3_BustedPHResults/"$prefix"/"$prefix"_"$orthogroupNumber"_BUSTEDPH.fas"
+          export inputFile="./9_3_BustedPHResults/"$prefix"/"$prefix"_"$orthogroupNumber"_BUSTEDPH.fas"
+          # ./9_3_BustedPHResults/workerPolymorphism/workerPolymorphism_OG0013357_BUSTEDPH.fas
+          HYPHYMP /workdir/mb2337/FormicidaeMolecularEvolution/9_3_BustedPHResults/hyphy-analyses/BUSTED-PH/BUSTED-PH.bf --alignment $inputFile --srv Yes
+      else
+          echo "."
+      fi
+    else
+      echo "."
+    fi
+  fi
+
+  echo __________________________________________________
+
+done < fileList.txt
