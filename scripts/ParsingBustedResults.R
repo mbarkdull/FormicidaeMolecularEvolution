@@ -16,7 +16,7 @@ library(rjson)
 
 # Construct a list of all of the json files:
 jsonFiles <- list.files(path = args[1], pattern = "*.json", full.names = TRUE)
-#jsonFiles <- list.files(path = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/8_3_BustedResults", pattern = "*.json", full.names = TRUE)
+#jsonFiles <- list.files(path = "./8_3_BustedResults", pattern = "*.json", full.names = TRUE)
 jsonFiles <- sort(jsonFiles, decreasing = TRUE)
 # bustedResult <- fromJSON(file = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/8_3_BustedResults/OG0013390_busted.json")
 
@@ -27,7 +27,7 @@ bustedJSONProcessing <- function(i) {
   # If the p value is less than 0.05, that means there is positive selection. 
   if (bustedResults[["test results"]][["p-value"]] < 0.05) {
     print("There is evidence for positive selection.")
-    orthogoupName <- sapply(strsplit(i, "\\/"), `[`, 7)
+    orthogoupName <- sapply(strsplit(as.character(i),"/"), tail, 1)
     orthogoupName <- sapply(strsplit(orthogoupName, "\\_"), `[`, 1)
     
     # Construct a vector of data containing the file name, the orthogroup number, the p-value, and the text "yes, evidence for positive selection":
@@ -36,7 +36,7 @@ bustedJSONProcessing <- function(i) {
     
   } else {
     print("No positive selection.")
-    orthogoupName <- sapply(strsplit(i, "\\/"), `[`, 7)
+    orthogoupName <- sapply(strsplit(as.character(i),"/"), tail, 1)
     orthogoupName <- sapply(strsplit(orthogoupName, "\\_"), `[`, 1)
     
     # Construct a vector of data containing the file name, the orthogroup number, the p-value, and the text "no evidence for positive selection":
@@ -55,8 +55,8 @@ bustedResults$V3 <- as.numeric(as.character(bustedResults$V3), scientific = FALS
 colnames(bustedResults) <- c("file", "orthogroup", "test results p-value", "selectionOn")
 
 # Get the number of genes with and without positive selection:
-numberPositive <- sum(bustedResults$V4 == "yes, BUSTED found evidence for positive selection")
-numberNone <- sum(bustedResults$V4 == "no evidence for positive selection from BUSTED")
+numberPositive <- sum(bustedResults$selectionOn == "yes, BUSTED found evidence for positive selection")
+numberNone <- sum(bustedResults$selectionOn == "no evidence for positive selection from BUSTED")
 percentPositive <- (numberPositive / (numberPositive + numberNone))*100
 
 # Create an output directory:
@@ -107,6 +107,7 @@ resultFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
 resultFisherBP
 resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultFisherBP, topNodes = length(resultFisherBP@score),
                                  numChar = 120)
+head(resultsFisherBPTable)
 GOdataMF <- new("topGOdata",
                 ontology = "MF",
                 allGenes = geneList,
@@ -117,6 +118,7 @@ resultFisherMF <- runTest(GOdataMF, algorithm = "elim", statistic = "fisher")
 resultFisherMF
 resultsFisherMFTable <- GenTable(GOdataMF, raw.p.value = resultFisherMF, topNodes = length(resultFisherMF@score),
                                  numChar = 120)
+head(resultsFisherMFTable)
 
 GOdataCC <- new("topGOdata",
                 ontology = "CC",
@@ -128,6 +130,7 @@ resultFisherCC <- runTest(GOdataCC, algorithm = "elim", statistic = "fisher")
 resultFisherCC
 resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNodes = length(resultFisherCC@score),
                                  numChar = 120)
+head(resultsFisherCCTable)
 # Use the Kolomogorov-Smirnov test:
 geneList <- as.numeric(as.character(bustedResults$`test results p-value`))
 names(geneList) <- bustedResults$orthogroup
@@ -140,6 +143,7 @@ GOdataBP <- new("topGOdata",
 resultKSBP <- runTest(GOdataBP, algorithm = "weight01", statistic = "ks")
 resultKSBP
 resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
+head(resultKSBPTable)
 
 # Create topGOData object
 GOdataMF <- new("topGOdata",
@@ -150,7 +154,7 @@ GOdataMF <- new("topGOdata",
 resultKSMF <- runTest(GOdataMF, algorithm = "weight01", statistic = "ks")
 resultKSMF
 resultKSMFTable <- GenTable(GOdataMF, raw.p.value = resultKSMF, topNodes = length(resultKSMF@score), numChar = 120)
-
+head(resultKSMFTable)
 
 # Create topGOData object
 GOdataCC <- new("topGOdata",
@@ -161,6 +165,7 @@ GOdataCC <- new("topGOdata",
 resultKSCC <- runTest(GOdataCC, algorithm = "weight01", statistic = "ks")
 resultKSCC
 resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
+head(resultKSCCTable)
 
 goEnrichmentSummaries <- capture.output(print(resultFisherBP), 
                                         print(resultFisherMF), 
