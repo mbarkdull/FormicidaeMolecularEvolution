@@ -14,25 +14,25 @@ library(rjson)
 
 jsonFiles <- list.files(path = args[1], pattern = "*.json", full.names = TRUE)
 #jsonFiles <- list.files(path = "./10_1_RelaxResults/workerPolymorphism", pattern = "*.json", full.names = TRUE)
-
 jsonFiles <- sort(jsonFiles, decreasing = TRUE)
+jsonFiles <- jsonFiles[sapply(jsonFiles, file.size) > 0]
 
 relaxJSONProcessing <- function(i) {
   relaxResult <- fromJSON(file = i)
   if (relaxResult[["test results"]][["p-value"]] < 0.05) {
     if (relaxResult[["test results"]][["relaxation or intensification parameter"]] > 1) {
-      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "Significant difference in selective regime between foreground and background branches", "Intensification of selection along foreground branches", args[2])
+      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "Significant difference in selective regime between foreground and background branches", "Intensification of selection along foreground branches")
       return(data)
     } else {
-      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "Significant difference in selective regime between foreground and background branches", "Relaxation of selection along foreground branches", args[2])
+      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "Significant difference in selective regime between foreground and background branches", "Relaxation of selection along foreground branches")
       return(data)
     }
   } else {
     if (relaxResult[["test results"]][["relaxation or intensification parameter"]] > 1) {
-      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "No significant difference in selective regime between foreground and background branches", "Nonsignificant intensification", args[2])
+      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "No significant difference in selective regime between foreground and background branches", "Nonsignificant intensification")
       return(data)
     } else {
-      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "No significant difference in selective regime between foreground and background branches", "Nonsignificant relaxation", args[2])
+      data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "No significant difference in selective regime between foreground and background branches", "Nonsignificant relaxation")
       return(data)
     }
   }
@@ -44,14 +44,15 @@ relaxResults <- map(jsonFiles, possiblyRelaxJSONProcessing)
 
 # Convert the results to a dataframe:
 relaxResults <- as.data.frame(do.call(rbind, relaxResults))   
-colnames(relaxResults) <- c("fileName", "pValue", "kValue", "description", "shortDescription", "traitTested")
-#relaxResults$V2 <- as.numeric(as.character(relaxResults$V2), scientific = FALSE)
-#relaxResults$V3 <- as.numeric(as.character(relaxResults$V3), scientific = FALSE)
+colnames(relaxResults) <- c("fileName", "pValue", "kValue", "description", "shortDescription")
+orthogroup <- sapply(strsplit(as.character(relaxResults$fileName),"/"), tail, 1)
+orthogroup <- sapply(strsplit(orthogroup, "_"), `[`, 2)
+relaxResults$orthogroup <- orthogroup
 
 
-numberRelax <- sum(relaxResults$V5 == "Relaxation of selection along foreground branches")
-numberNonsignficant <- sum(relaxResults$V4 == "No significant difference in selective regime between foreground and background branches")
-numberIntensified <- sum(relaxResults$V5 == "Intensification of selection along foreground branches")
+numberRelax <- sum(relaxResults$shortDescription == "Relaxation of selection along foreground branches")
+numberNonsignficant <- sum(relaxResults$description == "No significant difference in selective regime between foreground and background branches")
+numberIntensified <- sum(relaxResults$shortDescription == "Intensification of selection along foreground branches")
 percentRelaxed <- (numberRelax / (numberRelax + numberNonsignficant + numberIntensified))*100
 percentIntensified <- (numberIntensified / (numberRelax + numberNonsignficant + numberIntensified))*100
 
@@ -59,12 +60,14 @@ percentIntensified <- (numberIntensified / (numberRelax + numberNonsignficant + 
 dir.create("./Results")
 outputDirectory <- paste("./Results/", args[2], sep = "")
 dir.create(outputDirectory)
-outputFile <- paste("./Results/", args[2], "/", args[2], "RelaxResults.csv", sep = "")
+outputFile <- paste("./Results/", args[2], "/RelaxResults.csv", sep = "")
 print(outputFile)
 # Export the results:
 write_csv(relaxResults, outputFile)
 
-# Assessing significance:
+###############################################
+####### Fisher's exact test ###################
+###############################################
   # "The number of relaxed orthogroups in Coregonus and Salvelinus was significantly higher compared to the number of intensified orthogroups (one-sided Fisher’s Exact Test, p =0.035)." From Schneider, Kevin, Colin E. Adams, and Kathryn R. Elmer. "Parallel selection on ecologically relevant gene functions in the transcriptomes of highly diversifying salmonids." BMC genomics 20.1 (2019): 1-23. 	
 
 ### Kevin Schneider; last modified: 07.10.2019 ###
@@ -149,7 +152,7 @@ freq_table_below_or_above_1 <- matrix(c(length(below1), length(above1),
                                                       "selection" = c("relaxed", "intensified")))
 
 
-fisher.test(frequencyTableWithNoCorrection)
+fishersExactTest <- fisher.test(frequencyTableWithNoCorrection)
 fisher.test(frequencyTableWithFDR)
 fisher.test(frequencyTableWithBonferroni)
 fisher.test(freq_table_below_or_above_1)
@@ -164,3 +167,127 @@ freq_table_selparam <- matrix(c((length(relaxframe$kValue[relaxframe$kValue != 1
                                               "selection" = c("relaxed", "intensified")))
 
 fisher.test(freq_table_selparam)
+fishersExactTest <- capture.output(print(fishersExactTest))
+
+writeLines(fishersExactTest, con = file(base::paste("./Results/", args[2], "/RelaxFisher.csv", sep = "")))
+
+###############################################
+####### Check for GO term enrichment ##########
+###############################################
+
+# Load packages:
+library(topGO)
+library(tidyverse)
+library(RJSONIO)
+
+# Read in the GO term annotations for each orthogroup, which we obtained from KinFin:
+GOannotations <- read_delim("cluster_domain_annotation.GO.txt", delim = "\t")
+# Subset so we just have orthogroup name and GO domain IDs:
+longAnnotations <- dplyr::select(GOannotations, `#cluster_id`, domain_id)
+# Take out genes without GO terms
+longAnnotations <- longAnnotations[which(longAnnotations$domain_id != ""),] 
+# Rename the column #cluster_id to orthogroup
+longAnnotations <- longAnnotations %>%
+  dplyr::rename(orthogroup = `#cluster_id`)
+
+# Create list with element for each gene, containing vectors with all terms for each gene
+wideListAnnotations <- tapply(longAnnotations$domain_id, longAnnotations$orthogroup, function(x)x)
+
+# Define vector that is 1 if gene is significantly DE (`test results p-value` < 0.05) and 0 otherwise:
+significanceInfo <- dplyr::select(relaxResults, orthogroup, pValue)
+# Set each gene to 1 if adjP < cutoff, 0, otherwise
+pcutoff <- 0.05 
+tmp <- ifelse(significanceInfo$pValue < pcutoff, 1, 0)
+geneList <- tmp
+
+# Give geneList names:
+names(geneList) <- significanceInfo$orthogroup
+
+# Create the GOdata object:
+GOdataBP <- new("topGOdata",
+                ontology = "BP",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
+resultFisherBP
+resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultFisherBP, topNodes = length(resultFisherBP@score),
+                                 numChar = 120)
+head(resultsFisherBPTable)
+
+GOdataMF <- new("topGOdata",
+                ontology = "MF",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherMF <- runTest(GOdataMF, algorithm = "elim", statistic = "fisher")
+resultFisherMF
+resultsFisherMFTable <- GenTable(GOdataMF, raw.p.value = resultFisherMF, topNodes = length(resultFisherMF@score),
+                                 numChar = 120)
+head(resultsFisherMFTable)
+
+GOdataCC <- new("topGOdata",
+                ontology = "CC",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherCC <- runTest(GOdataCC, algorithm = "elim", statistic = "fisher")
+resultFisherCC
+resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNodes = length(resultFisherCC@score),
+                                 numChar = 120)
+head(resultsFisherCCTable)
+
+# Use the Kolomogorov-Smirnov test:
+geneList <- as.numeric(as.character(relaxResults$pValue))
+names(geneList) <- relaxResults$orthogroup
+# Create topGOData object
+GOdataBP <- new("topGOdata",
+                ontology = "BP",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSBP <- runTest(GOdataBP, algorithm = "weight01", statistic = "ks")
+resultKSBP
+resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
+head(resultKSBPTable)
+
+# Create topGOData object
+GOdataMF <- new("topGOdata",
+                ontology = "MF",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSMF <- runTest(GOdataMF, algorithm = "weight01", statistic = "ks")
+resultKSMF
+resultKSMFTable <- GenTable(GOdataMF, raw.p.value = resultKSMF, topNodes = length(resultKSMF@score), numChar = 120)
+head(resultKSMFTable)
+
+# Create topGOData object
+GOdataCC <- new("topGOdata",
+                ontology = "CC",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSCC <- runTest(GOdataCC, algorithm = "weight01", statistic = "ks")
+resultKSCC
+resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
+head(resultKSCCTable)
+
+goEnrichmentSummaries <- capture.output(print(resultFisherBP), 
+                                        print(resultFisherMF), 
+                                        print(resultFisherCC), 
+                                        print(resultKSBP), 
+                                        print(resultKSMF), 
+                                        print(resultKSCC))
+
+writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/RelaxGOSummaries.csv", sep = "")))
+
+
+
+
+
+
+
