@@ -1,3 +1,14 @@
+#!/usr/bin/env Rscript
+
+args <- commandArgs(trailingOnly=TRUE)
+if (length(args) != 2) {
+  stop("At least two arguments required: the path to BUSTED-PH results, and the corresponding trait prefix.", call.=FALSE)
+} else if (length(args)==1) {
+  # default label:
+  args[2] = "labelled"
+}
+
+
 library(RJSONIO)
 library(tidyverse)
 library(ggthemes)
@@ -7,7 +18,7 @@ library(ggthemes)
 ###############################################
 
 # Get a list of results files, sort by decreasing size, and remove any that are empty:
-files <- list.files(path = "./BUSTEDPH", pattern = "*.json", full.names = TRUE)
+files <- list.files(path = args[1], pattern = "*.json", full.names = TRUE)
 files <- sort(files, decreasing = TRUE)
 files <- files[sapply(files, file.size) > 0]
 
@@ -77,9 +88,10 @@ workerPolymorphismBustedPHResults <- workerPolymorphismBustedPHResults %>% mutat
                                  as.numeric(as.character(`test results background p-value`)) > 0.05  ~ "NoSelection",
                                as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifferenceBetweenForegroundAndBackground"))
 # Create an output directory:
-dir.create("./Results")
+dir.create("./Results/")
+dir.create(base::paste("./Results/", args[2], sep = ""))
 # Export the results:
-write_csv(workerPolymorphismBustedPHResults, "./Results/bustedPHResults.csv")
+write_csv(workerPolymorphismBustedPHResults, base::paste("./Results/", args[2], "/bustedPHResults.csv", sep = ""))
 
 ###############################################
 ####### Fisher's exact test ###################
@@ -115,15 +127,122 @@ if (fishersExactTest[["p.value"]] <= 0.05) {
 
 fishersExactTest <- capture.output(print(fishersExactTest))
 
-writeLines(fishersExactTest, con = file("./Results/bustedPHFisher.csv"))
+writeLines(fishersExactTest, con = file(base::paste("./Results/", args[2], "/bustedPHFisher.csv", sep = "")))
 
+###############################################
+####### Check for GO term enrichment ##########
+###############################################
 
+# Load packages:
+library(topGO)
+library(tidyverse)
+library(RJSONIO)
 
+# Read in the GO term annotations for each orthogroup, which we obtained from KinFin:
+GOannotations <- read_delim("cluster_domain_annotation.GO.txt", delim = "\t")
+# Subset so we just have orthogroup name and GO domain IDs:
+longAnnotations <- dplyr::select(GOannotations, `#cluster_id`, domain_id)
+# Take out genes without GO terms
+longAnnotations <- longAnnotations[which(longAnnotations$domain_id != ""),] 
+# Rename the column #cluster_id to orthogroup
+longAnnotations <- longAnnotations %>%
+  dplyr::rename(orthogroup = `#cluster_id`)
 
+# Create list with element for each gene, containing vectors with all terms for each gene
+wideListAnnotations <- tapply(longAnnotations$domain_id, longAnnotations$orthogroup, function(x)x)
 
+# Define vector that is 1 if gene is significantly DE (`test results p-value` < 0.05) and 0 otherwise:
+significanceInfo <- dplyr::select(workerPolymorphismBustedPHResults, orthogroup, `test results p-value`, `test results background p-value`, `test results shared distributions p-value`)
+# Set each gene to 1 if adjP < cutoff, 0, otherwise
+pcutoff <- 0.05 
+tmp <- ifelse(significanceInfo$`test results p-value` < pcutoff & 
+                significanceInfo$`test results background p-value` > pcutoff & 
+                significanceInfo$`test results shared distributions p-value` < pcutoff, 1, 0)
+geneList <- tmp
 
+# Give geneList names:
+names(geneList) <- significanceInfo$orthogroup
 
+# Create the GOdata object:
+GOdataBP <- new("topGOdata",
+                ontology = "BP",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
+resultFisherBP
+resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultFisherBP, topNodes = length(resultFisherBP@score),
+                                 numChar = 120)
+head(resultsFisherBPTable)
+GOdataMF <- new("topGOdata",
+                ontology = "MF",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherMF <- runTest(GOdataMF, algorithm = "elim", statistic = "fisher")
+resultFisherMF
+resultsFisherMFTable <- GenTable(GOdataMF, raw.p.value = resultFisherMF, topNodes = length(resultFisherMF@score),
+                                 numChar = 120)
+head(resultsFisherMFTable)
 
+GOdataCC <- new("topGOdata",
+                ontology = "CC",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherCC <- runTest(GOdataCC, algorithm = "elim", statistic = "fisher")
+resultFisherCC
+resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNodes = length(resultFisherCC@score),
+                                 numChar = 120)
+head(resultsFisherCCTable)
+
+# Use the Kolomogorov-Smirnov test:
+geneList <- as.numeric(as.character(workerPolymorphismBustedPHResults$`test results p-value`))
+names(geneList) <- workerPolymorphismBustedPHResults$orthogroup
+# Create topGOData object
+GOdataBP <- new("topGOdata",
+                ontology = "BP",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSBP <- runTest(GOdataBP, algorithm = "weight01", statistic = "ks")
+resultKSBP
+resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
+head(resultKSBPTable)
+
+# Create topGOData object
+GOdataMF <- new("topGOdata",
+                ontology = "MF",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSMF <- runTest(GOdataMF, algorithm = "weight01", statistic = "ks")
+resultKSMF
+resultKSMFTable <- GenTable(GOdataMF, raw.p.value = resultKSMF, topNodes = length(resultKSMF@score), numChar = 120)
+head(resultKSMFTable)
+
+# Create topGOData object
+GOdataCC <- new("topGOdata",
+                ontology = "CC",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSCC <- runTest(GOdataCC, algorithm = "weight01", statistic = "ks")
+resultKSCC
+resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
+head(resultKSCCTable)
+
+goEnrichmentSummaries <- capture.output(print(resultFisherBP), 
+                                        print(resultFisherMF), 
+                                        print(resultFisherCC), 
+                                        print(resultKSBP), 
+                                        print(resultKSMF), 
+                                        print(resultKSCC))
+
+writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/bustedPHGOSummaries.csv", sep = "")))
 
 
 
