@@ -2,6 +2,10 @@ library(RJSONIO)
 library(tidyverse)
 library(ggthemes)
 
+###############################################
+####### Convert JSON files to spreadsheet #####
+###############################################
+
 # Get a list of results files, sort by decreasing size, and remove any that are empty:
 files <- list.files(path = "./BUSTEDPH", pattern = "*.json", full.names = TRUE)
 files <- sort(files, decreasing = TRUE)
@@ -72,59 +76,30 @@ workerPolymorphismBustedPHResults <- workerPolymorphismBustedPHResults %>% mutat
                                as.numeric(as.character(`test results p-value`)) > 0.05 &
                                  as.numeric(as.character(`test results background p-value`)) > 0.05  ~ "NoSelection",
                                as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifferenceBetweenForegroundAndBackground"))
+# Create an output directory:
+dir.create("./Results")
+# Export the results:
+write_csv(workerPolymorphismBustedPHResults, "./Results/bustedPHResults.csv")
 
-# Write a function to merge the BUSTEDPH results and the annotations from InterProScan; add all the annotations:
-mergeAnnotations <- function(annotationFile, data) {
-  annotations <- read_delim(annotationFile, delim = "\t")
-  # Convert them to wide format:
-  annotations <- select(annotations, "#cluster_id", "domain_id", "domain_description") %>%
-    group_by(`#cluster_id`) %>%
-    mutate(uniqueID = row_number()) %>%
-    tidyr::pivot_wider(names_from = uniqueID, values_from = c(domain_description, domain_id)) 
-  data <- left_join(data, annotations, by = c("orthogroup" = "#cluster_id"))
-}
-# Read in annotations:
-data <- mergeAnnotations(annotationFile = "cluster_domain_annotation.Pfam.txt", data = workerPolymorphismBustedPHResults)
-data <- mergeAnnotations(annotationFile = "cluster_domain_annotation.IPR.txt", data = data)
-data <- mergeAnnotations(annotationFile = "cluster_domain_annotation.GO.txt", data = data)
+###############################################
+####### Fisher's exact test ###################
+###############################################
 
-# Filter to only positively selected genes and then pivot longer for readability:
-positivelySelectedGenes <- filter(data, differenceInSelection == "Yes") %>%
-  pivot_longer(cols = starts_with('domain'), 
-                     names_to = c('domain', 'annotation'), 
-                     names_sep = "_") %>%
-  filter(!is.na(value))
-
-
-ggplot(data, 
-       aes(x = selectionOn)) +
-  geom_bar() + 
-  theme(axis.text.x = element_text(angle = 0)) + 
-  scale_x_discrete(labels =c("NoSelection" = "No selection \non foreground \nor background",
-                             "NoSignificantDifferenceBetweenForegroundAndBackground" = "Foreground and \nbackground regimes \nare not \nsignificantly \ndifferent",
-                             "BackgroundOnly" = "Selection \non background \nonly",
-                             "ForegroundOnly" = "Selection \non foreground \nonly")) +
-  labs(x = "Selective regime",
-       y = "Count of orthogroups",
-       title = "Distribution of selective regimes associated with trait")  +
-  theme_hc()
-
-
-backgroundSelected <- data %>% 
+backgroundSelected <- workerPolymorphismBustedPHResults %>% 
   filter(as.numeric(as.character(`test results p-value`)) > 0.05 & 
            as.numeric(as.character(`test results background p-value`)) <= 0.05 & 
            as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05)
 nBackgroundSelected <- nrow(backgroundSelected)
 
-foregroundSelected <- data %>% 
+foregroundSelected <- workerPolymorphismBustedPHResults %>% 
   filter(as.numeric(as.character(`test results p-value`)) <= 0.05 & 
            as.numeric(as.character(`test results background p-value`)) > 0.05 & 
            as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05)
 nForegroundSelected <- nrow(foregroundSelected)
 
 frequencyTableWithNoCorrection <- matrix(c(nBackgroundSelected, nForegroundSelected, 
-                                           (nrow(data) - nBackgroundSelected),
-                                           (nrow(data) - nForegroundSelected)),
+                                           (nrow(workerPolymorphismBustedPHResults) - nBackgroundSelected),
+                                           (nrow(workerPolymorphismBustedPHResults) - nForegroundSelected)),
                                          nrow = 2,
                                          byrow = TRUE,
                                          dimnames = list("category" = c("selected", "noSelection") ,
@@ -137,6 +112,20 @@ if (fishersExactTest[["p.value"]] <= 0.05) {
 } else {
   print("No signficant difference.")
 }
+
+fishersExactTest <- capture.output(print(fishersExactTest))
+
+writeLines(fishersExactTest, con = file("./Results/bustedPHFisher.csv"))
+
+
+
+
+
+
+
+
+
+
 
 
 
