@@ -102,7 +102,7 @@ To run this script, simply use the command:
 
 This will create two files for each species, one with the longest protein isoforms and one with the longest coding sequence isoforms, in the directory `2_LongestIsoforms`. 
 
-**If you use this step, please cite orthologr as follows:**
+***If you use this step, please cite orthologr as follows:***
 
 Drost et al. 2015. Evidence for Active Maintenance of Phylotranscriptomic Hourglass Patterns in Animal and Plant Embryogenesis. Mol. Biol. Evol. 32 (5): 1221-1231. doi:10.1093/molbev/msv012
 
@@ -129,7 +129,7 @@ To run this step, simply use the command:
 
 This will create a new directory, `./TranslatedData/OutputFiles/`, that contains the translated transcript files. 
 
-If you use Transdecoder, please cite it as:
+***If you use Transdecoder, please cite it as:***
 Haas, B., and A. Papanicolaou. "TransDecoder." (2017).
 
 ## 5. Running Orthofinder:
@@ -141,7 +141,7 @@ To run this step, use the command:
 
 This will infer orthogroups and multiple-sequence alignments of amino acid sequences; MAFFT is used to generate the multiple sequence alignments. Outputs will be found in a new subdirectory of `/FormicidaeMolecularEvolution/`, `./OrthoFinder/fasta/OrthoFinder`.
 
-If you use Orthofinder, please cite it:
+***If you use Orthofinder, please cite it:***
 
   + OrthoFinder’s orthogroup and ortholog inference are described here:
       + Emms, D.M., Kelly, S. OrthoFinder: solving fundamental biases in whole genome comparisons dramatically improves orthogroup inference accuracy. Genome Biol 16, 157 (2015)
@@ -150,7 +150,7 @@ If you use Orthofinder, please cite it:
       + Emms D.M. & Kelly S. STRIDE: Species Tree Root Inference from Gene Duplication Events (2017), Mol Biol Evol 34(12): 3267-3278
       + Emms D.M. & Kelly S. STAG: Species Tree Inference from All Genes (2018), bioRxiv https://doi.org/10.1101/267914
 
-Please also cite MAFFT: 
+***Please also cite MAFFT: ***
 
   + K. Katoh, K. Misawa, K. Kuma, and T. Miyata. 2002. MAFFT: a novel method for rapid multiple sequence alignment based on fast Fourier transform. Nucleic Acids Res. 30(14): 3059-3066. 
   
@@ -283,7 +283,24 @@ Results will be output in the directory `./9_3_BustedPHResults/[labelling prefix
 **BUSTED-PH is currently an unpublished method, with no paper to cite. Please check the [GitHub](https://github.com/veg/hyphy-analyses/tree/master/BUSTED-PH) to see if the method has been published, and cite accordingly.**
 
 
-### Parsing aBSREL results
+### Parsing BUSTED-PH results
+I am interesting in whether there are more or fewer genes under positive selection in association with particular traits, and in the categories of gene that are under selection. To assess these things, you can use the R script `ParsingBustedPHResults.R`. In order to run this analysis, you'll need to have already annotated orthogroups as described in step 11, below. This script:
+
+  + Reads in BUSTED-PH results; 
+  + Converts them from JSON files to a spreadsheet; 
+  + Runs a Fisher's exact test to determine there is a signficiant difference in positive selection between the fore- and background species; 
+  + Uses [topGO](https://bioconductor.org/packages/release/bioc/html/topGO.html) to assess GO term enrichment of positively selected genes. 
+  
+To run this script, use the command:
+```
+Rscript ./scripts/ParsingBustedPHResults.R [full path to BUSTED-PH results] [labelling prefix for this trait]
+```
+
+Results will be output in the directory `./Results/[labelling prefix]`.
+
+***If you use this script, please cite topGO:***
+
+  + Alexa A, Rahnenfuhrer J (2021). topGO: Enrichment Analysis for Gene Ontology. R package version 2.44.0.
 
 ## 10. Testing for relaxed selection with RELAX
 
@@ -295,12 +312,25 @@ As with aBSREL, RELAX requires labelled phylogenies. You can generate these with
 
 RELAX is a method from HYPHY that asks whether the strength of natural selection has been increased or decreased along test branches. In order to run RELAX, as with aSBREL, you'll need a labelled phylogeny and a set of orthogroup sequences. Then, RELAX can be run with the command `./scripts/DataRunningRelax [full path to labelled phylogenies] [prefix used when labelling phylogenies]`.
 
-### 10.2 Parsing RELAX results
+### Parsing RELAX results
 
-I am interested in assessing whether species with a particular trait have more or fewer genes under relaxed selection than expected. Following Schneider, Adams, and Elmer (2019), I will assess this with a one-sided Fisher's exact test. Results from RELAX can be compiled and analyzed using the script `ParsingRelaxResults.R`. 
+I am interesting in whether there are more or fewer genes under relaxed selection in association with particular traits, and in the categories of gene that are under relaxed selection. To assess these things, you can use the R script `ParsingBustedPHResults.R`. In order to run this analysis, you'll need to have already annotated orthogroups as described in step 11, below. This script:
 
+  + Reads in RELAX results; 
+  + Converts them from JSON files to a spreadsheet; 
+  + Runs a Fisher's exact test, following Schneider, Adams, and Elmer (2019), to determine there is a signficiant difference in the rate of relaxed vs. intensified selection on the foreground species; 
+  + Uses [topGO](https://bioconductor.org/packages/release/bioc/html/topGO.html) to assess GO term enrichment of genes under relaxed selection. 
+  
+To run this script, use the command:
+```
+Rscript ./scripts/ParsingRelaxResults.R [full path to BUSTED-PH results] [labelling prefix for this trait]
+```
 
-Schneider, Kevin, Colin E. Adams, and Kathryn R. Elmer. "Parallel selection on ecologically relevant gene functions in the transcriptomes of highly diversifying salmonids." BMC genomics 20.1 (2019): 1-23. 	
+Results will be output in the directory `./Results/[labelling prefix]`.
+
+***If you use this script, please cite topGO:***
+
+  + Alexa A, Rahnenfuhrer J (2021). topGO: Enrichment Analysis for Gene Ontology. R package version 2.44.0.
 
 ## 11. Annotating proteins with InterProScan and annotating orthogroups with KinFin
 If you're interested in drawing conclusions about the function of genes evolving under a particular selection regime, you'll need to get functional annotations. This can be accomplished with a combination of InterProScan, which will annotate individual genes, and KinFin, which will use gene-level annotations to assign a function to whole orthogroups (which are the level of analysis for BUSTED, BUSTED-PH and RELAX).
