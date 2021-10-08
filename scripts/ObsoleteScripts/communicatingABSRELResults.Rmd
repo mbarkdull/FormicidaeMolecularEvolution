@@ -1,0 +1,302 @@
+---
+title: "Assessing significance of aBSREL results"
+author: "Megan Barkdull"
+date: "9/9/2021"
+header-includes:
+   - \usepackage[default]{sourcesanspro}
+   - \usepackage[T1]{fontenc}
+mainfont: SourceSansPro
+output: pdf_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+I am asking the question "do species with a particular trait of interest have more or fewer genes under positive selection than expected by chance?". I am using aBSREL to test each gene for positive selection, and then comparing results between foreground and background species. 
+
+For this report, I'm showing the partial results of an aBSREL run comparing positive selection for species with multilineage colonies (i.e., the species is polygynous, polyandrous, or both) to those with single-lineage colonies. My hypothesis is that species with multilineage colonies should have reduced positive selection, because worker relatedness is reduced, thus weakening kin selection on worker phenotypes. 
+
+## Assessing significance globally
+
+```{r readingData, echo=FALSE, warning=FALSE, include=FALSE}
+library(RJSONIO)
+library(tidyverse)
+library(janitor)
+library(tidytext)
+
+
+# Write a function to read in the aBSREL JSON result file and transform it into a dataframe:
+absrelJSONProcessing <- function(file, analysisType) {
+  # Read in the JSON file:
+  aBSRELJSON <- RJSONIO::fromJSON(content = file)
+  
+  # Create a data frame with the information for each branch tested:
+  aBSRELDataframe <- data.table::rbindlist(aBSRELJSON[["branch attributes"]][["0"]], fill = TRUE, idcol = TRUE)
+  aBSRELDataframe <- subset(aBSRELDataframe, select = -c(`Rate Distributions`))
+  aBSRELDataframe <- distinct (aBSRELDataframe)
+  
+  #Add a column to hold the orthogroup name:
+  orthogroup <- sapply(strsplit(aBSRELJSON[["input"]][["file name"]],"/"), tail, 1)
+  orthogroup <- sapply(strsplit(orthogroup, "_"), `[`, 2)
+  aBSRELDataframe$Orthogroup <- orthogroup
+  
+  # Add a column to label genes as having been part of the foreground or background
+  aBSRELDataframe$ForegroundBackground <- analysisType
+  
+  return(aBSRELDataframe)
+}
+
+# List all of the foreground analysis results files:
+foregroundFiles <- list.files(path = "/Users/meganbarkdull/Projects/FormicidaeMolecularEvolution/9_2_ABSRELResults/multilineage/foreground", pattern = "*.json", full.names = TRUE)
+# Drop any files with file size of zero:
+foregroundFiles <- foregroundFiles[sapply(foregroundFiles, file.size) > 0]
+
+# Make a "Safe" version of the function that will return an error if there is a problem with a particular file:
+possiblyabsrelJSONProcessing <- possibly(absrelJSONProcessing, otherwise = "File empty.")
+# Map the function over all foreground files:
+foregroundaBSRELResults <- map_dfr(foregroundFiles, analysisType = "foreground", possiblyabsrelJSONProcessing)
+
+# Do the same for background files:
+backgroundFiles <- list.files(path = "/Users/meganbarkdull/Projects/FormicidaeMolecularEvolution/9_2_ABSRELResults/multilineage/background", pattern = "*.json", full.names = TRUE)
+# Drop any files with file size of zero:
+backgroundFiles <- backgroundFiles[sapply(backgroundFiles, file.size) > 0]
+
+# Map the function over all background results:
+backgroundaBSRELResults <- map_dfr(backgroundFiles, analysisType = "background", possiblyabsrelJSONProcessing)
+
+# Combine the foreground and background tables:
+allResults <- rbind(backgroundaBSRELResults, foregroundaBSRELResults)
+
+# Remove rows with NAs in the corrected p-value columns
+allResults <- drop_na(allResults, `Corrected P-value`)
+
+# Create a column for species:
+allResults$Species <- sapply(strsplit(allResults$.id, "_"), head, 1)
+```
+
+After reading in the raw aBSREL results, we get a table like this, with a column for gene ID, the correct p-value, the orthogroup to which the gene belongs, and whether this gene is from a foreground or a background species:
+
+``` {r rawTable, echo=FALSE, warning=FALSE}
+selectedRawData <- select(allResults, .id, `Corrected P-value`, Orthogroup, ForegroundBackground)
+selectedRawData <- selectedRawData[order(selectedRawData$`Corrected P-value`),]
+knitr::kable(slice_sample(selectedRawData, n = 10))
+```
+
+So the question is, are there more/fewer foreground genes under positive selection than you'd expect by chance? To assess this, we'll use a permutation test. We'll calculate the true number of foreground genes under positive selection; then, we'll shuffle the foreground/background labels and re-calculated that number After doing that a large number of times, we can assess whether our real data show that more or fewer genes are under positive selection than expected. 
+
+``` {r globalReplicates, echo=FALSE, warning=FALSE}
+# How many significant p-values are on foreground branches?
+ForegroundSignificant <- nrow(filter(allResults, ForegroundBackground == "foreground" & `Corrected P-value` <= 0.05))
+
+# Now I'll use a permutation test to see how extreme my number of significant foreground genes is:
+# If I reshuffle the labels foreground/background, how many significant foreground genes?
+shuffleForeground <- function(allResults) {
+  shuffled <- transform(allResults, ForegroundBackground = sample(ForegroundBackground, replace = FALSE))
+  shuffledForegroundSignificant <- nrow(filter(shuffled, ForegroundBackground == "foreground" & `Corrected P-value` <= 0.05))
+}
+
+# If I shuffle 10000 times, what is my distribution of counts?
+replicates <- replicate(5000, {
+  shuffleForeground(allResults = allResults)
+})
+replicates <- sort(replicates)
+```
+
+The true number of foreground genes under positive selection is `r toString(ForegroundSignificant)`. How does this compare to the permuted data?
+
+``` {r globalHistogram, echo=FALSE, warning=FALSE}
+replicates <- as.data.frame(replicates)
+Bootstrapping <- ggplot(data = replicates, 
+                        mapping = aes(x = replicates)) + 
+  geom_histogram(binwidth = 3) + 
+  geom_vline(xintercept = ForegroundSignificant, 
+             size = 1, 
+             colour = "#FF3721", 
+             linetype = "dashed") + 
+  ggtitle("Null Distribution of Number of Foreground Genes Under Positive Selection") + 
+  labs(x = "Count of foreground genes under positive selection in resample", 
+       y = "Proportion of Resamples") + 
+  theme_bw()
+plot(Bootstrapping)
+
+globalpValue <- (sum(replicates$replicates <= ForegroundSignificant)) / nrow(replicates)
+
+```
+
+Here, the vertical line is our true value, `r toString(ForegroundSignificant)` genes under positive selection. The histogram shows the number of replicates that produced a given number of foreground genes under positive selection. Our true number is quite extreme- none of the permutations produced such a small number of genes under positive selection. We can formalize that statement by getting a p-value (from a one-sided t-test, since I have a specific prediction about the direction of the effect I expect from these data). Here, the p-value is `r toString(globalpValue)`.
+
+## Assessing significance on a per-species basis
+
+This approach is based on Roycroft et al. 2021 ("For each terminal branch, we calculated the mean proportion of sites under positive selection across all genes in aBSREL, to obtain a genome-wide estimate of the proportion of sites under positive selection for each species.").
+
+Here, I'll show what this looks like for the aBSREL runs comparing species with multilineage colonies to species with single lineage colonies. First we calculate the actual proportion of genes that are under positive selection for each species:
+
+``` {r realProportions, echo = FALSE}
+# Group by species, get the count of genes for each species, the number of genes with evidence for positive selection, and turn into a dataframe with one row per species:
+# Remove results with NAs in the original name column; these are internal branches. 
+allResults <- drop_na(allResults, `original name`)
+groupedResults <- allResults %>%
+  group_by(Species) %>%
+  mutate(allGenes = n(),
+            significantGenes = sum(`Corrected P-value` <= 0.05)) %>% 
+  ungroup() %>%
+  select(ForegroundBackground, Species, allGenes, significantGenes) %>% 
+  distinct()
+
+# What proportion of genes are under selection in each species?
+groupedResults$realProportion <- groupedResults$significantGenes / groupedResults$allGenes
+knitr::kable(select(groupedResults, Species, allGenes, significantGenes, realProportion))
+```
+
+Then we need to run a permutation test, to see if the proportion of genes under positive selection for each species is significantly greater or less than we'd expect due to chance. In this case, I'll shuffle the p-values across all genes and recalculate the proportion of significant genes for each species; I'll repeat the shuffling procede 5,000 times. Here are just the first few shuffled results, for *Atta colombica*. You can see that we get a different number of genes with a significant p-value each time we shuffle.   
+
+``` {r permutations, echo = FALSE}
+# Write a function to shuffle the p-values across all of the genes and get a proportion of positively-selected genes for each species:
+groupShuffle <- function(allResults) {
+  # Shuffle the p-values:
+  shuffledResults <- allResults %>%
+    mutate(`Corrected P-value` = sample(`Corrected P-value`, replace = FALSE))
+  
+  # Group by species:
+  shuffledGroupedResults <- shuffledResults %>%
+    group_by(Species) %>%
+    summarise(allGenes = n(),
+              significantGenes = sum(`Corrected P-value` <= 0.05))
+  shuffledGroupedResults <- as.data.frame(shuffledGroupedResults)
+  #row.names(shuffledGroupedResults) <- shuffledGroupedResults$Species
+  # What proportion of genes are under selection in each species?
+  shuffledGroupedResults$Proportion <- shuffledGroupedResults$significantGenes / shuffledGroupedResults$allGenes
+  return(shuffledGroupedResults)
+}
+
+# Now shuffle the p-values 5000 times:
+replicates <- replicate(5000, {
+  groupShuffle(allResults = allResults)
+  },
+  simplify = FALSE)
+
+# Turn the output into a dataframe instead of a list of dataframes:
+replicates <- do.call("rbind", replicates)
+knitr::kable(head(arrange(replicates, Species)))
+```
+
+We can visualize these results with barplots for each species. The bars represent the count of replicates that produced a given proportion of positively selected genes. You can see that the distribution is basically normal. The vertical black lines mark the true proportion of genes under positive selection, which we calculated from our actual aSBREL results. You can see that some species, like *Linepithema humile*, have real proportions that fall in the middle of the distribution of permutations, while others, like *Cephalotes varians*, have real proportions that fall far outside the distribution of permutations. 
+
+``` {r permutationDistributions, echo = FALSE, out.width = "100%"}
+replicates <- merge(replicates, groupedResults, by = "Species")
+
+Permutations <- ggplot(data = replicates, 
+                       mapping = aes(x = Proportion,
+                                     fill = ForegroundBackground)) +
+  geom_histogram(binwidth = 0.0025) +
+  geom_vline(data = groupedResults, 
+             mapping = aes(xintercept = realProportion),
+             colour = "black") +
+  facet_wrap(.~Species) + 
+  ggtitle("Null Distribution of Number of Foreground Genes Under Positive Selection") + 
+  labs(x = "Proportion of genes under positive selection in resample", 
+       y = "Count of Resamples") + 
+  theme_bw() + 
+  theme(legend.position = "bottom")
+
+plot(Permutations)
+```
+
+We can calculate p-values to formally say whether a species has more or fewer genes under positive selection than we'd expect. In this case, since we are looking at species with multilineage colonies vs. those with single-lineage colonies, my prediction was that the species with multilineage colonies would have **fewer genes under positive selection** compared to the others. So, in this case, our p-value is the proportion of permutations that produced fewer genes under positive selection than our real value- we are performing a **one-tailed t-test** here, since I had a specific prediction about the direction in which my real result would differ from the permutations. 
+
+``` {r pValues, echo = FALSE}
+library(RJSONIO)
+library(tidyverse)
+library(janitor)
+library(tidytext)
+
+wideReplicates <- replicates %>%
+  group_by(Species) %>%
+  mutate(row = row_number()) %>%
+  select(Species, Proportion, row) %>%
+  pivot_wider(names_from = Species, values_from = Proportion) %>%
+  select(-row) 
+
+# Make a wide version of the real data, with one column for each species:
+wideReal <- replicates %>%
+  group_by(Species) %>%
+  mutate(row = row_number()) %>%
+  select(Species, realProportion, row) %>%
+  pivot_wider(names_from = Species, values_from = realProportion) %>%
+  select(-row) 
+
+# For each species, use map2 to see how many simulated values are more or less than the real value, basically getting p-values. If the hypothesis is that foreground species have more genes under positive selection, the p-value is in proportionGreaterThan; ifthe hypothesis is that foreground species have fewer genes under positive selection, the p-value is in proportionLessThan:
+perSpeciesPValues <- wideReplicates %>% purrr::map2_df(wideReal,
+                                ~(data.frame(realValue = mean(.y),
+                                             numberGreaterThan = (length(which(.x >= .y))),
+                                             proportionGreaterThan = (length(which(.x >= .y))) / length(.x),
+                                             numberLessThan = (length(which(.x <= .y))),
+                                             proportionLessThan = (length(which(.x <= .y))) / length(.x))),
+                          .id = "Species")
+
+# Add foreground/background labels to the per species p-values:
+perSpeciesPValues <- merge(groupedResults, perSpeciesPValues, by = "Species")
+knitr::kable(select(perSpeciesPValues, Species, proportionLessThan))
+```
+
+Some species have significantly fewer genes under positive selection than expected by chance; for example, *Atta colombica*. Others have a number of genes under positive selection that is reasonably explained just due to chance, like *Formica exsecta*. 
+
+Are species with multilineage colonies more likely to have fewer genes under positive selection than species with single-lineage colonies?
+
+To assess this we can use another permutation test. This time we will use our table of species and their p-values, and will shuffle the foreground/background label across species. Then, we'll see where the actual proportion of foreground species with significantly fewer genes under positive selection falls relative to the simulated distribution. 
+
+``` {r echo = FALSE}
+# What proportion of foreground species have significant results?
+proportionForegroundSpeciesSignificant <- sum(perSpeciesPValues$ForegroundBackground == "foreground" & perSpeciesPValues$proportionLessThan <= 0.05) / sum(perSpeciesPValues$ForegroundBackground == "foreground")
+
+# Is this proportion different than you'd expect by chance?
+speciesShuffle <- function(perSpeciesPValues) {
+  # Shuffle the p-values:
+  shuffledResults <- perSpeciesPValues %>%
+    mutate(ForegroundBackground = sample(ForegroundBackground, replace = FALSE))
+  
+  # Get the proportion of pseudo-foreground species with signficant p-values:
+  proportionForegroundSpeciesSignificant <- sum(shuffledResults$ForegroundBackground == "foreground" & shuffledResults$proportionLessThan <= 0.05) / sum(shuffledResults$ForegroundBackground == "foreground")
+  
+  return(proportionForegroundSpeciesSignificant)
+}
+
+# Replicate the test:
+speciesReplicates <- replicate(10000, {
+  speciesShuffle(perSpeciesPValues = perSpeciesPValues)
+},
+simplify = FALSE)
+speciesReplicates <- do.call("rbind", speciesReplicates)
+speciesReplicates <- as.data.frame(speciesReplicates)
+
+speciesPermutations <- ggplot(data = speciesReplicates, 
+                              mapping = aes(x = V1)) + 
+  geom_histogram(binwidth = 0.01) +
+  ggtitle("Null Distribution of Number of Foreground Species with Significantly Fewer Genes Under Positive Selection") + 
+  labs(x = "Proportion of foreground species with reduced positive selection in resample", 
+       y = "Count of Resamples") + 
+  theme_bw() +
+  geom_vline(mapping = aes(xintercept = proportionForegroundSpeciesSignificant),
+             colour = "black")
+
+plot(speciesPermutations)
+
+```
+
+We can calculate a p-value here with a one-sided t-test: what proportion of replicates produce a greater proportion of foreground species with signficantly fewer genes under positive selection than our actual value? 
+
+``` {r pValue, echo = FALSE}
+# What proportion of replicates are greater than the real value?
+pValue <- (length(which(speciesReplicates$V1 >= proportionForegroundSpeciesSignificant))) / length(speciesReplicates$V1)
+print(pValue)
+```
+
+In this case, our p-value is `r toString(pValue)`. There are more foreground species with significantly fewer positively selected genes, but this result is not significant (for these partial data, which only represent about half of the total genes that will ultimately be tested once aBSREL finishes).
+
+One question I have here is if, because I'm combining two permutation tests, I need to do a correction for multiple hypothesis testing. 
+
+## Phylogenetic PGLS and ANOVA
+
+I'm also thinking of doing phylogenetic PGLS and ANOVA on these data. I'm meeting with Chloe this Friday to talk about how to run those tests. 
