@@ -298,18 +298,24 @@ I would recommend this approach.
 ### 8.4 Parsing results from BUSTED\[S\]
 
 BUSTED\[S\] outputs results in the form of a JSON file. To parse these
-results, you can use the script `ParsingBustedResults.R`. This script
-runs over all of the output files from BUSTED and compiles a table with
-columns for the output filename, the orthogroup number, the p-value
-calculated by BUSTED\[S\], and a verbal description of whether or not
-selection was detected.
+results, you can use the script `ParsingBustedResults.R`. You’ll need to
+have already annotated orthogroups, as described in step 11, below. This
+script: + Reads in BUSTED\[S\] results; + Converts them from JSON files
+to a spreadsheet; + Uses
+[topGO](https://bioconductor.org/packages/release/bioc/html/topGO.html)
+to assess GO term enrichment of genes under positive selection.
 
-To run this script, use the command
+To run this script, use the
+    command:
 
-`ParsingBustedResults.R [full path to BUSTED[S] results directory]`.
+    Rscript ./scripts/ParsingBustedResults.R [full path to BUSTED[S] results] 
 
-The output will be the file `./Results/bustedResults.csv`, which can be
-used for further analyses (for example, GO term enrichment).
+Results will be output in the directory `./Results/`.
+
+***If you use this script, please cite topGO:***
+
+  - Alexa A, Rahnenfuhrer J (2021). topGO: Enrichment Analysis for Gene
+    Ontology. R package version 2.44.0.
 
 ## 9\. Testing for positive selection with BUSTED-PH
 
