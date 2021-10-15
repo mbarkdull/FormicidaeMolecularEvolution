@@ -26,7 +26,6 @@ bustedJSONProcessing <- function(i) {
   # Now run my if else statement:
   # If the p value is less than 0.05, that means there is positive selection. 
   if (bustedResults[["test results"]][["p-value"]] < 0.05) {
-    print("There is evidence for positive selection.")
     orthogoupName <- sapply(strsplit(as.character(i),"/"), tail, 1)
     orthogoupName <- sapply(strsplit(orthogoupName, "\\_"), `[`, 1)
     
@@ -35,7 +34,6 @@ bustedJSONProcessing <- function(i) {
     return(data)
     
   } else {
-    print("No positive selection.")
     orthogoupName <- sapply(strsplit(as.character(i),"/"), tail, 1)
     orthogoupName <- sapply(strsplit(orthogoupName, "\\_"), `[`, 1)
     

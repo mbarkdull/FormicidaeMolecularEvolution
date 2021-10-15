@@ -28,12 +28,10 @@ parsingBustedPH <- function(content) {
   if (result[["test results"]][["p-value"]] <= 0.05) {
     if (result[["test results background"]][["p-value"]] > 0.05) {
       if (result[["test results shared distributions"]][["p-value"]] <= 0.05) {
-        print("Selection is associated with the phenotype / trait")
         textResult <- "Selection is associated with the phenotype / trait"
         data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]], "Yes")
         return(data)
       } else {
-        print("Selection is associated with the phenotype / trait, but there is no significant difference between test and background branches in terms of selective pressure")
         textResult <- "Selection is associated with the phenotype / trait, but there is no significant difference between test and background branches in terms of selective pressure"
         data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]], "No")
       }
@@ -42,17 +40,14 @@ parsingBustedPH <- function(content) {
       #textResult <- "Selection is acting on the branches with the phenotype / trait, but is **also** acting on background branches."
       #data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]])
       if (result[["test results shared distributions"]][["p-value"]] <= 0.05) {
-        print("There is a significant difference between test and background branches in terms of selective pressure")
         textResult <- "There is a significant difference between test and background branches in terms of selective pressure"
         data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]], "Yes")
       } else {
-        print("There is no significant difference between test and background branches in terms of selective pressure")
         textResult <- "There is no significant difference between test and background branches in terms of selective pressure"
         data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]], "No")
       }
     }
   } else {
-    print("There is **no evidence** of episodic diversifying selection on test branches; selection is not associated with phenotype/trait")
     textResult <- "There is **no evidence** of episodic diversifying selection on test branches; selection is not associated with phenotype/trait"
     data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]], "No")
   }
