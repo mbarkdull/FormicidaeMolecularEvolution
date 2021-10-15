@@ -18,7 +18,7 @@ jsonFiles <- sort(jsonFiles, decreasing = TRUE)
 jsonFiles <- jsonFiles[sapply(jsonFiles, file.size) > 0]
 
 relaxJSONProcessing <- function(i) {
-  relaxResult <- fromJSON(file = i)
+  relaxResult <- rjson::fromJSON(file = i)
   if (relaxResult[["test results"]][["p-value"]] < 0.05) {
     if (relaxResult[["test results"]][["relaxation or intensification parameter"]] > 1) {
       data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "Significant difference in selective regime between foreground and background branches", "Intensification of selection along foreground branches")
@@ -153,6 +153,7 @@ freq_table_below_or_above_1 <- matrix(c(length(below1), length(above1),
 
 
 fishersExactTest <- fisher.test(frequencyTableWithNoCorrection)
+fisher.test(frequencyTableWithNoCorrection)
 fisher.test(frequencyTableWithFDR)
 fisher.test(frequencyTableWithBonferroni)
 fisher.test(freq_table_below_or_above_1)
@@ -180,6 +181,10 @@ library(topGO)
 library(tidyverse)
 library(RJSONIO)
 
+print("####################################################################")
+print("###### GO term enrichment on genes under relaxed selection #####")
+print("####################################################################")
+
 # Read in the GO term annotations for each orthogroup, which we obtained from KinFin:
 GOannotations <- read_delim("cluster_domain_annotation.GO.txt", delim = "\t")
 # Subset so we just have orthogroup name and GO domain IDs:
@@ -194,7 +199,8 @@ longAnnotations <- longAnnotations %>%
 wideListAnnotations <- tapply(longAnnotations$domain_id, longAnnotations$orthogroup, function(x)x)
 
 # Define vector that is 1 if gene is significantly DE (`test results p-value` < 0.05) and 0 otherwise:
-significanceInfo <- dplyr::select(relaxResults, orthogroup, pValue)
+significanceInfo <- dplyr::select(relaxResults, orthogroup, pValue, kValue) %>%
+  dplyr::filter(kValue < 1)
 # Set each gene to 1 if adjP < cutoff, 0, otherwise
 pcutoff <- 0.05 
 tmp <- ifelse(significanceInfo$pValue < pcutoff, 1, 0)
@@ -241,8 +247,10 @@ resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNode
 head(resultsFisherCCTable)
 
 # Use the Kolomogorov-Smirnov test:
-geneList <- as.numeric(as.character(relaxResults$pValue))
-names(geneList) <- relaxResults$orthogroup
+significanceInfo <- dplyr::select(relaxResults, orthogroup, pValue, kValue) %>%
+  dplyr::filter(kValue < 1)
+geneList <- as.numeric(as.character(significanceInfo$pValue))
+names(geneList) <- significanceInfo$orthogroup
 # Create topGOData object
 GOdataBP <- new("topGOdata",
                 ontology = "BP",
@@ -283,9 +291,108 @@ goEnrichmentSummaries <- capture.output(print(resultFisherBP),
                                         print(resultKSMF), 
                                         print(resultKSCC))
 
-writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/RelaxGOSummaries.csv", sep = "")))
+writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/RelaxGOSummariesRelaxed.csv", sep = "")))
 
+############# GO Term enrichment for genes under intensified selection #################
 
+print("####################################################################")
+print("###### GO term enrichment on genes under intensified selection #####")
+print("####################################################################")
+
+# Define vector that is 1 if gene is significantly DE (`test results p-value` < 0.05) and 0 otherwise:
+significanceInfo <- dplyr::select(relaxResults, orthogroup, pValue, kValue) %>%
+  dplyr::filter(kValue > 1)
+# Set each gene to 1 if adjP < cutoff, 0, otherwise
+pcutoff <- 0.05 
+tmp <- ifelse(significanceInfo$pValue < pcutoff, 1, 0)
+geneList <- tmp
+
+# Give geneList names:
+names(geneList) <- significanceInfo$orthogroup
+
+# Create the GOdata object:
+GOdataBP <- new("topGOdata",
+                ontology = "BP",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
+resultFisherBP
+resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultFisherBP, topNodes = length(resultFisherBP@score),
+                                 numChar = 120)
+head(resultsFisherBPTable)
+
+GOdataMF <- new("topGOdata",
+                ontology = "MF",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherMF <- runTest(GOdataMF, algorithm = "elim", statistic = "fisher")
+resultFisherMF
+resultsFisherMFTable <- GenTable(GOdataMF, raw.p.value = resultFisherMF, topNodes = length(resultFisherMF@score),
+                                 numChar = 120)
+head(resultsFisherMFTable)
+
+GOdataCC <- new("topGOdata",
+                ontology = "CC",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherCC <- runTest(GOdataCC, algorithm = "elim", statistic = "fisher")
+resultFisherCC
+resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNodes = length(resultFisherCC@score),
+                                 numChar = 120)
+head(resultsFisherCCTable)
+
+# Use the Kolomogorov-Smirnov test:
+significanceInfo <- dplyr::select(relaxResults, orthogroup, pValue, kValue) %>%
+  dplyr::filter(kValue > 1)
+geneList <- as.numeric(as.character(significanceInfo$pValue))
+names(geneList) <- significanceInfo$orthogroup
+# Create topGOData object
+GOdataBP <- new("topGOdata",
+                ontology = "BP",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSBP <- runTest(GOdataBP, algorithm = "weight01", statistic = "ks")
+resultKSBP
+resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
+head(resultKSBPTable)
+
+# Create topGOData object
+GOdataMF <- new("topGOdata",
+                ontology = "MF",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSMF <- runTest(GOdataMF, algorithm = "weight01", statistic = "ks")
+resultKSMF
+resultKSMFTable <- GenTable(GOdataMF, raw.p.value = resultKSMF, topNodes = length(resultKSMF@score), numChar = 120)
+head(resultKSMFTable)
+
+# Create topGOData object
+GOdataCC <- new("topGOdata",
+                ontology = "CC",
+                allGenes = geneList,
+                geneSelectionFun = function(x)x,
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+resultKSCC <- runTest(GOdataCC, algorithm = "weight01", statistic = "ks")
+resultKSCC
+resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
+head(resultKSCCTable)
+
+goEnrichmentSummaries <- capture.output(print(resultFisherBP), 
+                                        print(resultFisherMF), 
+                                        print(resultFisherCC), 
+                                        print(resultKSBP), 
+                                        print(resultKSMF), 
+                                        print(resultKSCC))
+
+writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/RelaxGOSummariesIntensified.csv", sep = "")))
 
 
 
