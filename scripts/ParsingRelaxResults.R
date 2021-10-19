@@ -13,7 +13,7 @@ library(rjson)
 # A significant result of k>1 indicates that selection strength has been intensified along the test branches, and a significant result of k<1 indicates that selection strength has been relaxed along the test branches. (https://stevenweaver.github.io/hyphy-site/methods/selection-methods/)
 
 jsonFiles <- list.files(path = args[1], pattern = "*.json", full.names = TRUE)
-#jsonFiles <- list.files(path = "./10_1_RelaxResults/workerPolymorphism", pattern = "*.json", full.names = TRUE)
+#jsonFiles <- list.files(path = "./10_1_RelaxResults/polygyny", pattern = "*.json", full.names = TRUE)
 jsonFiles <- sort(jsonFiles, decreasing = TRUE)
 jsonFiles <- jsonFiles[sapply(jsonFiles, file.size) > 0]
 
@@ -171,6 +171,38 @@ fisher.test(freq_table_selparam)
 fishersExactTest <- capture.output(print(fishersExactTest))
 
 writeLines(fishersExactTest, con = file(base::paste("./Results/", args[2], "/RelaxFisher.csv", sep = "")))
+
+###############################################
+####### Make some nice plots ##################
+###############################################
+
+relaxResults$shortDescription <-
+  factor(relaxResults$shortDescription,
+         levels = c("Intensification of selection along foreground branches", 
+                    "Relaxation of selection along foreground branches",
+                    "Nonsignificant intensification",
+                    "Nonsignificant relaxation",
+                    "File empty."))
+
+plot <- ggplot(data = filter(relaxResults, 
+                             shortDescription != "File empty."))
+
+plot + 
+  geom_bar(mapping = aes(x = shortDescription)) + 
+  theme_bw() +
+  labs(x = "Selective regime", 
+       y = "Count of orthogroups", 
+       title = "Distribution of selective regimes") +
+  theme(axis.text.x = element_text(angle = 0,
+                                 hjust = 0.5,
+                                 vjust = 1),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank()) + 
+  scale_x_discrete(labels=c("Nonsignificant relaxation"  = "Nonsignificant\nrelaxation" ,
+                            "Intensification of selection along foreground branches" = "Intensification of\nselection along\nforeground branches",
+                            "Nonsignificant intensification" = "Nonsignificant\nintensification",
+                            "Relaxation of selection along foreground branches" = "Relaxation of\nselection along\nforeground branches",
+                            "File empty." = "File empty."))
 
 ###############################################
 ####### Check for GO term enrichment ##########

@@ -126,6 +126,34 @@ fishersExactTest <- capture.output(print(fishersExactTest))
 writeLines(fishersExactTest, con = file(base::paste("./Results/", args[2], "/bustedPHFisher.csv", sep = "")))
 
 ###############################################
+####### Make some nice plots ##################
+###############################################
+
+workerPolymorphismBustedPHResults$selectionOn <-
+  factor(workerPolymorphismBustedPHResults$selectionOn,
+         levels = c("ForegroundOnly",
+                    "BackgroundOnly",
+                    "NoSignificantDifferenceBetweenForegroundAndBackground",
+                    "NoSelection",
+                    NA))
+
+plot <- ggplot(data = workerPolymorphismBustedPHResults)
+
+plot + 
+  geom_bar(mapping = aes(x = selectionOn)) + 
+  theme_bw() +
+  labs(x = "Selective regime", 
+       y = "Count of orthogroups", 
+       title = "Distribution of selective regimes") +
+  theme(axis.text = element_text(angle = 67.5,
+                                 hjust = 1,
+                                 vjust = 1)) + 
+  scale_x_discrete(labels=c("ForegroundOnly" = "Selection on\nforeground only",
+                            "BackgroundOnly" = "Selection on\nbackground only",
+                            "NoSignificantDifferenceBetweenForegroundAndBackground" = "No significant difference\nbetween fore- and\nbackground",
+                            "NoSelection" = "No evidence for selection\non foreground"))
+
+###############################################
 ####### Check for GO term enrichment ##########
 ###############################################
 
