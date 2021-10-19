@@ -145,13 +145,15 @@ plot +
   labs(x = "Selective regime", 
        y = "Count of orthogroups", 
        title = "Distribution of selective regimes") +
-  theme(axis.text = element_text(angle = 67.5,
-                                 hjust = 1,
-                                 vjust = 1)) + 
+  theme(axis.text.x = element_text(angle = 0,
+                                   hjust = 0.5,
+                                   vjust = 1),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank()) + 
   scale_x_discrete(labels=c("ForegroundOnly" = "Selection on\nforeground only",
                             "BackgroundOnly" = "Selection on\nbackground only",
-                            "NoSignificantDifferenceBetweenForegroundAndBackground" = "No significant difference\nbetween fore- and\nbackground",
-                            "NoSelection" = "No evidence for selection\non foreground"))
+                            "NoSignificantDifferenceBetweenForegroundAndBackground" = "No significant\ndifference\nbetween fore- \nand background",
+                            "NoSelection" = "No evidence\nfor selection\non foreground"))
 
 ###############################################
 ####### Check for GO term enrichment ##########
