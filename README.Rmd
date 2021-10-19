@@ -63,6 +63,37 @@ grViz("digraph flowchart {
       ")
 ```
 
+Put more simply:
+
+```{r, echo = FALSE, fig.align = 'center'}
+library(DiagrammeR)
+grViz("digraph flowchart {
+      # node definitions with substituted label text
+      node [fontname = Helvetica, shape = rectangle]        
+      tab1 [label = '@@1']
+      tab2 [label = '@@2']
+      tab3 [label = '@@3']
+      tab4 [label = '@@4']
+      tab5 [label = '@@5']
+      tab6 [label = '@@6']
+
+      
+      # edge definitions with the node IDs
+      tab1 -> tab2 -> tab3 -> tab6; 
+      tab2 -> tab4 -> tab6;
+      tab2 -> tab5 -> tab6;
+      }
+      [1]: 'Clean and prepare sequence data'
+      [2]: 'Identify orthogroups \\n and infer gene trees with Orthofinder'
+      [3]: 'Test for family-level positive selection \\n with BUSTED[S]'
+      [4]: 'Test for positive selection \\n associated with traits \\n with BUSTED-PH'
+      [5]: 'Test for relaxed selection \\n associated with traits \\n with RELAX'
+      [6]: 'Assess GO term enrichment \\n with topGO'
+
+      
+      ")
+```
+
 ### Using this workflow:
 To use this workflow, simply clone this repository onto your own machine. You will run all Bash scripts in the main directory associated with this repository (i.e., in `/FormicidaeMolecularEvolution/`)
 

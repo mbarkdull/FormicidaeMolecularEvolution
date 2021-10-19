@@ -10,6 +10,11 @@ is:
 
 <img src="README_files/figure-gfm/unnamed-chunk-1-1.png" style="display: block; margin: auto;" />
 
+Put more
+simply:
+
+<img src="README_files/figure-gfm/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
+
 ### Using this workflow:
 
 To use this workflow, simply clone this repository onto your own
@@ -191,7 +196,7 @@ in order to create codon-aware alignments with PAL2NAL, we need files
 that contain all of the alignments for each individual
 species.
 
-<img src="README_files/figure-gfm/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
+<img src="README_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
 
 The R script `DataMSA.R` will recombine the Orthofinder outputs so that
 they can be input to PAL2NAL. To run the script, you’ll need to get the
