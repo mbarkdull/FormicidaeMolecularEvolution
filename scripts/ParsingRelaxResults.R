@@ -14,6 +14,8 @@ library(rjson)
 
 jsonFiles <- list.files(path = args[1], pattern = "*.json", full.names = TRUE)
 #jsonFiles <- list.files(path = "./10_1_RelaxResults/polygyny", pattern = "*.json", full.names = TRUE)
+#jsonFiles <- list.files(path = "./10_1_RelaxResults/workerPolymorphism", pattern = "*.json", full.names = TRUE)
+
 jsonFiles <- sort(jsonFiles, decreasing = TRUE)
 jsonFiles <- jsonFiles[sapply(jsonFiles, file.size) > 0]
 
@@ -250,6 +252,36 @@ print("####################################################################")
 print("###### GO term enrichment on genes under relaxed selection #####")
 print("####################################################################")
 
+# Define a function to generate violin plots:
+violinPlotting <- function(fisherResultsTable, inferredGeneAnnotations, plotTitle) {
+  violinData <- full_join(fisherResultsTable, inferredGeneAnnotations, by = c("GO.ID" = "goTerm"))
+  violinData <- full_join(violinData, relaxResults, by = c("orthogroup" = "orthogroup"))
+  
+  ggplot(data = filter(violinData, 
+                       raw.p.value < 0.01),
+         mapping = aes(x = Term,
+                       y = as.numeric(as.character(kValue)))) +
+    geom_violin() +
+    geom_jitter(height = 0, 
+                width = 0.1) +
+    stat_summary(fun = median, 
+                 geom = "crossbar", 
+                 size = 0.2, 
+                 color = "darkred") +
+    geom_hline(yintercept = 1) +
+    theme_bw() +
+    labs(title = plotTitle,
+         x = "Significantly enriched GO terms",
+         y = "Distribution of relaxtion parameters (k values)") +
+    theme(axis.text.x = element_text(angle = 45,
+                                     hjust = 1,
+                                     vjust = 1),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.x = element_blank())
+  
+}
+
+
 # Read in the GO term annotations for each orthogroup, which we obtained from KinFin:
 GOannotations <- read_delim("cluster_domain_annotation.GO.txt", delim = "\t")
 # Subset so we just have orthogroup name and GO domain IDs:
@@ -269,6 +301,7 @@ significanceInfo <- dplyr::select(relaxResults, orthogroup, pValue, kValue)
 pcutoff <- 0.05 
 tmp <- ifelse(significanceInfo$pValue < pcutoff & significanceInfo$kValue < 1, 1, 0)
 geneList <- tmp
+rm(tmp)
 
 # Give geneList names:
 names(geneList) <- significanceInfo$orthogroup
@@ -280,11 +313,20 @@ GOdataBP <- new("topGOdata",
                 geneSelectionFun = function(x)(x == 1),
                 annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
 # Run Fisher's exact test to check for enrichment:
-resultFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
-resultFisherBP
-resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultFisherBP, topNodes = length(resultFisherBP@score),
+resultsFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
+resultsFisherBP
+resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultsFisherBP, topNodes = length(resultsFisherBP@score),
                                  numChar = 120)
 head(resultsFisherBPTable)
+
+# topGO infers additional annotations not present in your input. We want to map these back to their orthogroups. 
+inferredGeneAnnotationsBP <- genesInTerm(GOdataBP)
+inferredGeneAnnotationsBP <- map_dfr(.x = inferredGeneAnnotationsBP,
+        .f = ~ enframe(x = .x,
+                       name = NULL,
+                       value = "orthogroup"),
+        .id = "goTerm")
+
 
 GOdataMF <- new("topGOdata",
                 ontology = "MF",
@@ -297,6 +339,13 @@ resultFisherMF
 resultsFisherMFTable <- GenTable(GOdataMF, raw.p.value = resultFisherMF, topNodes = length(resultFisherMF@score),
                                  numChar = 120)
 head(resultsFisherMFTable)
+inferredGeneAnnotationsMF <- genesInTerm(GOdataMF)
+inferredGeneAnnotationsMF <- map_dfr(.x = inferredGeneAnnotationsMF,
+                                     .f = ~ enframe(x = .x,
+                                                    name = NULL,
+                                                    value = "orthogroup"),
+                                     .id = "goTerm")
+
 
 GOdataCC <- new("topGOdata",
                 ontology = "CC",
@@ -309,6 +358,25 @@ resultFisherCC
 resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNodes = length(resultFisherCC@score),
                                  numChar = 120)
 head(resultsFisherCCTable)
+inferredGeneAnnotationsCC <- genesInTerm(GOdataCC)
+inferredGeneAnnotationsCC <- map_dfr(.x = inferredGeneAnnotationsCC,
+                                     .f = ~ enframe(x = .x,
+                                                    name = NULL,
+                                                    value = "orthogroup"),
+                                     .id = "goTerm")
+
+
+allResultsFisherRelaxed <- bind_rows(resultsFisherBPTable, resultsFisherMFTable, resultsFisherCCTable)
+allInferredAnnotationsRelaxed <- bind_rows(inferredGeneAnnotationsBP, inferredGeneAnnotationsMF, inferredGeneAnnotationsCC)
+
+
+if (length(which(allResultsFisherRelaxed$raw.p.value <= 0.01)) > 0) {
+  violinPlotting(allResultsFisherRelaxed, allInferredAnnotationsRelaxed, plotTitle = "Relaxation parameter distributions across significantly enriched GO terms")
+} else {
+  print("no significant GO terms")
+}
+
+
 
 ##### FIX!!!!!!! #####
 # Use the Kolomogorov-Smirnov test:
@@ -351,7 +419,7 @@ head(resultsFisherCCTable)
 #resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
 #head(resultKSCCTable)
 
-goEnrichmentSummaries <- capture.output(print(resultFisherBP), 
+goEnrichmentSummaries <- capture.output(print(resultsFisherBP), 
                                         print(resultFisherMF), 
                                         print(resultFisherCC))
 
@@ -369,6 +437,7 @@ significanceInfo <- dplyr::select(relaxResults, orthogroup, pValue, kValue)
 pcutoff <- 0.05 
 tmp <- ifelse(significanceInfo$pValue < pcutoff & significanceInfo$kValue > 1, 1, 0)
 geneList <- tmp
+rm(tmp)
 
 # Give geneList names:
 names(geneList) <- significanceInfo$orthogroup
@@ -380,11 +449,17 @@ GOdataBP <- new("topGOdata",
                 geneSelectionFun = function(x)(x == 1),
                 annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
 # Run Fisher's exact test to check for enrichment:
-resultFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
-resultFisherBP
-resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultFisherBP, topNodes = length(resultFisherBP@score),
+resultsFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
+resultsFisherBP
+resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultsFisherBP, topNodes = length(resultsFisherBP@score),
                                  numChar = 120)
 head(resultsFisherBPTable)
+inferredGeneAnnotationsBP <- genesInTerm(GOdataBP)
+inferredGeneAnnotationsBP <- map_dfr(.x = inferredGeneAnnotationsBP,
+                                     .f = ~ enframe(x = .x,
+                                                    name = NULL,
+                                                    value = "orthogroup"),
+                                     .id = "goTerm")
 
 GOdataMF <- new("topGOdata",
                 ontology = "MF",
@@ -397,6 +472,12 @@ resultFisherMF
 resultsFisherMFTable <- GenTable(GOdataMF, raw.p.value = resultFisherMF, topNodes = length(resultFisherMF@score),
                                  numChar = 120)
 head(resultsFisherMFTable)
+inferredGeneAnnotationsMF <- genesInTerm(GOdataMF)
+inferredGeneAnnotationsMF <- map_dfr(.x = inferredGeneAnnotationsMF,
+                                     .f = ~ enframe(x = .x,
+                                                    name = NULL,
+                                                    value = "orthogroup"),
+                                     .id = "goTerm")
 
 GOdataCC <- new("topGOdata",
                 ontology = "CC",
@@ -409,7 +490,25 @@ resultFisherCC
 resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNodes = length(resultFisherCC@score),
                                  numChar = 120)
 head(resultsFisherCCTable)
+inferredGeneAnnotationsCC <- genesInTerm(GOdataCC)
+inferredGeneAnnotationsCC <- map_dfr(.x = inferredGeneAnnotationsCC,
+                                     .f = ~ enframe(x = .x,
+                                                    name = NULL,
+                                                    value = "orthogroup"),
+                                     .id = "goTerm")
 
+allResultsFisherIntensified <- bind_rows(resultsFisherBPTable, resultsFisherMFTable, resultsFisherCCTable)
+allInferredAnnotationsIntensified <- bind_rows(inferredGeneAnnotationsBP, inferredGeneAnnotationsMF, inferredGeneAnnotationsCC)
+
+if (length(which(allResultsFisherIntensified$raw.p.value <= 0.01)) > 0) {
+  violinPlotting(allResultsFisherIntensified, allInferredAnnotationsIntensified, plotTitle = "Relaxation parameter distributions across significantly enriched GO terms")
+} else {
+  print("no significant GO terms")
+}
+
+
+
+##### FIX!!!!!!! #####
 # Use the Kolomogorov-Smirnov test:
 #significanceInfo <- dplyr::select(relaxResults, orthogroup, pValue, kValue) %>%
   #dplyr::filter(kValue > 1)
@@ -448,25 +547,9 @@ head(resultsFisherCCTable)
 #resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
 #head(resultKSCCTable)
 
-goEnrichmentSummaries <- capture.output(print(resultFisherBP), 
+goEnrichmentSummaries <- capture.output(print(resultsFisherBP), 
                                         print(resultFisherMF), 
                                         print(resultFisherCC))
 
 writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/RelaxGOSummariesIntensified.csv", sep = "")))
 
-############## Generate a violin plot ###################
-
-violinData <- full_join(resultsFisherBPTable, GOannotations, by = c("GO.ID" = "domain_id"))
-violinData <- full_join(violinData, relaxResults, by = c("#cluster_id" = "orthogroup"))
-
-ggplot(data = filter(violinData, 
-                     raw.p.value < 0.01),
-       mapping = aes(x = Term,
-                     y = as.numeric(as.character(kValue)))) +
-  geom_violin() +
-  geom_jitter(height = 0, 
-              width = 0.1) +
-  stat_summary(fun = median, 
-               geom = "crossbar", 
-               size = 0.2, 
-               color = "darkred")
