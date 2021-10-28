@@ -83,6 +83,21 @@ workerPolymorphismBustedPHResults <- workerPolymorphismBustedPHResults %>% mutat
                                as.numeric(as.character(`test results p-value`)) > 0.05 &
                                  as.numeric(as.character(`test results background p-value`)) > 0.05  ~ "NoSelection",
                                as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifferenceBetweenForegroundAndBackground"))
+
+workerPolymorphismBustedPHResults$`test results p-value` <- as.numeric(as.character(workerPolymorphismBustedPHResults$`test results p-value`))
+workerPolymorphismBustedPHResults$`test results background p-value` <- as.numeric(as.character(workerPolymorphismBustedPHResults$`test results background p-value`))
+workerPolymorphismBustedPHResults$`test results shared distributions p-value` <- as.numeric(as.character(workerPolymorphismBustedPHResults$`test results shared distributions p-value`))
+
+workerPolymorphismBustedPHResults %>%
+  dplyr::select(orthogroup, `test results p-value`, `test results background p-value`, `test results shared distributions p-value`) %>%
+  dplyr::arrange(`test results p-value`) %>%
+  dplyr::filter(`test results p-value` > 0.001) %>%
+  dplyr::filter(`test results background p-value` < 0.06) %>%
+  dplyr::filter(`test results background p-value` > 0.04) %>%
+  dplyr::filter(`test results shared distributions p-value` < 0.06) %>%
+  head() %>%
+  gt::gt()
+
 # Create an output directory:
 dir.create("./Results/")
 dir.create(base::paste("./Results/", args[2], sep = ""))
@@ -137,7 +152,7 @@ workerPolymorphismBustedPHResults$selectionOn <-
                     "NoSelection",
                     NA))
 
-plot <- ggplot(data = workerPolymorphismBustedPHResults)
+plot <- ggplot(data = dplyr::filter(workerPolymorphismBustedPHResults, !is.na(workerPolymorphismBustedPHResults$selectionOn)))
 
 plot + 
   geom_bar(mapping = aes(x = selectionOn)) + 
@@ -232,56 +247,53 @@ head(resultsFisherCCTable)
 # Use the Kolomogorov-Smirnov test:
 
 # Define vector that is 1 if gene is significantly DE (`test results p-value` < 0.05) and 0 otherwise:
-significanceInfo <- dplyr::select(workerPolymorphismBustedPHResults, orthogroup, `test results p-value`, `test results background p-value`, `test results shared distributions p-value`)
+#significanceInfo <- dplyr::select(workerPolymorphismBustedPHResults, orthogroup, `test results p-value`, `test results background p-value`, `test results shared distributions p-value`)
 # Set each gene to 1 if adjP < cutoff, 0, otherwise
-significanceInfo <- filter(significanceInfo, significanceInfo$`test results p-value` < 0.05 & 
-                             significanceInfo$`test results background p-value` > 0.05 & 
-                             significanceInfo$`test results shared distributions p-value` < 0.05)
+#significanceInfo <- filter(significanceInfo, significanceInfo$`test results p-value` < 0.05 & 
+                            # significanceInfo$`test results background p-value` > 0.05 & 
+                           #  significanceInfo$`test results shared distributions p-value` < 0.05)
 
-geneList <- as.numeric(as.character(significanceInfo$`test results p-value`))
+#geneList <- as.numeric(as.character(significanceInfo$`test results p-value`))
 
 # Give geneList names:
-names(geneList) <- significanceInfo$orthogroup
+#names(geneList) <- significanceInfo$orthogroup
 
 # Create topGOData object
-GOdataBP <- new("topGOdata",
-                ontology = "BP",
-                allGenes = geneList,
-                geneSelectionFun = function(x)x,
-                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
-resultKSBP <- runTest(GOdataBP, algorithm = "weight01", statistic = "ks")
-resultKSBP
-resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
-head(resultKSBPTable)
+#GOdataBP <- new("topGOdata",
+                #ontology = "BP",
+                #allGenes = geneList,
+                #geneSelectionFun = function(x)x,
+                #annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+#resultKSBP <- runTest(GOdataBP, algorithm = "weight01", statistic = "ks")
+#resultKSBP
+#resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
+#head(resultKSBPTable)
 
 # Create topGOData object
-GOdataMF <- new("topGOdata",
-                ontology = "MF",
-                allGenes = geneList,
-                geneSelectionFun = function(x)x,
-                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
-resultKSMF <- runTest(GOdataMF, algorithm = "weight01", statistic = "ks")
-resultKSMF
-resultKSMFTable <- GenTable(GOdataMF, raw.p.value = resultKSMF, topNodes = length(resultKSMF@score), numChar = 120)
-head(resultKSMFTable)
+#GOdataMF <- new("topGOdata",
+             #   ontology = "MF",
+             #   allGenes = geneList,
+             #   geneSelectionFun = function(x)x,
+             #   annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+#resultKSMF <- runTest(GOdataMF, algorithm = "weight01", statistic = "ks")
+#resultKSMF
+#resultKSMFTable <- GenTable(GOdataMF, raw.p.value = resultKSMF, topNodes = length(resultKSMF@score), numChar = 120)
+#head(resultKSMFTable)
 
 # Create topGOData object
-GOdataCC <- new("topGOdata",
-                ontology = "CC",
-                allGenes = geneList,
-                geneSelectionFun = function(x)x,
-                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
-resultKSCC <- runTest(GOdataCC, algorithm = "weight01", statistic = "ks")
-resultKSCC
-resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
-head(resultKSCCTable)
+#GOdataCC <- new("topGOdata",
+               # ontology = "CC",
+               # allGenes = geneList,
+               # geneSelectionFun = function(x)x,
+               # annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+#resultKSCC <- runTest(GOdataCC, algorithm = "weight01", statistic = "ks")
+#resultKSCC
+#resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
+#head(resultKSCCTable)
 
 goEnrichmentSummaries <- capture.output(print(resultFisherBP), 
                                         print(resultFisherMF), 
-                                        print(resultFisherCC), 
-                                        print(resultKSBP), 
-                                        print(resultKSMF), 
-                                        print(resultKSCC))
+                                        print(resultFisherCC))
 
 writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/bustedPHGOSummariesForeground.csv", sep = "")))
 
@@ -354,56 +366,53 @@ head(resultsFisherCCTable)
 # Use the Kolomogorov-Smirnov test:
 
 # Define vector that is 1 if gene is significantly DE (`test results p-value` < 0.05) and 0 otherwise:
-significanceInfo <- dplyr::select(workerPolymorphismBustedPHResults, orthogroup, `test results p-value`, `test results background p-value`, `test results shared distributions p-value`)
+#significanceInfo <- dplyr::select(workerPolymorphismBustedPHResults, orthogroup, `test results p-value`, `test results background p-value`, `test results shared distributions p-value`)
 # Set each gene to 1 if adjP < cutoff, 0, otherwise
-significanceInfo <- filter(significanceInfo, significanceInfo$`test results p-value` > 0.05 & 
-                             significanceInfo$`test results background p-value` < 0.05 & 
-                             significanceInfo$`test results shared distributions p-value` < 0.05)
+#significanceInfo <- filter(significanceInfo, significanceInfo$`test results p-value` > 0.05 & 
+                           #  significanceInfo$`test results background p-value` < 0.05 & 
+                           #  significanceInfo$`test results shared distributions p-value` < 0.05)
 
-geneList <- as.numeric(as.character(significanceInfo$`test results background p-value`))
+#geneList <- as.numeric(as.character(significanceInfo$`test results background p-value`))
 
 # Give geneList names:
-names(geneList) <- significanceInfo$orthogroup
+#names(geneList) <- significanceInfo$orthogroup
 
 # Create topGOData object
-GOdataBP <- new("topGOdata",
-                ontology = "BP",
-                allGenes = geneList,
-                geneSelectionFun = function(x)x,
-                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
-resultKSBP <- runTest(GOdataBP, algorithm = "weight01", statistic = "ks")
-resultKSBP
-resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
-head(resultKSBPTable)
+#GOdataBP <- new("topGOdata",
+              #  ontology = "BP",
+              #  allGenes = geneList,
+              #  geneSelectionFun = function(x)x,
+              #  annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+#resultKSBP <- runTest(GOdataBP, algorithm = "weight01", statistic = "ks")
+#resultKSBP
+#resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
+#head(resultKSBPTable)
 
 # Create topGOData object
-GOdataMF <- new("topGOdata",
-                ontology = "MF",
-                allGenes = geneList,
-                geneSelectionFun = function(x)x,
-                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
-resultKSMF <- runTest(GOdataMF, algorithm = "weight01", statistic = "ks")
-resultKSMF
-resultKSMFTable <- GenTable(GOdataMF, raw.p.value = resultKSMF, topNodes = length(resultKSMF@score), numChar = 120)
-head(resultKSMFTable)
+#GOdataMF <- new("topGOdata",
+               # ontology = "MF",
+               # allGenes = geneList,
+               # geneSelectionFun = function(x)x,
+               # annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+#resultKSMF <- runTest(GOdataMF, algorithm = "weight01", statistic = "ks")
+#resultKSMF
+#resultKSMFTable <- GenTable(GOdataMF, raw.p.value = resultKSMF, topNodes = length(resultKSMF@score), numChar = 120)
+#head(resultKSMFTable)
 
 # Create topGOData object
-GOdataCC <- new("topGOdata",
-                ontology = "CC",
-                allGenes = geneList,
-                geneSelectionFun = function(x)x,
-                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
-resultKSCC <- runTest(GOdataCC, algorithm = "weight01", statistic = "ks")
-resultKSCC
-resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
-head(resultKSCCTable)
+#GOdataCC <- new("topGOdata",
+              #  ontology = "CC",
+               # allGenes = geneList,
+               # geneSelectionFun = function(x)x,
+              #  annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+#resultKSCC <- runTest(GOdataCC, algorithm = "weight01", statistic = "ks")
+#resultKSCC
+#resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
+#head(resultKSCCTable)
 
 goEnrichmentSummaries <- capture.output(print(resultFisherBP), 
                                         print(resultFisherMF), 
-                                        print(resultFisherCC), 
-                                        print(resultKSBP), 
-                                        print(resultKSMF), 
-                                        print(resultKSCC))
+                                        print(resultFisherCC))
 
 writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/bustedPHGOSummariesBackground.csv", sep = "")))
 
