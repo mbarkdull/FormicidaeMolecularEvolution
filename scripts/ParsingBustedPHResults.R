@@ -76,13 +76,36 @@ workerPolymorphismBustedPHResults <- bustedPHDataframeProcessing(workerPolymorph
 workerPolymorphismBustedPHResults <- workerPolymorphismBustedPHResults %>% mutate(selectionOn =
                      case_when(as.numeric(as.character(`test results p-value`)) <= 0.05 & 
                                  as.numeric(as.character(`test results background p-value`)) > 0.05 &
-                                 as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05 ~ "ForegroundOnly", 
-                                as.numeric(as.character(`test results p-value`)) > 0.05 &
-                                   as.numeric(as.character(`test results background p-value`)) <= 0.05 &
-                                   as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05 ~ "BackgroundOnly", 
-                               as.numeric(as.character(`test results p-value`)) > 0.05 &
-                                 as.numeric(as.character(`test results background p-value`)) > 0.05  ~ "NoSelection",
-                               as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifferenceBetweenForegroundAndBackground"))
+                                 as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05 ~ "ForegroundOnly",
+                               
+                               as.numeric(as.character(`test results p-value`)) <= 0.05 & 
+                                 as.numeric(as.character(`test results background p-value`)) <= 0.05 &
+                                 as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05 ~ "SelectionOnBoth",
+                               
+                               as.numeric(as.character(`test results p-value`)) <= 0.05 & 
+                                 as.numeric(as.character(`test results background p-value`)) <= 0.05 &
+                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifference",
+                               
+                               as.numeric(as.character(`test results p-value`)) <= 0.05 & 
+                                 as.numeric(as.character(`test results background p-value`)) > 0.05 &
+                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifference",
+                               
+                               as.numeric(as.character(`test results p-value`)) > 0.05 & 
+                                 as.numeric(as.character(`test results background p-value`)) <= 0.05 &
+                                 as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05 ~ "BackgroundOnly",
+                               
+                               as.numeric(as.character(`test results p-value`)) > 0.05 & 
+                                 as.numeric(as.character(`test results background p-value`)) <= 0.05 &
+                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifference",
+                               
+                               as.numeric(as.character(`test results p-value`)) > 0.05 & 
+                                 as.numeric(as.character(`test results background p-value`)) > 0.05 &
+                                 as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05 ~ "NoEvidenceOfSelection",
+                               
+                               as.numeric(as.character(`test results p-value`)) > 0.05 & 
+                                 as.numeric(as.character(`test results background p-value`)) > 0.05 &
+                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifference"))
+
 
 workerPolymorphismBustedPHResults$`test results p-value` <- as.numeric(as.character(workerPolymorphismBustedPHResults$`test results p-value`))
 workerPolymorphismBustedPHResults$`test results background p-value` <- as.numeric(as.character(workerPolymorphismBustedPHResults$`test results background p-value`))
@@ -148,14 +171,23 @@ workerPolymorphismBustedPHResults$selectionOn <-
   factor(workerPolymorphismBustedPHResults$selectionOn,
          levels = c("ForegroundOnly",
                     "BackgroundOnly",
-                    "NoSignificantDifferenceBetweenForegroundAndBackground",
-                    "NoSelection",
-                    NA))
+                    "NoSignificantDifference",
+                    "NoEvidenceOfSelection",
+                    "SelectionOnBoth"))
 
 plot <- ggplot(data = dplyr::filter(workerPolymorphismBustedPHResults, !is.na(workerPolymorphismBustedPHResults$selectionOn)))
 
 plot + 
   geom_bar(mapping = aes(x = selectionOn)) + 
+  geom_linerange(aes(xmin = 1, 
+                     xmax = 2, 
+                     y = (1.75 * length(which(selectionOn == "ForegroundOnly")))), 
+                 color = "grey26", 
+                 size = 0.3) +
+  geom_text(aes(x = 1.5, 
+                y = (2.25 * length(which(selectionOn == "ForegroundOnly"))),
+                label = paste("p-value = ", formatC(fishersExactTest[["p.value"]], format = "e", digits = 2), sep = "")),
+            stat = "unique") +
   theme_bw() +
   labs(x = "Selective regime", 
        y = "Count of orthogroups", 
@@ -167,8 +199,11 @@ plot +
         panel.grid.major.x = element_blank()) + 
   scale_x_discrete(labels=c("ForegroundOnly" = "Selection on\nforeground only",
                             "BackgroundOnly" = "Selection on\nbackground only",
-                            "NoSignificantDifferenceBetweenForegroundAndBackground" = "No significant\ndifference\nbetween fore- \nand background",
-                            "NoSelection" = "No evidence\nfor selection\non foreground"))
+                            "NoSignificantDifference" = "No significant\ndifference\nbetween fore- \nand background",
+                            "NoEvidenceOfSelection" = "No evidence\nfor selection",
+                            "SelectionOnBoth" = "Selection on\nboth fore-\nand background"))
+
+ggsave(filename = "barPlotSelectionBustedPH.png", path = base::paste("./Results/", args[2], "/", sep = ""))
 
 ###############################################
 ####### Check for GO term enrichment ##########
