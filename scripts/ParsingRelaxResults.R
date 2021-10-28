@@ -376,7 +376,7 @@ if (length(which(allResultsFisherRelaxed$raw.p.value <= 0.01)) > 0) {
   print("no significant GO terms")
 }
 
-
+ggsave(filename = "violinRelaxedSelection.png", path = base::paste("./Results/", args[2], "/", sep = ""))
 
 ##### FIX!!!!!!! #####
 # Use the Kolomogorov-Smirnov test:
