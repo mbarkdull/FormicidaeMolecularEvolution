@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Run with something like:
+# ./scripts/subsetBUSTEDPH /workdir/mb2337/FormicidaeMolecularEvolution/9_1_LabelledPhylogenies/herbivory/ herbivory /workdir/mb2337/FormicidaeMolecularEvolution/nitrogenOrthogroups.txt 
+
+# Export required paths:
+export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
+
+# Make a directory for BUSTED[S] outputs:
+mkdir ./9_3_BustedPHResults
+mkdir ./9_3_BustedPHResults/$2
+
+# Add HyPhy to your path:
+module load gcc/7.3.0
+export PATH=/programs/hyphy-20210923/bin:$PATH
+cd ./9_3_BustedPHResults
+git clone https://github.com/veg/hyphy-analyses.git
+cd ../
+
+cp $3 fileList.txt
+#ls -hSr tmp | sort > fileList.txt
+
+while read -r line;
+do
+  export orthogroupNumber=$line
+  export treeFile=$2"Labelled_"$orthogroupNumber"_tree.txt"
+  export catFile="./9_3_BustedPHResults/"$prefix"/"$prefix"_"$orthogroupNumber"_BUSTEDPH.fas"
+  export cdsFile="./8_2_RemovedStops/cleaned_"$orthogroupNumber"_cds.fasta"
+
+  if [ -f "$catFile" ]; then
+      echo "$catFile exists; BUSTED-PH already performed on this orthogroup."
+
+  else
+    if [ -f "$1$treeFile" ]; then
+        echo "$1$treeFile exists."
+        if [ -f "$cdsFile" ]; then
+            echo "$cdsFile exists."
+            cat $cdsFile $1$treeFile >> "./9_3_BustedPHResults/"$2"/"$2"_"$orthogroupNumber"_BUSTEDPH.fas"
+            export inputFile="./9_3_BustedPHResults/"$2"/"$2"_"$orthogroupNumber"_BUSTEDPH.fas"
+            # HYPHYMPI /workdir/mb2337/FormicidaeMolecularEvolution/9_3_BustedPHResults/hyphy-analyses/BUSTED-PH/BUSTED-PH.bf --alignment ./9_3_BustedPHResults/workerPolymorphism/workerPolymorphism_OG0013357_BUSTEDPH.fas --srv Yes
+            HYPHYMP /workdir/mb2337/FormicidaeMolecularEvolution/9_3_BustedPHResults/hyphy-analyses/BUSTED-PH/BUSTED-PH.bf --alignment $inputFile --srv Yes
+        else
+            echo "."
+        fi
+    else
+        echo "."
+    fi
+  fi
+
+done < fileList.txt
