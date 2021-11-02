@@ -159,13 +159,23 @@ if (fishersExactTest[["p.value"]] <= 0.05) {
   print("No signficant difference.")
 }
 
-fishersExactTest <- capture.output(print(fishersExactTest))
+fishersExactTestPrint <- capture.output(print(fishersExactTest))
 
-writeLines(fishersExactTest, con = file(base::paste("./Results/", args[2], "/bustedPHFisher.csv", sep = "")))
+writeLines(fishersExactTestPrint, con = file(base::paste("./Results/", args[2], "/bustedPHFisher.csv", sep = "")))
 
 ###############################################
 ####### Make some nice plots ##################
 ###############################################
+
+print(fishersExactTest[["p.value"]])
+
+pValue <- if (fishersExactTest[["p.value"]] < 0.000001) {
+  formatC(fishersExactTest[["p.value"]], format = "e", digits = 2)
+} else {
+  round(fishersExactTest[["p.value"]], digits = 3)
+}
+
+print(pValue)
 
 workerPolymorphismBustedPHResults$selectionOn <-
   factor(workerPolymorphismBustedPHResults$selectionOn,
@@ -186,7 +196,7 @@ plot +
                  size = 0.3) +
   geom_text(aes(x = 1.5, 
                 y = (2.25 * length(which(selectionOn == "ForegroundOnly"))),
-                label = paste("p-value = ", formatC(fishersExactTest[["p.value"]], format = "e", digits = 2), sep = "")),
+                label = paste("p-value = ", pValue, sep = "")),
             stat = "unique") +
   theme_bw() +
   labs(x = "Selective regime", 
@@ -204,6 +214,13 @@ plot +
                             "SelectionOnBoth" = "Selection on\nboth fore-\nand background"))
 
 ggsave(filename = "barPlotSelectionBustedPH.png", path = base::paste("./Results/", args[2], "/", sep = ""))
+
+plot + 
+  geom_point(mapping = aes(x = `test results p-value`,
+                           y = `test results background p-value`,
+                           color = `test results shared distributions p-value`)) +
+  geom_vline(xintercept = 0.05) +
+  geom_hline(yintercept = 0.05)
 
 ###############################################
 ####### Check for GO term enrichment ##########
