@@ -18,11 +18,10 @@ library(rjson)
 jsonFiles <- list.files(path = args[1], pattern = "*.json", full.names = TRUE)
 #jsonFiles <- list.files(path = "./8_3_BustedResults", pattern = "*.json", full.names = TRUE)
 jsonFiles <- sort(jsonFiles, decreasing = TRUE)
-# bustedResult <- fromJSON(file = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/8_3_BustedResults/OG0013390_busted.json")
-
+# bustedResult <- rjson::fromJSON(file = "./8_3_BustedResults/OG0000067_busted.json")
 # Write a function that will process each individual json file and extract the file name, orthogroup number, p-value, and return a text description of the p-value:
 bustedJSONProcessing <- function(i) {
-  bustedResults <- fromJSON(file = i)
+  bustedResults <- rjson::fromJSON(file = i)
   # Now run my if else statement:
   # If the p value is less than 0.05, that means there is positive selection. 
   if (bustedResults[["test results"]][["p-value"]] < 0.05) {
@@ -30,7 +29,12 @@ bustedJSONProcessing <- function(i) {
     orthogoupName <- sapply(strsplit(orthogoupName, "\\_"), `[`, 1)
     
     # Construct a vector of data containing the file name, the orthogroup number, the p-value, and the text "yes, evidence for positive selection":
-    data <- c(bustedResults[["input"]][["file name"]], orthogoupName, bustedResults[["test results"]][["p-value"]], "yes, BUSTED found evidence for positive selection")
+    data <- c(bustedResults[["input"]][["file name"]], 
+              orthogoupName, 
+              bustedResults[["test results"]][["p-value"]], 
+              "yes, BUSTED found evidence for positive selection", 
+              bustedResults[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["omega"]],
+              bustedResults[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["proportion"]])
     return(data)
     
   } else {
@@ -38,7 +42,12 @@ bustedJSONProcessing <- function(i) {
     orthogoupName <- sapply(strsplit(orthogoupName, "\\_"), `[`, 1)
     
     # Construct a vector of data containing the file name, the orthogroup number, the p-value, and the text "no evidence for positive selection":
-    data <- c(bustedResults[["input"]][["file name"]], orthogoupName, bustedResults[["test results"]][["p-value"]], "no evidence for positive selection from BUSTED")
+    data <- c(bustedResults[["input"]][["file name"]], 
+              orthogoupName, 
+              bustedResults[["test results"]][["p-value"]], 
+              "no evidence for positive selection from BUSTED", 
+              bustedResults[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["omega"]],
+              bustedResults[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["proportion"]])
     return(data)
   }
 }
@@ -49,8 +58,10 @@ bustedResults <- map(jsonFiles, possiblyBustedJSONProcessing)
 
 # Convert the results to a dataframe:
 bustedResults <- as.data.frame(do.call(rbind, bustedResults))   
-bustedResults$V3 <- as.numeric(as.character(bustedResults$V3), scientific = FALSE)
-colnames(bustedResults) <- c("file", "orthogroup", "test results p-value", "selectionOn")
+colnames(bustedResults) <- c("file", "orthogroup", "test results p-value", "selectionOn", "omega3", "proportionOfSitesUnderSelection")
+bustedResults$`test results p-value` <- as.numeric(bustedResults$`test results p-value`)
+bustedResults$omega3 <- as.numeric(bustedResults$omega3)
+bustedResults$proportionOfSitesUnderSelection <- as.numeric(bustedResults$proportionOfSitesUnderSelection)
 
 # Get the number of genes with and without positive selection:
 numberPositive <- sum(bustedResults$selectionOn == "yes, BUSTED found evidence for positive selection")
@@ -61,6 +72,28 @@ percentPositive <- (numberPositive / (numberPositive + numberNone))*100
 dir.create("./Results")
 # Export the results:
 write_csv(bustedResults, "./Results/bustedResults.csv")
+
+#### Make a heat map of p-values vs. omega3 values, a la https://github.com/veg/hyphy/issues/737 ###
+
+d <- ggplot(filter(bustedResults, `test results p-value` <= 0.05), 
+            mapping = aes(x = proportionOfSitesUnderSelection, 
+                          y = omega3))
+
+d + 
+  geom_hex() + 
+  scale_fill_gradient(trans = "log10")
+
+d + 
+  geom_hex(bins = 40) + 
+  scale_fill_gradient(trans = "log10",
+                      low = "#ccf0ed",
+                      high = "#014a44") +
+  scale_x_log10() + 
+  scale_y_log10() +
+  labs(x = "Proportion of sites in the gene that are under selection",
+       y = "Strength of selection (omega)",
+       fill = "Count of genes") +
+  theme_bw()
 
 ###############################################
 ####### Check for GO term enrichment ##########
@@ -105,6 +138,7 @@ resultFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
 resultFisherBP
 resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultFisherBP, topNodes = length(resultFisherBP@score),
                                  numChar = 120)
+
 head(resultsFisherBPTable)
 GOdataMF <- new("topGOdata",
                 ontology = "MF",
@@ -143,6 +177,13 @@ resultKSBP
 resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
 head(resultKSBPTable)
 
+resultKSBPTable %>%
+  head(n = 7) %>%
+  dplyr::select(GO.ID, Term, raw.p.value) %>%
+  gt::gt() %>%
+  gt::tab_header(
+    title = "Biological Process GO terms enriched across ants")
+
 # Create topGOData object
 GOdataMF <- new("topGOdata",
                 ontology = "MF",
@@ -174,6 +215,14 @@ goEnrichmentSummaries <- capture.output(print(resultFisherBP),
 
 writeLines(goEnrichmentSummaries, con = file("./Results/bustedGOSummaries.csv"))
 
+################## Generate some violin plots ###############################
 
+
+#fullData <- inner_join(resultKSBPTable, GOannotations, by = c("GO.ID" = "domain_id"))
+#fullData <- inner_join(fullData, bustedResults, by = c("#cluster_id" = "orthogroup"))
+
+#ggplot(data = filter(fullData, raw.p.value < 0.01)) +
+  #geom_violin(mapping = aes(x = Term,
+                            #y = `test results p-value`))
 
 
