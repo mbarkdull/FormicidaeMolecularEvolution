@@ -432,7 +432,7 @@ goEnrichmentSummaries <- capture.output(print(resultsFisherBP),
                                         print(resultFisherMF), 
                                         print(resultFisherCC))
 
-writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/RelaxGOSummariesRelaxed.csv", sep = "")))
+writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/", args[2], "RelaxGOSummariesRelaxed.csv", sep = "")))
 
 ############# GO Term enrichment for genes under intensified selection #################
 
