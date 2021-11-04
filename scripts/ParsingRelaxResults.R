@@ -239,6 +239,15 @@ ggplot(data = filter(relaxResults,
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank())
 
+relaxResults$pValue <- as.numeric(relaxResults$pValue)
+relaxResults$kValue <- as.numeric(relaxResults$kValue)
+
+ggplot(data = relaxResults) +
+  geom_hex(mapping = aes(x = pValue,
+                         y = kValue),
+           bins = 50) +
+  geom_vline(xintercept = 0.05)
+
 ###############################################
 ####### Check for GO term enrichment ##########
 ###############################################
@@ -372,11 +381,11 @@ allInferredAnnotationsRelaxed <- bind_rows(inferredGeneAnnotationsBP, inferredGe
 
 if (length(which(allResultsFisherRelaxed$raw.p.value <= 0.01)) > 0) {
   violinPlotting(allResultsFisherRelaxed, allInferredAnnotationsRelaxed, plotTitle = "Relaxation parameter distributions across significantly enriched GO terms")
+  ggsave(filename = paste(args[2], "violinRelaxedSelection.png", sep = ""), path = base::paste("./Results/", args[2], "/", sep = ""))
 } else {
   print("no significant GO terms")
 }
 
-ggsave(filename = "violinRelaxedSelection.png", path = base::paste("./Results/", args[2], "/", sep = ""))
 
 ##### FIX!!!!!!! #####
 # Use the Kolomogorov-Smirnov test:
@@ -502,6 +511,7 @@ allInferredAnnotationsIntensified <- bind_rows(inferredGeneAnnotationsBP, inferr
 
 if (length(which(allResultsFisherIntensified$raw.p.value <= 0.01)) > 0) {
   violinPlotting(allResultsFisherIntensified, allInferredAnnotationsIntensified, plotTitle = "Relaxation parameter distributions across significantly enriched GO terms")
+  ggsave(filename = paste(args[2], "violinIntensifiedSelection.png", sep = ""), path = base::paste("./Results/", args[2], "/", sep = ""))
 } else {
   print("no significant GO terms")
 }
