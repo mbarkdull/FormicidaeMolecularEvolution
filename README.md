@@ -13,6 +13,9 @@ below:
 
 [![DOI](https://zenodo.org/badge/306091796.svg)](https://zenodo.org/badge/latestdoi/306091796)
 
+If you have any questions about how to use this workflow, feel free to
+open a Github issue or email at mb2337 \[at\] cornell \[dot\] edu.
+
 The general overview of this workflow
 is:
 
