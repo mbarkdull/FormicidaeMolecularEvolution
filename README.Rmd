@@ -13,7 +13,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-This repository hosts the workflow for a comparative genomics analysis. The general overview is:
+This repository hosts the workflow for a comparative genomics analysis. 
+
+If you use this code, please be sure to cite all appropriate third party tools as described in the ReadMe below, and **also cite this repository** using the digital object identifier (DOI) below:
+
+[![DOI](https://zenodo.org/badge/306091796.svg)](https://zenodo.org/badge/latestdoi/306091796)
+
+The general overview of this workflow is:
 
 ```{r, echo = FALSE, fig.align = 'center'}
 library(DiagrammeR)

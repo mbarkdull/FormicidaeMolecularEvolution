@@ -5,7 +5,15 @@ Megan Barkdull
 ## Introduction
 
 This repository hosts the workflow for a comparative genomics analysis.
-The general overview
+
+If you use this code, please be sure to cite all appropriate third party
+tools as described in the ReadMe below, and **also cite this
+repository** using the digital object identifier (DOI)
+below:
+
+[![DOI](https://zenodo.org/badge/306091796.svg)](https://zenodo.org/badge/latestdoi/306091796)
+
+The general overview of this workflow
 is:
 
 <img src="README_files/figure-gfm/unnamed-chunk-1-1.png" style="display: block; margin: auto;" />
