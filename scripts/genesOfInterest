@@ -1,0 +1,28 @@
+#!/bin/bash
+# Command line arguments:
+		# First: full path to the list of orthogroups of interest
+		# Second: full path to unlabelled gene trees from Orthofinder, a la ./5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/
+
+# Make an ouput directory:
+mkdir ./12_genesOfInterest/
+mkdir ./12_genesOfInterest/absrel/
+
+export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
+
+# Download the newest version of HyPhy:
+export PATH=/home/$USER/miniconda3/bin:$PATH
+conda install -c bioconda hyphy
+
+while read -r line;
+do
+	export cdsFile=8_2_RemovedStops/cleaned_"$line"_cds.fasta
+	echo $cdsFile
+	export treeFile=$2$line"_tree.txt"
+	echo Removing any special characters in $treeFile
+	sed -i'.original' -e "s|\||_|g" $treeFile
+	rm $treeFile.original
+	export outputFile=$line"_absrel.json"
+	#Example command: hyphy absrel --alignment /Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/8_2_RemovedStops/cleaned_OG0001224_cds.fasta --tree  /Users/meganbarkdull/Projects/FormicidaeMolecularEvolution/test.txt --srv Yes --output absrelTest.json --branches Foreground
+	hyphy absrel --alignment $cdsFile --tree  $treeFile --srv Yes --output ./12_genesOfInterest/absrel/$outputFile --branches All
+
+done < $1
