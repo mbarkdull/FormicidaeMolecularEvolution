@@ -13,22 +13,23 @@ export orthogroupNumber=`echo "$cdsFile" | awk -F'_' '{print ($4)}'`
 echo The orthogroup number is $orthogroupNumber
 export treeFile=$orthogroupNumber"_tree.txt"
 echo The path to tree file is $pathToTrees$treeFile
-export fullTreeFile=$pathToTrees$treeFile
+export fullTreeFile=$2$treeFile
 export output="./8_3_BustedResults/"$orthogroupNumber"_busted.json"
 if [ -f "$output" ]; then
   echo "$output exists; this gene has been previously analysed."
 else
-  if [ -f "$fullTreeFile" ]; then
+  if [ -f "$2$treeFile" ]; then
     echo "$treeFile exists; running BUSTED[S]."
     echo Removing any special characters in $fullTreeFile
     sed -i'.original' -e "s|\||_|g" $fullTreeFile
-    rm $fullTreeFile.original
+    rm $2$treeFile.original
 
     # Example cds file: ./8_2_BustedResults/cleaned_OG0013039_cds.fasta
     # Example gene tree file: /workdir/mb2337/FormicidaeMolecularEvolution/4_OrthoFinder/fasta/OrthoFinder/Results_Nov19_1/Resolved_Gene_Trees/OG0013039_cds.fasta
     #hyphy busted --alignment /workdir/mb2337/FormicidaeMolecularEvolution/8_2_RemovedStops/cleaned_OG00012768_cds.fasta --tree /workdir/mb2337/FormicidaeMolecularEvolution/4_OrthoFinder/fasta/OrthoFinder/Results_Nov24/Resolved_Gene_Trees/OG00012768_tree.txt --srv Yes CPU=16
-    echo Running BUSTED[S] on $cdsFile and $fullTreeFile
-    HYPHYMPI busted --alignment $cdsFile --tree $fullTreeFile --srv Yes --output "./8_3_BustedResults/"$orthogroupNumber"_busted.json"
+    echo Running BUSTED[S] on $cdsFile and $2$treeFile
+    sed -i'.original' -e "s|\?|_|g" $cdsFile
+    HYPHYMPI busted --alignment $cdsFile --tree $2$treeFile --srv Yes --output "./8_3_BustedResults/"$orthogroupNumber"_busted.json"
     #hyphy busted --alignment 8_2_RemovedStops/cleaned_OG0008294_cds.fasta --tree 5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Gene_Trees/OG0008294_tree.txt --srv Yes --output ./8_3_BustedResults/OG0008294_busted.json
   else
     echo "$treeFile does not exist because this orthogroup consists of three or fewer sequences. Skipping BUSTED[S]."
