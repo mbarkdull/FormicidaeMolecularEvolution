@@ -11,6 +11,14 @@ absrelJSONProcessing <- function(file) {
   
   # Create a data frame with the information for each branch tested:
   aBSRELDataframe <- data.table::rbindlist(aBSRELJSON[["branch attributes"]][["0"]], fill = TRUE, idcol = TRUE)
+  
+  # Get the tree from the absrel file:
+  aBSRELTree <- aBSRELJSON[["input"]][["trees"]][["0"]]
+  # Add a terminal ; so it's in Newick format:
+  aBSRELTree <- gsub('$', ';', aBSRELTree)
+  # Create a column in the dataframe for the tree:
+  aBSRELDataframe$tree <- aBSRELTree
+  
   aBSRELDataframe <- subset(aBSRELDataframe, select = -c(`Rate Distributions`))
   aBSRELDataframe <- distinct (aBSRELDataframe)
   
@@ -21,7 +29,6 @@ absrelJSONProcessing <- function(file) {
 
   return(aBSRELDataframe)
 }
-aBSRELJSON <- RJSONIO::fromJSON(content = "./12_genesOfInterest/absrel/OG0000796_absrel.json")
 
 # List all of the results files:
 aBSRELResults <- list.files(path = "./12_genesOfInterest/absrel/", 
@@ -88,33 +95,40 @@ library(ape)
 }
 
 # Write a function to plot phylogeny, colored by p-value from aBSREL:
-treeWithpValues <- function(orthogroup, aBSRELResults) {
-  # Read in the tree file:
-  tree <- read.tree(file = paste("5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/", 
-                                 orthogroup, 
-                                 "_tree.txt", 
-                                 sep = ""))
-  # Create a column in aBSRELResults called node, so that these data can be joined to the tree:
-  aBSRELResults$node <- aBSRELResults$.id
-  OG0004124 <- filter(aBSRELResults, 
+treeWithpValues <- function(orthogroup) {
+  # Create a column in the absrel results called node, so that the absrel results can be joined to the tree:
+  OG0004124 <- aBSRELResults
+  OG0004124$node <- OG0004124$.id
+  # Subset the absrel results to just the single orthogroup this is running on, 
+  OG0004124 <- filter(OG0004124, 
                       Orthogroup == orthogroup) 
   OG0004124 <- mutate(OG0004124, 
                       node = as.character(node))
   OG0004124 <- dplyr::select(OG0004124, 
                              node, 
                              `Corrected P-value`, 
-                             X2)
+                             X2,
+                             tree)
   OG0004124 <- mutate(OG0004124, 
                       Selected = if_else(`Corrected P-value` <= 0.05, 
                                          "Yes", 
                                          "No"))
+  #OG0004124$node <- ifelse(grepl('^n', OG0004124$node), 
+                           #gsub("_", "", OG0004124$node), 
+                           #print(OG0004124$node))
+
+  # Get the tree that aBSREL ran on:
+  tree <- base::unique(OG0004124$tree)
+  tree <- ape::read.tree(text = tree)
+  # Get the name of the gene that this orthogroup corresponds to:
   gene <- base::unique(OG0004124$X2)
+  # Make a ggtree object from the tree:
   test <- ggtree(tree)
+  # Add the absrel results to the tree ggtree object:
   tree <- test %<+% OG0004124
-  tree[["data"]] <- full_join(tree[["data"]], OG0004124, by = c("label" = "node"))
   tree[["data"]][["label"]] <- sapply(strsplit(tree[["data"]][["label"]], "_"), `[`, 1)
   tree <- tree + 
-    geom_tree(aes(color = `Corrected P-value.x`)) +
+    geom_tree(aes(color = `Corrected P-value`)) +
     geom_tiplab() +  
     scale_color_gradientn(colours=c("red", 
                                     'orange', 
@@ -129,7 +143,7 @@ treeWithpValues <- function(orthogroup, aBSRELResults) {
 
 orthogroups <- base::unique(aBSRELResults$Orthogroup)
 
-plots <- map(orthogroups, ~treeWithpValues(.x, aBSRELResults = aBSRELResults))
+plots <- map(orthogroups, ~treeWithpValues(.x))
 plots[[1]]
 cowplot::plot_grid(plotlist = plots)
 ggplot2::ggsave(filename = "./genesOfInterestaBSRELTrees.pdf",
@@ -138,25 +152,35 @@ ggplot2::ggsave(filename = "./genesOfInterestaBSRELTrees.pdf",
                 units = "in")
 
 treeWithBinarySelection <- function(orthogroup) {
-  tree <- read.tree(file = paste("5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/", 
-                                 orthogroup, 
-                                 "_tree.txt", 
-                                 sep = ""))
-  aBSRELResults$node <- aBSRELResults$.id
-  OG0004124 <- filter(aBSRELResults, 
-                      Orthogroup == orthogroup & !is.na(`original name`)) 
+  # Create a column in the absrel results called node, so that the absrel results can be joined to the tree:
+  OG0004124 <- aBSRELResults
+  OG0004124$node <- OG0004124$.id
+  # Subset the absrel results to just the single orthogroup this is running on, 
+  OG0004124 <- filter(OG0004124, 
+                      Orthogroup == orthogroup) 
   OG0004124 <- mutate(OG0004124, 
                       node = as.character(node))
   OG0004124 <- dplyr::select(OG0004124, 
                              node, 
                              `Corrected P-value`, 
-                             X2)
+                             X2,
+                             tree)
   OG0004124 <- mutate(OG0004124, 
-                      Selected = ifelse(OG0004124$`Corrected P-value` <= 0.05, 
+                      Selected = if_else(`Corrected P-value` <= 0.05, 
                                          "Yes", 
                                          "No"))
+  #OG0004124$node <- ifelse(grepl('^n', OG0004124$node), 
+  #gsub("_", "", OG0004124$node), 
+  #print(OG0004124$node))
+  
+  # Get the tree that aBSREL ran on:
+  tree <- base::unique(OG0004124$tree)
+  tree <- ape::read.tree(text = tree)
+  # Get the name of the gene that this orthogroup corresponds to:
   gene <- base::unique(OG0004124$X2)
+  # Make a ggtree object from the tree:
   test <- ggtree(tree)
+  # Add the absrel results to the tree ggtree object:
   tree <- test %<+% OG0004124
   tree[["data"]][["label"]] <- sapply(strsplit(tree[["data"]][["label"]], "_"), `[`, 1)
   tree <- tree + 
@@ -175,44 +199,4 @@ ggplot2::ggsave(filename = "./genesOfInterestBinaryaBSRELTrees.pdf",
                 width = 20,
                 height = 20,
                 units = "in")
-
-
-
-
-tree <- read.tree(file = "5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0000565_tree.txt")
-aBSRELResults$node <- aBSRELResults$.id
-OG0004124 <- filter(aBSRELResults, 
-                    Orthogroup == "OG0000565") 
-OG0004124 <- mutate(OG0004124, 
-                    node = as.character(node))
-OG0004124 <- dplyr::select(OG0004124, 
-                           node, 
-                           `Corrected P-value`, 
-                           X2)
-OG0004124 <- mutate(OG0004124, 
-                    Selected = if_else(X2 <= 0.05, 
-                                       "Yes", 
-                                       "No"))
-gene <- base::unique(OG0004124$X2)
-test <- ggtree(tree)
-tree <- test %<+% OG0004124
-
-a <- tree[["data"]]
-
-a <- inner_join(tree[["data"]], OG0004124, by = c("label" = "node"))
-tree[["data"]] <- a  
-
-tree[["data"]] <- mutate(tree[["data"]], 
-                    Selected = ifelse(tree[["data"]]$`Corrected P-value.y` <= 0.05, 
-                                      "Yes", 
-                                      "No"))
-
-
-x <- tree + 
-  geom_tree(aes(color = Selected)) +
-  geom_tiplab()
-plot(x) 
-
-
-
 
