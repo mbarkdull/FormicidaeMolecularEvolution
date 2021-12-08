@@ -32,6 +32,7 @@ if [ -f "$treeFile" ]; then
     # Run RELAX:
     echo Running RELAX on $cdsFile and $treeFile.
     sed -i'.original' -e "s|\?|_|g" $cdsFile
+    rm $cdsFile.original
     HYPHYMPI relax --alignment $cdsFile --tree $treeFile --test Foreground --srv Yes CPU=64 --output "./10_1_RelaxResults/"$3"/"$orthogroupNumber"_relax.json"
 
   fi
