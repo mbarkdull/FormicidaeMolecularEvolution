@@ -29,6 +29,8 @@ else
     #hyphy busted --alignment /workdir/mb2337/FormicidaeMolecularEvolution/8_2_RemovedStops/cleaned_OG00012768_cds.fasta --tree /workdir/mb2337/FormicidaeMolecularEvolution/4_OrthoFinder/fasta/OrthoFinder/Results_Nov24/Resolved_Gene_Trees/OG00012768_tree.txt --srv Yes CPU=16
     echo Running BUSTED[S] on $cdsFile and $2$treeFile
     sed -i'.original' -e "s|\?|_|g" $cdsFile
+    rm $cdsFile.original
+
     HYPHYMPI busted --alignment $cdsFile --tree $2$treeFile --srv Yes --output "./8_3_BustedResults/"$orthogroupNumber"_busted.json"
     #hyphy busted --alignment 8_2_RemovedStops/cleaned_OG0008294_cds.fasta --tree 5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Gene_Trees/OG0008294_tree.txt --srv Yes --output ./8_3_BustedResults/OG0008294_busted.json
   else
