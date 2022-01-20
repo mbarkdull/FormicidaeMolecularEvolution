@@ -138,15 +138,15 @@ bustedPHResults <- bustedPHResults %>% mutate(selectionOn =
                                
                                as.numeric(as.character(`test results p-value`)) <= 0.05 & 
                                  as.numeric(as.character(`test results background p-value`)) <= 0.05 &
-                                 as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05 ~ "SelectionOnBoth",
+                                 as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05 ~ "SelectionOnBothButDifferent",
                                
                                as.numeric(as.character(`test results p-value`)) <= 0.05 & 
                                  as.numeric(as.character(`test results background p-value`)) <= 0.05 &
-                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifference",
+                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "SelectionOnBothButNoSignificantDifference",
                                
                                as.numeric(as.character(`test results p-value`)) <= 0.05 & 
                                  as.numeric(as.character(`test results background p-value`)) > 0.05 &
-                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifference",
+                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "EvidenceOfSelectionAssociatedWithTraitButNS",
                                
                                as.numeric(as.character(`test results p-value`)) > 0.05 & 
                                  as.numeric(as.character(`test results background p-value`)) <= 0.05 &
@@ -154,7 +154,7 @@ bustedPHResults <- bustedPHResults %>% mutate(selectionOn =
                                
                                as.numeric(as.character(`test results p-value`)) > 0.05 & 
                                  as.numeric(as.character(`test results background p-value`)) <= 0.05 &
-                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifference",
+                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "EvidenceOfSelectionAssociatedWithLackOfTraitButNS",
                                
                                as.numeric(as.character(`test results p-value`)) > 0.05 & 
                                  as.numeric(as.character(`test results background p-value`)) > 0.05 &
@@ -162,7 +162,7 @@ bustedPHResults <- bustedPHResults %>% mutate(selectionOn =
                                
                                as.numeric(as.character(`test results p-value`)) > 0.05 & 
                                  as.numeric(as.character(`test results background p-value`)) > 0.05 &
-                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoSignificantDifference"))
+                                 as.numeric(as.character(`test results shared distributions p-value`)) > 0.05 ~ "NoEvidenceOfSelection"))
 
 # Convert the p-value and omega columns to numeric, not character:
 
@@ -244,16 +244,18 @@ pValue <- if (fishersExactTest[["p.value"]] < 0.000001) {
 } else {
   round(fishersExactTest[["p.value"]], digits = 3)
 }
-
 print(pValue)
+trait <- args[2]
 
 bustedPHResults$selectionOn <-
   factor(bustedPHResults$selectionOn,
          levels = c("ForegroundOnly",
                     "BackgroundOnly",
-                    "NoSignificantDifference",
-                    "NoEvidenceOfSelection",
-                    "SelectionOnBoth"))
+                    "EvidenceOfSelectionAssociatedWithTraitButNS",
+                    "EvidenceOfSelectionAssociatedWithLackOfTraitButNS",
+                    "SelectionOnBothButDifferent",
+                    "SelectionOnBothButNoSignificantDifference",
+                    "NoEvidenceOfSelection"))
 
 plot <- ggplot(data = dplyr::filter(bustedPHResults, !is.na(bustedPHResults$selectionOn)))
 
@@ -271,7 +273,7 @@ plot +
   theme_bw() +
   labs(x = "Selective regime", 
        y = "Count of orthogroups", 
-       title = "Distribution of selective regimes") +
+       title = paste("Distribution of positive selection regimes \nassociated with", trait, sep = " ")) +
   theme(axis.text.x = element_text(angle = 0,
                                    hjust = 0.5,
                                    vjust = 1),
@@ -279,11 +281,18 @@ plot +
         panel.grid.major.x = element_blank()) + 
   scale_x_discrete(labels=c("ForegroundOnly" = "Selection on\nforeground only",
                             "BackgroundOnly" = "Selection on\nbackground only",
-                            "NoSignificantDifference" = "No significant\ndifference\nbetween fore- \nand background",
-                            "NoEvidenceOfSelection" = "No evidence\nfor selection",
-                            "SelectionOnBoth" = "Selection on\nboth fore-\nand background"))
+                            "EvidenceOfSelectionAssociatedWithTraitButNS" = "Nonsignificant\nevidence of\nselection associated\nwith trait",
+                            "EvidenceOfSelectionAssociatedWithLackOfTraitButNS" = "Nonsignificant\nevidence of\nselection associated\nwith lacking trait",
+                            "SelectionOnBothButNoSignificantDifference" = "Selection on both fore-\nand background,\nno signficant difference",
+                            "SelectionOnBothButDifferent" = "Selection on\nfore- and background\nwith significant differences",
+                            "NoEvidenceOfSelection" = "No evidence\nfor selection"))
 
-ggsave(filename = "barPlotSelectionBustedPH.png", path = base::paste("./Results/", args[2], "/", sep = ""))
+ggsave(filename = "barPlotSelectionBustedPH.png", 
+       path = base::paste("./Results/", args[2], "/", sep = ""), 
+       width = 7,
+       height = 4,
+       units = "in",
+       dpi = 600)
 
 plot + 
   geom_point(mapping = aes(x = `test results p-value`,
