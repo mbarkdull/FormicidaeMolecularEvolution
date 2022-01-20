@@ -12,6 +12,7 @@ if (length(args) != 2) {
 library(RJSONIO)
 library(tidyverse)
 library(ggthemes)
+library(gt)
 
 ###############################################
 ####### Convert JSON files to spreadsheet #####
@@ -30,11 +31,29 @@ parsingBustedPH <- function(content) {
     if (result[["test results background"]][["p-value"]] > 0.05) {
       if (result[["test results shared distributions"]][["p-value"]] <= 0.05) {
         textResult <- "Selection is associated with the phenotype / trait"
-        data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]], "Yes")
+        data <- c(result[["input"]][["file name"]], 
+                  textResult, 
+                  result[["test results"]][["p-value"]], 
+                  result[["test results background"]][["p-value"]], 
+                  result[["test results shared distributions"]][["p-value"]], 
+                  "Yes",
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["omega"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["proportion"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Background"]][["2"]][["omega"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Background"]][["2"]][["proportion"]])
         return(data)
       } else {
         textResult <- "Selection is associated with the phenotype / trait, but there is no significant difference between test and background branches in terms of selective pressure"
-        data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]], "No")
+        data <- c(result[["input"]][["file name"]], 
+                  textResult, 
+                  result[["test results"]][["p-value"]], 
+                  result[["test results background"]][["p-value"]], 
+                  result[["test results shared distributions"]][["p-value"]], 
+                  "No",
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["omega"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["proportion"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Background"]][["2"]][["omega"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Background"]][["2"]][["proportion"]])
       }
     } else {
       #print("Selection is acting on the branches with the phenotype / trait, but is **also** acting on background branches.")
@@ -42,27 +61,66 @@ parsingBustedPH <- function(content) {
       #data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]])
       if (result[["test results shared distributions"]][["p-value"]] <= 0.05) {
         textResult <- "There is a significant difference between test and background branches in terms of selective pressure"
-        data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]], "Yes")
+        data <- c(result[["input"]][["file name"]], 
+                  textResult, 
+                  result[["test results"]][["p-value"]], 
+                  result[["test results background"]][["p-value"]], 
+                  result[["test results shared distributions"]][["p-value"]], 
+                  "Yes",
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["omega"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["proportion"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Background"]][["2"]][["omega"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Background"]][["2"]][["proportion"]])
       } else {
         textResult <- "There is no significant difference between test and background branches in terms of selective pressure"
-        data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]], "No")
+        data <- c(result[["input"]][["file name"]], 
+                  textResult, 
+                  result[["test results"]][["p-value"]], 
+                  result[["test results background"]][["p-value"]], 
+                  result[["test results shared distributions"]][["p-value"]], 
+                  "No",
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["omega"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["proportion"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Background"]][["2"]][["omega"]],
+                  result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Background"]][["2"]][["proportion"]])
       }
     }
   } else {
     textResult <- "There is **no evidence** of episodic diversifying selection on test branches; selection is not associated with phenotype/trait"
-    data <- c(result[["input"]][["file name"]], textResult, result[["test results"]][["p-value"]], result[["test results background"]][["p-value"]], result[["test results shared distributions"]][["p-value"]], "No")
+    data <- c(result[["input"]][["file name"]], 
+              textResult, 
+              result[["test results"]][["p-value"]], 
+              result[["test results background"]][["p-value"]], 
+              result[["test results shared distributions"]][["p-value"]], 
+              "No",
+              result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["omega"]],
+              result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["proportion"]],
+              result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Background"]][["2"]][["omega"]],
+              result[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Background"]][["2"]][["proportion"]])
   }
   
 }
+#krf1 <- parsingBustedPH(content = "./9_3_BustedPHResults/workerReproductionQueens/workerReproductionQueens_OG0004124_BUSTEDPH.fas.BUSTED.json")
+#takeout <- parsingBustedPH(content = "./9_3_BustedPHResults/workerReproductionQueens/workerReproductionQueens_OG0000796_BUSTEDPH.fas.BUSTED.json")
+
 # Make a safer version of that function with `possibly`:
 possiblyparsingBustedPH <- possibly(parsingBustedPH, otherwise = "File empty.")
 # Map the function over all results files to construct a master dataframe:
-workerPolymorphismBustedPHResults <- map(files, possiblyparsingBustedPH)
+workerPolymorphismBustedPHResults <- purrr::map(files, possiblyparsingBustedPH)
 
 # Write a function to process and fix the column names of the results dataframe:
 bustedPHDataframeProcessing <- function(resultsDataframe) {
   BustedPHResults <- as.data.frame(do.call(rbind, resultsDataframe))   
-  colnames(BustedPHResults) <- c("file", "textResult", "test results p-value", "test results background p-value", "test results shared distributions p-value", "differenceInSelection")
+  colnames(BustedPHResults) <- c("file", 
+                                 "textResult", 
+                                 "test results p-value", 
+                                 "test results background p-value", 
+                                 "test results shared distributions p-value", 
+                                 "differenceInSelection",
+                                 "unconstrainedTestOmega",
+                                 "unconstrainedTestProportion",
+                                 "unconstrainedBackgroundOmega",
+                                 "unconstrainedBackgroundProportion")
   orthogroup <- sapply(strsplit(as.character(BustedPHResults$file),"/"), tail, 1)
   orthogroup <- sapply(strsplit(orthogroup, "_"), `[`, 2)
   BustedPHResults$orthogroup <- orthogroup
@@ -110,6 +168,10 @@ workerPolymorphismBustedPHResults <- workerPolymorphismBustedPHResults %>% mutat
 workerPolymorphismBustedPHResults$`test results p-value` <- as.numeric(as.character(workerPolymorphismBustedPHResults$`test results p-value`))
 workerPolymorphismBustedPHResults$`test results background p-value` <- as.numeric(as.character(workerPolymorphismBustedPHResults$`test results background p-value`))
 workerPolymorphismBustedPHResults$`test results shared distributions p-value` <- as.numeric(as.character(workerPolymorphismBustedPHResults$`test results shared distributions p-value`))
+workerPolymorphismBustedPHResults$unconstrainedTestOmega <- as.numeric(as.character(workerPolymorphismBustedPHResults$unconstrainedTestOmega))
+workerPolymorphismBustedPHResults$unconstrainedTestProportion <- as.numeric(as.character(workerPolymorphismBustedPHResults$unconstrainedTestProportion))
+workerPolymorphismBustedPHResults$unconstrainedBackgroundOmega <- as.numeric(as.character(workerPolymorphismBustedPHResults$unconstrainedBackgroundOmega))
+workerPolymorphismBustedPHResults$unconstrainedBackgroundProportion <- as.numeric(as.character(workerPolymorphismBustedPHResults$unconstrainedBackgroundProportion))
 
 workerPolymorphismBustedPHResults %>%
   dplyr::select(orthogroup, `test results p-value`, `test results background p-value`, `test results shared distributions p-value`) %>%
@@ -222,6 +284,47 @@ plot +
   geom_vline(xintercept = 0.05) +
   geom_hline(yintercept = 0.05)
 
+ggplot(data = filter(workerPolymorphismBustedPHResults, 
+                     `test results shared distributions p-value` <= 0.05), 
+       mapping = aes(x = `test results p-value`,
+                     y = `test results background p-value`)) +
+  geom_hex(bins = 50) +
+  scale_fill_continuous(trans = "log10") +
+  geom_vline(xintercept = 0.05) +
+  geom_hline(yintercept = 0.05) + 
+  labs(x = "Significance (p-value) for evidence\nof selection on species with the trait",
+       y = "Significance (p-value) for evidence\nof selection on species without the trait",
+       title = "Distribution of selective regimes on\ngenes with a difference between species with and\nwithout the trait")
+
+maxOmega <- max(c(workerPolymorphismBustedPHResults$unconstrainedBackgroundOmega, workerPolymorphismBustedPHResults$unconstrainedTestOmega))
+maxProportion <- max(c(workerPolymorphismBustedPHResults$unconstrainedBackgroundProportion, workerPolymorphismBustedPHResults$unconstrainedTestProportion))
+
+p1 <- ggplot(filter(workerPolymorphismBustedPHResults,
+              `test results p-value` <= 0.05 &
+                `test results shared distributions p-value` <= 0.05)) +
+  geom_hex(mapping = aes(x = unconstrainedTestOmega,
+                         y = unconstrainedTestProportion),
+           bins = 50) +
+  labs(x = "Selection strength (omega values)",
+       y = "Proportion of sites in gene under selection",
+       title = "Selective regimes on genes \nunder selection in species \nwith the trait")
+
+p2 <- ggplot(filter(workerPolymorphismBustedPHResults,
+              `test results background p-value` <= 0.05 &
+                `test results shared distributions p-value` <= 0.05)) +
+  geom_hex(mapping = aes(x = unconstrainedBackgroundOmega,
+                         y = unconstrainedBackgroundProportion),
+           bins = 50) +
+  labs(x = "Selective strength (omega values)",
+       y = "Proportion of sites in gene under selection",
+       title = "Selection regimes on genes \nunder selection in species \nwithout the trait")
+
+
+ggpubr::ggarrange(p1, 
+                  p2,
+                  ncol = 2, 
+                  nrow = 1) 
+
 ###############################################
 ####### Check for GO term enrichment ##########
 ###############################################
@@ -295,6 +398,22 @@ resultFisherCC
 resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNodes = length(resultFisherCC@score),
                                  numChar = 120)
 head(resultsFisherCCTable)
+
+
+# Combine all of the results for GO terms enriched in the foreground:
+goTermsForeground <- rbind(resultsFisherBPTable, resultsFisherMFTable, resultsFisherCCTable) %>%
+  dplyr::filter(raw.p.value <= 0.01)
+# Generate a nice table:
+goTermsForeground %>% 
+  gt() %>%
+  tab_header(title = "GO terms enriched for positive selection in foreground species") %>%
+  cols_label(GO.ID = "Go term ID",
+             Term = "GO Term",
+             Annotated = "Orthogroups annotated",
+             Significant = "Orthogroups under positive selection",
+             Expected = "Expected number of orthogroups",
+             raw.p.value = "p-value") %>%
+  cols_move_to_start(columns = c(Term))
 
 # Use the Kolomogorov-Smirnov test:
 
@@ -415,6 +534,20 @@ resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNode
                                  numChar = 120)
 head(resultsFisherCCTable)
 
+# Combine results of all the tests:
+goTermsBackground <- rbind(resultsFisherBPTable, resultsFisherMFTable, resultsFisherCCTable) %>%
+  dplyr::filter(raw.p.value <= 0.01)
+# Generate a nice table:
+goTermsBackground %>% 
+  gt() %>%
+  tab_header(title = "GO terms enriched for positive selection in background species") %>%
+  cols_label(GO.ID = "Go term ID",
+             Term = "GO Term",
+             Annotated = "Orthogroups annotated",
+             Significant = "Orthogroups under positive selection",
+             Expected = "Expected number of orthogroups",
+             raw.p.value = "p-value") %>%
+  cols_move_to_start(columns = c(Term))
 # Use the Kolomogorov-Smirnov test:
 
 # Define vector that is 1 if gene is significantly DE (`test results p-value` < 0.05) and 0 otherwise:
@@ -468,5 +601,7 @@ goEnrichmentSummaries <- capture.output(print(resultFisherBP),
 
 writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/bustedPHGOSummariesBackground.csv", sep = "")))
 
+# Look at particular, interesting genes:
 
+krf1 <- filter(workerPolymorphismBustedPHResults, orthogroup == "OG0004124")
 
