@@ -51,7 +51,6 @@ orthogroup <- sapply(strsplit(as.character(relaxResults$fileName),"/"), tail, 1)
 orthogroup <- sapply(strsplit(orthogroup, "_"), `[`, 2)
 relaxResults$orthogroup <- orthogroup
 
-
 numberRelax <- sum(relaxResults$shortDescription == "Relaxation of selection along foreground branches")
 numberNonsignficant <- sum(relaxResults$description == "No significant difference in selective regime between foreground and background branches")
 numberIntensified <- sum(relaxResults$shortDescription == "Intensification of selection along foreground branches")
@@ -176,13 +175,23 @@ freq_table_selparam <- matrix(c((length(relaxframe$kValue[relaxframe$kValue != 1
                                               "selection" = c("relaxed", "intensified")))
 
 fisher.test(freq_table_selparam)
-fishersExactTest <- capture.output(print(fishersExactTest))
+fishersExactTestPrint <- capture.output(print(fishersExactTest))
 
-writeLines(fishersExactTest, con = file(base::paste("./Results/", args[2], "/RelaxFisher.csv", sep = "")))
+writeLines(fishersExactTestPrint, con = file(base::paste("./Results/", args[2], "/RelaxFisher.csv", sep = "")))
 
 ###############################################
 ####### Make some nice plots ##################
 ###############################################
+print(fishersExactTest[["p.value"]])
+
+pValue <- if (fishersExactTest[["p.value"]] < 0.000001) {
+  formatC(fishersExactTest[["p.value"]], format = "e", digits = 2)
+} else {
+  round(fishersExactTest[["p.value"]], digits = 4)
+}
+print(pValue)
+pValueLabel <- paste("p-value = ", pValue, sep = "")
+trait <- args[2]
 
 relaxResults$shortDescription <-
   factor(relaxResults$shortDescription,
@@ -193,12 +202,13 @@ relaxResults$shortDescription <-
                     "File empty."))
 relaxResults$kValue <- as.numeric(as.character(relaxResults$kValue))
 
+# Create a base plot, filtering out relax files that are empty:
 plot <- ggplot(data = filter(relaxResults, 
                              shortDescription != "File empty."))
 
+# Combine that base plot with a bar plot to show the number of genes intensified, relaxed, and NS:
 plot + 
-  geom_bar(mapping = aes(x = shortDescription)) + 
-  theme_bw() +
+  geom_bar(mapping = aes(x = shortDescription)) +
   labs(x = "Selective regime", 
        y = "Count of orthogroups", 
        title = "Distribution of selective regimes") +
@@ -211,28 +221,39 @@ plot +
                             "Intensification of selection along foreground branches" = "Intensification of\nselection along\nforeground branches",
                             "Nonsignificant intensification" = "Nonsignificant\nintensification",
                             "Relaxation of selection along foreground branches" = "Relaxation of\nselection along\nforeground branches",
-                            "File empty." = "File empty."))
+                            "File empty." = "File empty.")) + 
+  geom_linerange(aes(xmin = 1, 
+                     xmax = 2, 
+                     y = (1.75 * length(which(shortDescription == "Intensification of selection along foreground branches")))), 
+                 color = "grey26", 
+                 size = 0.3) +
+  geom_text(aes(x = 1.5, 
+                y = (1.9 * length(which(shortDescription == "Intensification of selection along foreground branches"))),
+                label = pValueLabel),
+            stat = "unique") + 
+  theme_bw() 
 
-
+# Create a plot that shows the distribution of k-values:
 ggplot(data = filter(relaxResults, 
                      shortDescription != "File empty.", 
                      kValue < 2)) + 
   geom_histogram(mapping = aes(x = kValue),
                  binwidth = 0.05,
-                 boundary = 0.5,
+                 center = 0,
                  color = "grey26",
                  alpha = 0) + 
   geom_vline(xintercept = 1,
              color = "darkred",
              size = 0.75) +
-  geom_text(aes(x = 1.02, y = 175,
+  geom_text(aes(x = 1.05, y = 175,
                 label = "Neutral expectation, k = 1"),
             stat = "unique",
-            hjust = 0) +
+            hjust = 0, 
+            color = "darkred") +
   theme_bw() +
   labs(x = "Relaxation parameter, k", 
        y = "Count of orthogroups", 
-       title = "Distribution of selective regimes") +
+       title = paste("Distribution of selective regimes associated with", trait, sep = " ")) +
   theme(axis.text.x = element_text(angle = 0,
                                    hjust = 0.5,
                                    vjust = 1),
@@ -256,6 +277,7 @@ ggplot(data = relaxResults) +
 library(topGO)
 library(tidyverse)
 library(RJSONIO)
+library(gt)
 
 print("####################################################################")
 print("###### GO term enrichment on genes under relaxed selection #####")
@@ -289,7 +311,6 @@ violinPlotting <- function(fisherResultsTable, inferredGeneAnnotations, plotTitl
           panel.grid.major.x = element_blank())
   
 }
-
 
 # Read in the GO term annotations for each orthogroup, which we obtained from KinFin:
 GOannotations <- read_delim("cluster_domain_annotation.GO.txt", delim = "\t")
@@ -376,8 +397,25 @@ inferredGeneAnnotationsCC <- map_dfr(.x = inferredGeneAnnotationsCC,
 
 
 allResultsFisherRelaxed <- bind_rows(resultsFisherBPTable, resultsFisherMFTable, resultsFisherCCTable)
-allInferredAnnotationsRelaxed <- bind_rows(inferredGeneAnnotationsBP, inferredGeneAnnotationsMF, inferredGeneAnnotationsCC)
+# Combine all of the results for GO terms enriched in the foreground:
+goTermsRelaxed <- rbind(resultsFisherBPTable, resultsFisherMFTable, resultsFisherCCTable) %>%
+  dplyr::filter(raw.p.value <= 0.01)
+# Generate a nice table:
+goTermsRelaxedTable <- goTermsRelaxed %>% 
+  gt() %>%
+  tab_header(title = "GO terms enriched for relaxed selection") %>%
+  cols_label(GO.ID = "Go term ID",
+             Term = "GO Term",
+             Annotated = "Orthogroups annotated",
+             Significant = "Orthogroups under relaxed selection",
+             Expected = "Expected number of orthogroups under relaxed selection",
+             raw.p.value = "p-value") %>%
+  cols_move_to_start(columns = c(Term)) %>%
+  cols_align(align = c("left"),
+             columns = everything())
+gtsave(goTermsRelaxedTable, filename = "goTermsRelaxed.png", path = base::paste("./Results/", args[2], "/", sep = ""))
 
+allInferredAnnotationsRelaxed <- bind_rows(inferredGeneAnnotationsBP, inferredGeneAnnotationsMF, inferredGeneAnnotationsCC)
 
 if (length(which(allResultsFisherRelaxed$raw.p.value <= 0.01)) > 0) {
   violinPlotting(allResultsFisherRelaxed, allInferredAnnotationsRelaxed, plotTitle = "Relaxation parameter distributions across significantly enriched GO terms")
@@ -385,48 +423,6 @@ if (length(which(allResultsFisherRelaxed$raw.p.value <= 0.01)) > 0) {
 } else {
   print("no significant GO terms")
 }
-
-
-##### FIX!!!!!!! #####
-# Use the Kolomogorov-Smirnov test:
-#significanceInfo <- dplyr::select(relaxResults, orthogroup, pValue, kValue) %>%
-  #dplyr::filter(kValue < 1)
-#geneList <- as.numeric(as.character(significanceInfo$pValue))
-#names(geneList) <- significanceInfo$orthogroup
-
-# Create topGOData object
-#GOdataBP <- new("topGOdata",
-                #ontology = "BP",
-                #allGenes = geneList,
-                #geneSelectionFun = function(x)x,
-                #annot = annFUN.gene2GO, 
-                #gene2GO = wideListAnnotations)
-#resultKSBP <- runTest(GOdataBP, algorithm = "weight01", statistic = "ks")
-#resultKSBP
-#resultKSBPTable <- GenTable(GOdataBP, raw.p.value = resultKSBP, topNodes = length(resultKSBP@score), numChar = 120)
-#head(resultKSBPTable)
-
-# Create topGOData object
-#GOdataMF <- new("topGOdata",
-               # ontology = "MF",
-                #allGenes = geneList,
-                #geneSelectionFun = function(x)x,
-                #annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
-#resultKSMF <- runTest(GOdataMF, algorithm = "weight01", statistic = "ks")
-#resultKSMF
-#resultKSMFTable <- GenTable(GOdataMF, raw.p.value = resultKSMF, topNodes = length(resultKSMF@score), numChar = 120)
-#head(resultKSMFTable)
-
-# Create topGOData object
-#GOdataCC <- new("topGOdata",
-                #ontology = "CC",
-                #allGenes = geneList,
-                #geneSelectionFun = function(x)x,
-                #annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
-#resultKSCC <- runTest(GOdataCC, algorithm = "weight01", statistic = "ks")
-#resultKSCC
-#resultKSCCTable <- GenTable(GOdataCC, raw.p.value = resultKSCC, topNodes = length(resultKSCC@score), numChar = 120)
-#head(resultKSCCTable)
 
 goEnrichmentSummaries <- capture.output(print(resultsFisherBP), 
                                         print(resultFisherMF), 
@@ -507,6 +503,23 @@ inferredGeneAnnotationsCC <- map_dfr(.x = inferredGeneAnnotationsCC,
                                      .id = "goTerm")
 
 allResultsFisherIntensified <- bind_rows(resultsFisherBPTable, resultsFisherMFTable, resultsFisherCCTable)
+goTermsBackground <- rbind(resultsFisherBPTable, resultsFisherMFTable, resultsFisherCCTable) %>%
+  dplyr::filter(raw.p.value <= 0.01)
+# Generate a nice table:
+goTermsBackgroundTable <- goTermsBackground %>% 
+  gt() %>%
+  tab_header(title = "GO terms enriched for intensified selection") %>%
+  cols_label(GO.ID = "Go term ID",
+             Term = "GO Term",
+             Annotated = "Orthogroups annotated",
+             Significant = "Orthogroups under intensified selection",
+             Expected = "Expected number of orthogroups under intensified selection",
+             raw.p.value = "p-value") %>%
+  cols_move_to_start(columns = c(Term)) %>%
+  cols_align(align = c("left"),
+             columns = everything())
+gtsave(goTermsBackgroundTable, filename = "goTermsIntensified.png", path = base::paste("./Results/", args[2], "/", sep = ""))
+
 allInferredAnnotationsIntensified <- bind_rows(inferredGeneAnnotationsBP, inferredGeneAnnotationsMF, inferredGeneAnnotationsCC)
 
 if (length(which(allResultsFisherIntensified$raw.p.value <= 0.01)) > 0) {
@@ -563,3 +576,5 @@ goEnrichmentSummaries <- capture.output(print(resultsFisherBP),
 
 writeLines(goEnrichmentSummaries, con = file(base::paste("./Results/", args[2], "/RelaxGOSummariesIntensified.csv", sep = "")))
 
+# Look at particularly interesting genes:
+krf1 <- filter(relaxResults, orthogroup == "OG0004124")
