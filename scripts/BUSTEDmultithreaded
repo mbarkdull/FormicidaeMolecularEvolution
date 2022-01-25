@@ -23,19 +23,19 @@ do
   batchFileNames+=($cdsFile)
   # Get the size of the array :  ${#batchFileNames[&]}
   if [ ${#batchFileNames[@]} -eq $batchSize ]; then
-    echo Starting batch
+    #echo Starting batch
     for batchFile in ${batchFileNames[@]} ; do
       echo $batchFile
       ./scripts/SingleBustedRun $batchFile $1 &
     done
-    echo Begin wait.
+    #echo Begin wait.
     wait
-    echo Done waiting.
-    echo Finished batch
+    #echo Done waiting.
+    #echo Finished batch
     batchFileNames=()
   fi
 
-  echo __________________________________________________
+  #echo __________________________________________________
 
 done < fileList.txt
 
@@ -43,6 +43,6 @@ if [ ${#batchFileNames[@]} -gt 0 ]; then
   echo Starting batch
   for batchFile in ${batchFileNames[@]} ; do
     echo $batchFile
-    ./scripts/SingleBustedRun $batchFile &
+    ./scripts/SingleBustedRun $batchFile $1 &
   done
 fi
