@@ -19,7 +19,7 @@ dir.create("./9_1_LabelledPhylogenies")
 # List all of the unlabelled tree files:
 treeFiles <- list.files(path = args[1], full.names = TRUE)
 #treeFiles <- list.files(path = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees", full.names = TRUE)
-#tree <- ape::read.tree("/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt")
+#tree <- ape::read.tree("/workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt")
 #interest <- read_csv(file = "./ForegroundGroupings/WorkerPolymorphismLabelling.txt", col_names = FALSE)
 
 interest <- read_csv(file = args[2], col_names = FALSE)
@@ -28,7 +28,6 @@ interest <- read_csv(file = args[2], col_names = FALSE)
 multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
   # Read in a phylogeny:
   tree <- ape::read.tree(tree)
-  plot(tree)
   
   # Assign the list of species of interest:
   interest <- speciesOfInterest
@@ -56,34 +55,20 @@ multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
   # Now only produce an output tree if there are actually foreground tips present:
   if (length(selected_tips) == 0) {
     print("No foreground tips in this tree")
+  } else if (length(selected_tips) == length(tree[["tip.label"]])) {
+    print("all tips are foreground")
   } else {
     ## Finding the direct ancestor for each of these tips
     descendants <- tree$edge[tree$edge[, 2] %in% selected_tips, 1]
     
     ## Adding the term "{Foreground}" to the selected descendants (the -Ntip(tree) part is because the node counting in the $edge table starts at the value Ntip(tree)).
     tree$node.label[descendants-Ntip(tree)] <- paste(tree$node.label[descendants-Ntip(tree)], "{Foreground}")
-    ## Replacing all the non selected node labels by nothing ("")
-    #tree$node.label[-c(descendants-Ntip(tree))] <- ""
     
     ## Plotting the results
     ape::write.tree(tree, file = exportFile)
     #return(tree)
   }
 }
-
-#test <- multiTreeLabelling(tree = "/workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
-
-#test1 <- ape::read.tree(file = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt")
-#unlabelled <- ggtree(test1) + geom_tiplab() + geom_nodelab() + xlim(0, 2.5)
-#plot(unlabelled)
-
-#test <- multiTreeLabelling(tree = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0013922_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
-#labelled <- ggtree(test) + geom_tiplab() + geom_nodelab() + xlim(0, 2.5)
-#plot(labelled)
-
-#combo <- ggarrange(unlabelled, labelled, ncol = 2, nrow = 1)
-#plot(combo)
-#ggsave(filename = "unlabelledAndLabelled.png", width = 15, height = 10, units = "in")
 
 setwd("./9_1_LabelledPhylogenies")
 dir.create(args[3])
