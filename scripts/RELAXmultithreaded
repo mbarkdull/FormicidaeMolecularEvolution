@@ -26,6 +26,7 @@ if [ -z "$3" ]
 
     # Construct a list of orthogroups, ordered from smallest to largest. This will ensure you start getting results ASAP and can tell if there are any issues.
     ls -hSr 8_2_RemovedStops > sequencefileList.txt
+    rm $2FileList.txt
     # Read the list of files and check that a corresponding tree file DOES exist and a corresponding output file does NOT exist.
     while read -r line;
     do
@@ -33,7 +34,7 @@ if [ -z "$3" ]
     export treeFile=$1$2"Labelled_"$orthogroupNumber"_tree.txt"
     if [ -f "$treeFile" ]; then
       echo "$treeFile exists."
-      FILE="./10_1_RelaxResults/"$2"/"$orthogroupNumber"_absrel.json"
+      FILE="./10_1_RelaxResults/"$2"/"$orthogroupNumber"_relax.json"
       if [ -f "$FILE" ]; then
         echo "*************************************************************"
         echo "$FILE exists; RELAX has already been run on this orthogroup."
@@ -98,7 +99,7 @@ if [ -z "$3" ]
     while read -r line;
     # line is       8_2_RemovedStops/cleaned_OG0000001_cds.fasta
     do
-      FILE="./10_1_RelaxResults/"$2"/"$orthogroupNumber"_absrel.json"
+      FILE="./10_1_RelaxResults/"$2"/"$orthogroupNumber"_relax.json"
       if [ -f "$FILE" ]; then
         echo "*************************************************************"
         echo "$FILE exists; RELAX has already been run on this orthogroup."
