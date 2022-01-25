@@ -1,101 +1,135 @@
 #!/bin/bash
 
-# Export required paths:
-export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
+# This script can be run like:
+  # ./scripts/DataRunningRelax [full path to labelled phylogenies] [prefix used when labelling phylogenies]
 
-# Make a directory for RELAX outputs:
-mkdir ./10_1_RelaxResults/
-mkdir ./10_1_RelaxResults/$2/
+# Check if a third argument- the list of input files- has been supplied on the command line:
+# If it has not, then:
+if [ -z "$3" ]
+  then
+    echo "Creating list of input files"
+    # Export required paths:
+    export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
 
-# Download the newest version of HyPhy:
-export PATH=/home/$USER/miniconda3/bin:$PATH
-conda install -c bioconda hyphy
+    # Make a directory for RELAX outputs:
+    mkdir ./10_1_RelaxResults/
+    mkdir ./10_1_RelaxResults/$2/
 
-export batchSize=30
-export currentBatch=0
-export batchFileNames=()
+    # Download the newest version of HyPhy:
+    export PATH=/home/$USER/miniconda3/bin:$PATH
+    conda install -c bioconda hyphy
 
-# Construct a list of orthogroups, ordered from smallest to largest. This will ensure you start getting results ASAP and can tell if there are any issues.
-ls -hSr 8_2_RemovedStops > sequencefileList.txt
-while read -r line;
-do
+    # Set values for the batch size and start the current batch size at zero:
+    export batchSize=30
+    export currentBatch=0
+    export batchFileNames=()
 
-export orthogroupNumber=`echo "$line" | awk -F'_' '{print ($2)}'`
-export treeFile=$1$2"Labelled_"$orthogroupNumber"_tree.txt"
-if [ -f "$treeFile" ]; then
-  echo "$treeFile exists."
-  FILE="./10_1_RelaxResults/"$2"/"$orthogroupNumber"_absrel.json"
-  if [ -f "$FILE" ]; then
-    echo "*************************************************************"
-    echo "$FILE exists; RELAX has already been run on this orthogroup."
-    echo "*************************************************************"
+    # Construct a list of orthogroups, ordered from smallest to largest. This will ensure you start getting results ASAP and can tell if there are any issues.
+    ls -hSr 8_2_RemovedStops > sequencefileList.txt
+    # Read the list of files and check that a corresponding tree file DOES exist and a corresponding output file does NOT exist.
+    while read -r line;
+    do
+    export orthogroupNumber=`echo "$line" | awk -F'_' '{print ($2)}'`
+    export treeFile=$1$2"Labelled_"$orthogroupNumber"_tree.txt"
+    if [ -f "$treeFile" ]; then
+      echo "$treeFile exists."
+      FILE="./10_1_RelaxResults/"$2"/"$orthogroupNumber"_absrel.json"
+      if [ -f "$FILE" ]; then
+        echo "*************************************************************"
+        echo "$FILE exists; RELAX has already been run on this orthogroup."
+        echo "*************************************************************"
+      else
+        # Make sure vertical bars are replaced with underscores:
+        echo This file should be added to the file list
+        echo 8_2_RemovedStops/cleaned_"$orthogroupNumber"_cds.fasta >> $2FileList.txt
+      fi
+    else
+      echo "$treeFile does not exist because this orthogroup consists of three or fewer sequences."
+    fi
+
+    done < sequencefileList.txt
+
+    while read -r line;
+    # line is       8_2_RemovedStops/cleaned_OG0000001_cds.fasta
+    do
+      export cdsFile="$line"
+      batchFileNames+=($cdsFile)
+      # Get the size of the array :  ${#batchFileNames[&]}
+      if [ ${#batchFileNames[@]} -eq $batchSize ]; then
+        echo Starting batch
+        for batchFile in ${batchFileNames[@]} ; do
+          echo $batchFile
+          ./scripts/SingleRELAXRun $batchFile $1 $2 &
+        done
+        echo Begin wait.
+        wait
+        echo Done waiting.
+        echo Finished batch
+        batchFileNames=()
+      fi
+      echo __________________________________________________
+    done < $2FileList.txt
+
+
+    if [ ${#batchFileNames[@]} -gt 0 ]; then
+      echo Starting batch
+      for batchFile in ${batchFileNames[@]} ; do
+        echo $batchFile
+        ./scripts/SingleRELAXRun $batchFile $1 $2 &
+      done
+    fi
+  # If a third command line argument has been supplied, then don't create a list of input files, just use the one provided.
   else
-    # Make sure vertical bars are replaced with underscores:
-    echo This file should be added to the file list
-    echo 8_2_RemovedStops/cleaned_"$orthogroupNumber"_cds.fasta >> $2FileList.txt
-  fi
-else
-  echo "$treeFile does not exist because this orthogroup consists of three or fewer sequences."
+    # Export required paths:
+    export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
+
+    # Make a directory for RELAX outputs:
+    mkdir ./10_1_RelaxResults/
+    mkdir ./10_1_RelaxResults/$2/
+
+    # Download the newest version of HyPhy:
+    export PATH=/home/$USER/miniconda3/bin:$PATH
+    conda install -c bioconda hyphy
+
+    export batchSize=30
+    export currentBatch=0
+    export batchFileNames=()
+
+    while read -r line;
+    # line is       8_2_RemovedStops/cleaned_OG0000001_cds.fasta
+    do
+      FILE="./10_1_RelaxResults/"$2"/"$orthogroupNumber"_absrel.json"
+      if [ -f "$FILE" ]; then
+        echo "*************************************************************"
+        echo "$FILE exists; RELAX has already been run on this orthogroup."
+        echo "*************************************************************"
+      else
+        # Make sure vertical bars are replaced with underscores:
+        export cdsFile="$line"
+        batchFileNames+=($cdsFile)
+        # Get the size of the array :  ${#batchFileNames[&]}
+        if [ ${#batchFileNames[@]} -eq $batchSize ]; then
+          echo Starting batch
+          for batchFile in ${batchFileNames[@]} ; do
+            echo $batchFile
+            ./scripts/SingleRELAXRun $batchFile $1 $2 &
+          done
+          echo Begin wait.
+          wait
+          echo Done waiting.
+          echo Finished batch
+          batchFileNames=()
+        fi
+        echo __________________________________________________
+      fi
+    done < $3
+
+
+    if [ ${#batchFileNames[@]} -gt 0 ]; then
+      echo Starting batch
+      for batchFile in ${batchFileNames[@]} ; do
+        echo $batchFile
+        ./scripts/SingleRELAXRun $batchFile $1 $2 &
+      done
+    fi
 fi
-
-done < sequencefileList.txt
-
-while read -r line;
-# line is       8_2_RemovedStops/cleaned_OG0000001_cds.fasta
-do
-  export cdsFile="$line"
-  batchFileNames+=($cdsFile)
-  # Get the size of the array :  ${#batchFileNames[&]}
-  if [ ${#batchFileNames[@]} -eq $batchSize ]; then
-    echo Starting batch
-    for batchFile in ${batchFileNames[@]} ; do
-      echo $batchFile
-      ./scripts/SingleRELAXRun $batchFile $1 $2 &
-    done
-    echo Begin wait.
-    wait
-    echo Done waiting.
-    echo Finished batch
-    batchFileNames=()
-  fi
-  echo __________________________________________________
-done < $2FileList.txt
-
-
-if [ ${#batchFileNames[@]} -gt 0 ]; then
-  echo Starting batch
-  for batchFile in ${batchFileNames[@]} ; do
-    echo $batchFile
-    ./scripts/SingleRELAXRun $batchFile $1 $2 &
-  done
-fi
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ls -hSr tmp | sort > fileList.txt
