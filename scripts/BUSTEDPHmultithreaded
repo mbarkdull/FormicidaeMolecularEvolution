@@ -18,12 +18,34 @@ export batchSize=50
 export currentBatch=0
 export batchFileNames=()
 
-ls -hSr 8_2_RemovedStops > fileList.txt
-#ls -hSr tmp | sort > fileList.txt
+ls -hSr 8_2_RemovedStops > sequencefileList.txt
+rm $2FileList.txt
+# Read the list of files and check that a corresponding tree file DOES exist and a corresponding output file does NOT exist.
+while read -r line;
+do
+export orthogroupNumber=`echo "$line" | awk -F'_' '{print ($2)}'`
+export treeFile=$1$2"Labelled_"$orthogroupNumber"_tree.txt"
+if [ -f "$treeFile" ]; then
+  echo "$treeFile exists."
+  FILE="./9_3_BustedPHResults/"$2"/"$2"_"$orthogroupNumber"_BUSTEDPH.fas.BUSTED.json"
+  if [ -f "$FILE" ]; then
+    echo "*************************************************************"
+    echo "$FILE exists; BUSTED-PH has already been run on this orthogroup."
+    echo "*************************************************************"
+  else
+    # Make sure vertical bars are replaced with underscores:
+    echo This file should be added to the file list
+    echo 8_2_RemovedStops/cleaned_"$orthogroupNumber"_cds.fasta >> $2FileList.txt
+  fi
+else
+  echo "$treeFile does not exist."
+fi
+done < sequencefileList.txt
+
 
 while read -r line;
 do
-  export cdsFile=8_2_RemovedStops/"$line"
+  export cdsFile="$line"
   batchFileNames+=($cdsFile)
   # Get the size of the array :  ${#batchFileNames[&]}
   if [ ${#batchFileNames[@]} -eq $batchSize ]; then
@@ -38,10 +60,8 @@ do
     echo Finished batch
     batchFileNames=()
   fi
-
   echo __________________________________________________
-
-done < fileList.txt
+done < $2FileList.txt
 
 if [ ${#batchFileNames[@]} -gt 0 ]; then
   echo Starting batch
