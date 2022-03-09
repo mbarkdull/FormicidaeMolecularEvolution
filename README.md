@@ -300,7 +300,7 @@ time. To run BUSTED\[S\], use the Bash script
 for positive selection on the sequences. To run this step, use the
 command `./scripts/DataRunningBusted [absolute path to the gene tree
 files from Orthofinder, something like
-/workdir/mb2337/FormicidaeMolecularEvolution/5_Orthofinder/fasta/Orthofinder/Results*/Gene_Trees]`.
+/workdir/mb2337/FormicidaeMolecularEvolution/5_Orthofinder/fasta/Orthofinder/Results*/Resolved_Gene_Trees]`.
 
 #### Running BUSTED\[S\] multi-threaded
 
@@ -308,7 +308,7 @@ To speed up analysis, different orthogroups can be run simultaneously.
 To run BUSTED\[S\] in this manner, use the command
 `./scripts/BUSTEDmultithreaded [absolute path to the gene tree files
 from Orthofinder, something like
-/workdir/mb2337/FormicidaeMolecularEvolution/5_Orthofinder/fasta/Orthofinder/Results*/Gene_Trees]`.
+/workdir/mb2337/FormicidaeMolecularEvolution/5_Orthofinder/fasta/Orthofinder/Results*/Resolved_Gene_Trees]`.
 I would recommend this approach.
 
 ### 8.4 Parsing results from BUSTED\[S\]
