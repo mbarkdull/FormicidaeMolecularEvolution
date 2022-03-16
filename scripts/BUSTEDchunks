@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Remove an existing chunk list:
+rm chunkList.txt
+rm testFileList.txt
+rm checkedFileList.txt
+rm bustedsFileList*
+
+# Export required paths:
+export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
+
+# Make a directory for BUSTED[S] outputs:
+mkdir ./8_3_BustedResults
+
+# Download the newest version of HyPhy:
+export PATH=/home/$USER/miniconda3/bin:$PATH
+conda install -c bioconda hyphy
+
+# Create the list of input files:
+ls -hSr 8_2_RemovedStops > testFileList.txt
+
+while read -r line;
+do
+export orthogroupNumber=`echo "$line" | awk -F'_' '{print ($2)}'`
+export treeFile=$1$orthogroupNumber"_tree.txt"
+if [ -f "$treeFile" ]; then
+  echo "$treeFile exists."
+  FILE="./8_3_BustedResults/"$orthogroupNumber"_busted.json"
+  if [ -f "$FILE" ]; then
+    echo "*************************************************************"
+    echo "$FILE exists; BUSTED has already been run on this orthogroup."
+    echo "*************************************************************"
+  else
+    # Make sure vertical bars are replaced with underscores:
+    echo This file should be added to the file list
+    echo cleaned_"$orthogroupNumber"_cds.fasta >> checkedFileList.txt
+  fi
+else
+  echo "$treeFile does not exist because this orthogroup consists of three or fewer sequences."
+fi
+
+done < testFileList.txt
+rm testFileList.txt
+
+
+# Split that file into a specified number of chunks:
+export chunkNumber="l/"$2
+split --number=$chunkNumber --additional-suffix=.txt -d checkedFileList.txt bustedsFileList
+
+# Create a file listing those chunks:
+ls bustedsFileList* > chunkList.txt
+
+# Create a holder for the chunks:
+export batchSize=$2
+export currentBatch=0
+export batchFileNames=()
+
+# while reading each line in our list of chunked files,
+while read -r line;
+do
+  export batchFile=$line
+  batchFileNames+=($batchFile)
+
+  if [ ${#batchFileNames[@]} -eq $batchSize ]; then
+    echo Starting batch
+    for batchFile in ${batchFileNames[@]} ; do
+      echo $batchFile
+      #sleep 10 &
+      ./scripts/BUSTEDchunksSingle $batchFile $1 &
+    done
+    echo Begin wait.
+    wait
+    echo Done waiting.
+    echo Finished batch
+    batchFileNames=()
+  fi
+
+done < chunkList.txt

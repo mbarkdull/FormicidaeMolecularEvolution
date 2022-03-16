@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# In this file      In newBusted       On the computer
+# $1                  $batchFile        The chunk file
+# $2                  $1                The path to the gene trees
+
+# While reading each line of the chunked file,
+while read -r line;
+do
+  # Create the name of the coding sequence file from the line of the chunked file:
+  export cdsFile=8_2_RemovedStops/"$line"
+  export pathToTrees=$2
+  # Echo the name of the coding sequence file:
+  echo $cdsFile
+  echo $pathToTrees
+
+  export orthogroupNumber=`echo "$cdsFile" | awk -F'_' '{print ($4)}'`
+  echo The orthogroup number is $orthogroupNumber
+  export treeFile=$orthogroupNumber"_tree.txt"
+  echo The path to tree file is $pathToTrees$treeFile
+  export fullTreeFile=$2$treeFile
+  export output="./8_3_BustedResults/"$orthogroupNumber"_busted.json"
+  if [ -f "$output" ]; then
+    echo "$output exists; this gene has been previously analysed."
+  else
+    if [ -f "$2$treeFile" ]; then
+      echo "$treeFile exists; running BUSTED[S]."
+      echo Removing any special characters in $fullTreeFile
+      sed -i'.original' -e "s|\||_|g" $fullTreeFile
+      rm $2$treeFile.original
+
+      # Example cds file: ./8_2_BustedResults/cleaned_OG0013039_cds.fasta
+      # Example gene tree file: /workdir/mb2337/FormicidaeMolecularEvolution/4_OrthoFinder/fasta/OrthoFinder/Results_Nov19_1/Resolved_Gene_Trees/OG0013039_cds.fasta
+      #hyphy busted --alignment /workdir/mb2337/FormicidaeMolecularEvolution/8_2_RemovedStops/cleaned_OG00012768_cds.fasta --tree /workdir/mb2337/FormicidaeMolecularEvolution/4_OrthoFinder/fasta/OrthoFinder/Results_Nov24/Resolved_Gene_Trees/OG00012768_tree.txt --srv Yes CPU=16
+      echo Running BUSTED[S] on $cdsFile and $2$treeFile
+      sed -i'.original' -e "s|\?|_|g" $cdsFile
+      rm $cdsFile.original
+
+      HYPHYMPI busted --alignment $cdsFile --tree $2$treeFile --srv Yes --output "./8_3_BustedResults/"$orthogroupNumber"_busted.json"
+      #hyphy busted --alignment 8_2_RemovedStops/cleaned_OG0008294_cds.fasta --tree 5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Gene_Trees/OG0008294_tree.txt --srv Yes --output ./8_3_BustedResults/OG0008294_busted.json
+    else
+      echo "$treeFile does not exist because this orthogroup consists of three or fewer sequences. Skipping BUSTED[S]."
+    fi
+  fi
+
+  # $line looks like cleaned_OG0019864_cds.fasta
+done < $1
