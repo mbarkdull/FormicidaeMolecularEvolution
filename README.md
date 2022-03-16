@@ -306,10 +306,12 @@ files from Orthofinder, something like
 
 To speed up analysis, different orthogroups can be run simultaneously.
 To run BUSTED\[S\] in this manner, use the command
-`./scripts/BUSTEDmultithreaded [absolute path to the gene tree files
-from Orthofinder, something like
-/workdir/mb2337/FormicidaeMolecularEvolution/5_Orthofinder/fasta/Orthofinder/Results*/Resolved_Gene_Trees]`.
-I would recommend this approach.
+`./scripts/BUSTEDchunks [absolute path to the gene tree files from
+Orthofinder, something like
+/workdir/mb2337/FormicidaeMolecularEvolution/5_Orthofinder/fasta/Orthofinder/Results*/Resolved_Gene_Trees]
+[the number of chunks you would like to divide inputs into; likely a
+number near the number of cores you are working with]`. I would
+recommend this approach.
 
 ### 8.4 Parsing results from BUSTED\[S\]
 
