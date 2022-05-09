@@ -5,7 +5,7 @@ library(gt)
 library(plyr)
 library(rjson)
 
-traits <- c("polyandry", "polygyny", "workerReproductionQueens", "workerPolymorphism")
+traits <- c("polyandry", "polygyny", "workerReproductionQueens", "workerPolymorphism", "multilineage")
 
 processingRELAXFiles <- function(trait) {
   jsonFiles <- list.files(path = paste("./10_1_RelaxResults/", trait, sep = ""), pattern = "*.json", full.names = TRUE)
@@ -54,6 +54,7 @@ possiblyprocessingRELAXFiles <- possibly(processingRELAXFiles, otherwise = "File
 relaxResults <- purrr::map(traits, possiblyprocessingRELAXFiles)
 relaxResults <- as.data.frame(do.call(rbind, relaxResults))  
 
+# Create a column that accurate categories genes by selective regime:
 relaxResults <- relaxResults %>% mutate(selectionCategory =
                                           case_when(pValue <= 0.05 & kValue > 1 ~ "signficantIntensification",
                                                     pValue <= 0.05 & kValue < 1 ~ "signficantRelaxation",
@@ -107,7 +108,7 @@ relaxResults$selectionCategory <- factor(relaxResults$selectionCategory,
                                                  "nonsignficantRelaxation"))
 
 plot <- ggplot(data = filter(relaxResults,
-                             fileName != "File empty."))
+                             !is.na(selectionCategory)))
 plot + 
   geom_bar(mapping = aes(x = selectionCategory),
            position = "dodge") +
@@ -213,3 +214,87 @@ plot2 +
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank()) + 
   facet_wrap(~trait) 
+
+# Looking at only single copy orthogroups:
+singleCopyOrthogroups <- read_delim("5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Orthogroups/Orthogroups_SingleCopyOrthologues.txt",
+                                    delim = "\t",
+                                    col_names = FALSE)
+                                   
+singleCopyOrthogroupResults <- dplyr::filter(relaxResults, 
+                                             relaxResults$orthogroup %in% singleCopyOrthogroups$X1)
+
+pValueByTraitSingleCopy <- function(specificTrait) {
+  relaxResultsTrait <- filter(singleCopyOrthogroupResults, 
+                              trait == specificTrait)
+  nSelectionIntensified <- relaxResultsTrait %>% 
+    filter(pValue <= 0.05,
+           kValue > 1) %>%
+    nrow()
+  
+  nSelectionRelaxed <- relaxResultsTrait %>% 
+    filter(pValue <= 0.05,
+           kValue < 1) %>%
+    nrow()
+  # Construct a frequency table with that information:
+  frequencyTableWithNoCorrection <- matrix(c(nSelectionIntensified, nSelectionRelaxed, 
+                                             (nrow(relaxResultsTrait) - nSelectionIntensified),
+                                             (nrow(relaxResultsTrait) - nSelectionRelaxed)),
+                                           nrow = 2,
+                                           byrow = TRUE,
+                                           dimnames = list("category" = c("evidenceForSelection", "nonsignificantResult") ,
+                                                           "selection" = c("intensified", "relaxed")))
+  # Run a fisher's exact test to see if there is a difference in the proportion of genes under selection in the fore- vs. background:
+  fishersExactTest <- fisher.test(frequencyTableWithNoCorrection)
+  # Print the resulting p-value:
+  fishersExactTest[["p.value"]]
+  pValue <- if (fishersExactTest[["p.value"]] < 0.000001) {
+    formatC(fishersExactTest[["p.value"]], format = "e", digits = 2)
+  } else {
+    round(fishersExactTest[["p.value"]], digits = 4)
+  }
+  textHeight <- as.numeric(max(nSelectionIntensified, nSelectionRelaxed))
+  return(c(specificTrait, pValue, textHeight))
+}
+possiblypValueByTraitSingleCopy <- possibly(pValueByTraitSingleCopy, otherwise = "Error")
+pValues <- purrr::map(traits, possiblypValueByTraitSingleCopy)
+pValues <- as.data.frame(do.call(rbind, pValues))   
+colnames(pValues) <- c("trait", "pValue", "maxHeight")
+
+
+# Plot:
+singleCopyOrthogroupResults$selectionCategory <- factor(singleCopyOrthogroupResults$selectionCategory,
+                                                        levels = c("signficantIntensification",
+                                                                   "signficantRelaxation",
+                                                                   "nonsignficantIntensification",
+                                                                   "nonsignficantRelaxation"))
+
+plot <- ggplot(data = filter(singleCopyOrthogroupResults,
+                             !is.na(selectionCategory)))
+plot + 
+  geom_bar(mapping = aes(x = selectionCategory),
+           position = "dodge") +
+  labs(x = "Selective regime", 
+       y = "Count of orthogroups", 
+       title = "Relationship between selective intensity and focal traits\nfor single-copy orthogroups only") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90,
+                                   hjust = 1,
+                                   vjust = 1),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank()) +
+  geom_text(data = pValues, 
+            aes(x = 1.5,
+                y = as.numeric(maxHeight) + 300,
+                label = pValue)) + 
+  geom_linerange(data = pValues,
+                 aes(xmin = 1, 
+                     xmax = 2, 
+                     y = (as.numeric(maxHeight) + 200)), 
+                 color = "grey26", 
+                 size = 0.3) + 
+  scale_x_discrete(labels=c("nonsignficantRelaxation" = "Nonsignificant\nrelaxation",
+                            "signficantIntensification" = "Intensification of\nselection in species\nwith focal trait",
+                            "nonsignficantIntensification" = "Nonsignificant\nintensification",
+                            "signficantRelaxation" = "Relaxation of\nselection in species\nwith focal trait")) + 
+  facet_wrap(~trait,
+             nrow = 3) 
