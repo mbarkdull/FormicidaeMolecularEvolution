@@ -374,15 +374,17 @@ will be the labelled phylogenies.
 
 ### 9.3 Running BUSTED-PH
 
-BUSTED-PH can be run with the script `./scripts/BUSTEDPHmultithreaded`.
-This script chunks the orthogroups into groups of fifty, then stars a
-background process for each orthogroup in a chunk, passing them to the
+BUSTED-PH can be run with the script `./scripts/BUSTEDPHchunks`. This
+script subsets the orthogroups into a user-specified number of chunks,
+then starts a background process for each chunk, passing them to the
 script `./scripts/SingleBustedPHRun`, which creates an input file and
 runs BUSTED-PH. This allows you to take advantages of multiple cores on
-your machine, speeding up the run. To run BUSTED-PH, then, use the
-command:
+your machine, speeding up the run. You’ll want the number of chunks you
+specify on the command line to be the appropriate number of threads to
+use on your machine. To run BUSTED-PH, then, use the
+    command:
 
-    ./scripts/BUSTEDPHmultithreaded [full path to the directory containing labelled phylogenies from step 9.1] [prefix used when labelling phylogenies]
+    ./scripts/BUSTEDPHchunks [full path to the directory containing labelled phylogenies from step 9.1] [prefix used when labelling phylogenies] [number of threads to use/chunks to create]
 
 Results will be output in the directory
 `./9_3_BustedPHResults/[labelling prefix]`
@@ -434,10 +436,13 @@ indeed, you can likely reuse the phylogenies you generated for aBSREL.
 
 RELAX is a method from HYPHY that asks whether the strength of natural
 selection has been increased or decreased along test branches. In order
-to run RELAX, as with aSBREL, you’ll need a labelled phylogeny and a set
-of orthogroup sequences. Then, RELAX can be run with the command
-`./scripts/DataRunningRelax [full path to labelled phylogenies] [prefix
-used when labelling phylogenies]`.
+to run RELAX, as with BUSTED-PH, you’ll need a labelled phylogeny and a
+set of orthogroup sequences. Then, RELAX can be run with the command
+`./scripts/RELAXchunks [full path to labelled phylogenies] [prefix used
+when labelling phylogenies] [number of threads to use]`.
+
+This script works in the same way as the script used to run BUSTED-PH,
+described above.
 
 ### Parsing RELAX results
 
