@@ -16,7 +16,7 @@ library(rjson)
 
 # Construct a list of all of the json files:
 jsonFiles <- list.files(path = args[1], pattern = "*.json", full.names = TRUE)
-#jsonFiles <- list.files(path = "./8_3_BustedResults", pattern = "*.json", full.names = TRUE)
+#jsonFiles <- list.files(path = "./8_3_BustedResults/8_3_BustedResults/", pattern = "*.json", full.names = TRUE)
 jsonFiles <- sort(jsonFiles, decreasing = TRUE)
 # bustedResult <- rjson::fromJSON(file = "./8_3_BustedResults/OG0000067_busted.json")
 # Write a function that will process each individual json file and extract the file name, orthogroup number, p-value, and return a text description of the p-value:
@@ -24,7 +24,7 @@ bustedJSONProcessing <- function(i) {
   bustedResults <- rjson::fromJSON(file = i)
   # Now run my if else statement:
   # If the p value is less than 0.05, that means there is positive selection. 
-  if (bustedResults[["test results"]][["p-value"]] < 0.05) {
+
     orthogoupName <- sapply(strsplit(as.character(i),"/"), tail, 1)
     orthogoupName <- sapply(strsplit(orthogoupName, "\\_"), `[`, 1)
     
@@ -32,25 +32,11 @@ bustedJSONProcessing <- function(i) {
     data <- c(bustedResults[["input"]][["file name"]], 
               orthogoupName, 
               bustedResults[["test results"]][["p-value"]], 
-              "yes, BUSTED found evidence for positive selection", 
               bustedResults[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["omega"]],
               bustedResults[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["proportion"]])
     return(data)
-    
-  } else {
-    orthogoupName <- sapply(strsplit(as.character(i),"/"), tail, 1)
-    orthogoupName <- sapply(strsplit(orthogoupName, "\\_"), `[`, 1)
-    
-    # Construct a vector of data containing the file name, the orthogroup number, the p-value, and the text "no evidence for positive selection":
-    data <- c(bustedResults[["input"]][["file name"]], 
-              orthogoupName, 
-              bustedResults[["test results"]][["p-value"]], 
-              "no evidence for positive selection from BUSTED", 
-              bustedResults[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["omega"]],
-              bustedResults[["fits"]][["Unconstrained model"]][["Rate Distributions"]][["Test"]][["2"]][["proportion"]])
-    return(data)
-  }
 }
+
 # Create a version of the function that returns an error if there's an empty file (from https://www.r-bloggers.com/2017/12/skip-errors-in-r-loops-by-not-writing-loops/):
 possiblyBustedJSONProcessing <- possibly(bustedJSONProcessing, otherwise = "File empty.")
 # Run this function with purrr:map so as to avoid for loops (from https://www.r-bloggers.com/2017/12/skip-errors-in-r-loops-by-not-writing-loops/ and https://jennybc.github.io/purrr-tutorial/ls01_map-name-position-shortcuts.html):
@@ -58,7 +44,7 @@ bustedResults <- map(jsonFiles, possiblyBustedJSONProcessing)
 
 # Convert the results to a dataframe:
 bustedResults <- as.data.frame(do.call(rbind, bustedResults))   
-colnames(bustedResults) <- c("file", "orthogroup", "test results p-value", "selectionOn", "omega3", "proportionOfSitesUnderSelection")
+colnames(bustedResults) <- c("file", "orthogroup", "test results p-value", "omega3", "proportionOfSitesUnderSelection")
 bustedResults$`test results p-value` <- as.numeric(bustedResults$`test results p-value`)
 bustedResults$omega3 <- as.numeric(bustedResults$omega3)
 bustedResults$proportionOfSitesUnderSelection <- as.numeric(bustedResults$proportionOfSitesUnderSelection)
@@ -138,6 +124,8 @@ resultFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
 resultFisherBP
 resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultFisherBP, topNodes = length(resultFisherBP@score),
                                  numChar = 120)
+significantresultsFisherBPTable <- dplyr::filter(resultsFisherBPTable, 
+                                          as.numeric(raw.p.value) <= 0.01)
 
 head(resultsFisherBPTable)
 GOdataMF <- new("topGOdata",
@@ -214,6 +202,16 @@ goEnrichmentSummaries <- capture.output(print(resultFisherBP),
                                         print(resultKSCC))
 
 writeLines(goEnrichmentSummaries, con = file("./Results/bustedGOSummaries.csv"))
+allResults <- rbind(resultsFisherBPTable,
+                    resultsFisherMFTable,
+                    resultsFisherCCTable,
+                    resultKSBPTable,
+                    resultKSMFTable,
+                    resultKSCCTable)
+significantGOResults <- dplyr::filter(allResults,
+                                      as.numeric(raw.p.value) <= 0.01) %>%
+  distinct(Term, .keep_all = TRUE)
+significantGOResults$raw.p.value <- as.numeric(significantGOResults$raw.p.value)
 
 ################## Generate some violin plots ###############################
 
