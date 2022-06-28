@@ -1,41 +1,32 @@
 #!/bin/bash
 
-export cdsFile=$1
-export pathToTrees=$2
-export abbreviation=$3
-echo Running on the file $cdsFile
-#sleep 5
-#echo Finish $cdsFile
-#exit
+# In this file:           #In BUSTEDPHchunks
+#   $1                        the chunked file listing CDS files
+#   $2                        the path to labelled phylogenies
+#   $3                        the prefix for this trait
 
-#echo the coding sequence alignment file is $cdsFile
-# The tree file needs to look like OG0002680_tree.txt. $f looks like  /8_2_RemovedStops/cleaned_OG0002680_cds.fasta.
-export line=`echo "$cdsFile" | awk -F'/' '{print ($2)}'`
-export orthogroupNumber=`echo "$line" | awk -F'_' '{print ($2)}'`
-echo The orthogroup number is $orthogroupNumber
-export treeFile=$2$3"Labelled_"$orthogroupNumber"_tree.txt"
-echo The path to tree file is $treeFile
-export output="./10_1_RelaxResults/"$3"/"$orthogroupNumber"_absrel.json"
-if [ -f "$treeFile" ]; then
-  echo "$treeFile exists."
-  FILE="./10_1_RelaxResults/"$3"/"$orthogroupNumber"_absrel.json"
-  if [ -f "$FILE" ]; then
-    echo "*************************************************************"
-    echo "$FILE exists; RELAX has already been run on this orthogroup."
-    echo "*************************************************************"
-  else
-    # Make sure vertical bars are replaced with underscores:
-    echo Removing any special characters in $treeFile
-    sed -i'.original' -e "s|\||_|g" $treeFile
-    rm $treeFile.original
 
-    # Run RELAX:
-    echo Running RELAX on $cdsFile and $treeFile.
-    sed -i'.original' -e "s|\?|_|g" $cdsFile
-    rm $cdsFile.original
-    HYPHYMPI relax --alignment $cdsFile --tree $treeFile --test Foreground --srv Yes CPU=64 --output "./10_1_RelaxResults/"$3"/"$orthogroupNumber"_relax.json"
+while read -r line;
+do
+  export cdsFile=$line
+  export pathToTrees=$2
+  export prefix=$3
 
-  fi
-else
-  echo "$treeFile does not exist because this orthogroup consists of three or fewer sequences."
-fi
+  #echo the coding sequence alignment file is $cdsFile
+  # The tree file needs to look like OG0002680_tree.txt. $f looks like  /8_2_RemovedStops/cleaned_OG0002680_cds.fasta.
+  export orthogroupNumber=`echo "$cdsFile" | awk -F'_' '{print ($4)}'`
+  #echo The orthogroup number is $orthogroupNumber
+  # 9_1_LabelledPhylogenies/workerPolymorphism/workerPolymorphismLabelled_OG0007231_tree.txt
+  export treeFile=$2$3"Labelled_"$orthogroupNumber"_tree.txt"
+  # Make sure vertical bars are replaced with underscores:
+      echo Removing any special characters in $treeFile
+      sed -i'.original' -e "s|\||_|g" $treeFile
+      rm $treeFile.original
+
+      # Run RELAX:
+      echo Running RELAX on $cdsFile and $treeFile.
+      sed -i'.original' -e "s|\?|_|g" $cdsFile
+      rm $cdsFile.original
+      HYPHYMPI relax --alignment $cdsFile --tree $treeFile --test Foreground --srv Yes CPU=64 --output "./10_1_RelaxResults/"$3"/"$orthogroupNumber"_relax.json"
+
+done < $1

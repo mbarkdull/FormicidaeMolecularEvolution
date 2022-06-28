@@ -1,0 +1,114 @@
+#!/bin/bash
+
+##### Get everything set up:
+# Export required paths:
+export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
+
+# Make a directory for RELAX outputs:
+mkdir ./10_1_RelaxResults/
+mkdir ./10_1_RelaxResults/$2/
+
+# Download the newest version of HyPhy:
+export PATH=/home/$USER/miniconda3/bin:$PATH
+conda install -c bioconda hyphy
+
+##### Construct the list of inputs:
+# List all of the orthogroup sequence files:
+ls -hSr 8_2_RemovedStops > $2"SequencefileList.txt"
+rm $2FileList_relax.txt
+
+# Read the list of orthogroup sequence files.
+# If a tree file DOES exist and an output file does NOT exist, add that orthogroup sequence file to the input list, $2FileList_relax.txt
+while read -r line;
+do
+    export orthogroupNumber=`echo "$line" | awk -F'_' '{print ($2)}'`
+    export treeFile=$1$2"Labelled_"$orthogroupNumber"_tree.txt"
+    if [ -f "$treeFile" ]; then
+        echo "$treeFile exists."
+        FILE="./10_1_RelaxResults/"$2"/"$orthogroupNumber"_relax.json"
+        if [ -f "$FILE" ]; then
+            echo "*************************************************************"
+            echo "$FILE exists; RELAX has already been run on this orthogroup."
+            echo "*************************************************************"
+        else
+            # Make sure vertical bars are replaced with underscores:
+            echo This file should be added to the file list
+            echo 8_2_RemovedStops/cleaned_"$orthogroupNumber"_cds.fasta >> $2FileList_relax.txt
+        fi
+    else
+        echo "$treeFile does not exist because this orthogroup consists of three or fewer sequences."
+    fi
+done < $2"SequencefileList.txt"
+
+# Split the input file list into a user-specified number of chunks:
+export chunkNumber="l/"$3
+split --number=$chunkNumber --additional-suffix=.txt -d $2FileList_relax.txt $2"relaxFileList"
+# Remove any chunks that are empty:
+find . -name $2'relaxFileList*' -type f -empty -delete
+# Create a file listing those chunks:
+ls $2"relaxFileList"* > $2"relaxChunkList.txt"
+
+# While the list of chunks is not empty,
+while [ -s $2"relaxChunkList.txt" ]
+do
+  # Run RELAX, meaning:
+  # Create a holder for the chunks:
+  export batchSize=$3
+  export currentBatch=0
+  export batchFileNames=()
+  # Then, while reading each line in our list of chunked files,
+  while read -r line;
+  do
+    export batchFile=$line
+    batchFileNames+=($batchFile)
+    if [ ${#batchFileNames[@]} -eq $batchSize ]; then
+      for batchFile in ${batchFileNames[@]} ; do
+        #sleep 10 &
+        ./scripts/SingleRELAXRun $batchFile $1 $2 &
+      done
+      wait
+      batchFileNames=()
+    fi
+  done < $2"relaxChunkList.txt"
+  # Once finished running RELAX, delete outputs with a size of zero:
+  find 10_1_RelaxResults/$2/ -type f -size 0b -delete
+  # Delete the old input files:
+  rm $2"relaxFileList"*
+  rm $2"relaxChunkList.txt"
+  # And re-create a list of input files:
+  # List all of the orthogroup sequence files:
+  ls -hSr 8_2_RemovedStops > $2"SequencefileList.txt"
+  rm $2FileList_relax.txt
+
+  # Read the list of orthogroup sequence files.
+  # If a tree file DOES exist and an output file does NOT exist, add that orthogroup sequence file to the input list, $2FileList_relax.txt
+  while read -r line;
+  do
+      export orthogroupNumber=`echo "$line" | awk -F'_' '{print ($2)}'`
+      export treeFile=$1$2"Labelled_"$orthogroupNumber"_tree.txt"
+      if [ -f "$treeFile" ]; then
+          echo "$treeFile exists."
+          FILE="./10_1_RelaxResults/"$2"/"$orthogroupNumber"_relax.json"
+          if [ -f "$FILE" ]; then
+              echo "*************************************************************"
+              echo "$FILE exists; RELAX has already been run on this orthogroup."
+              echo "*************************************************************"
+          else
+              # Make sure vertical bars are replaced with underscores:
+              echo This file should be added to the file list
+              echo 8_2_RemovedStops/cleaned_"$orthogroupNumber"_cds.fasta >> $2FileList_relax.txt
+          fi
+      else
+          echo "$treeFile does not exist because this orthogroup consists of three or fewer sequences."
+      fi
+  done < $2"SequencefileList.txt"
+
+  # Split the input file list into a user-specified number of chunks:
+  export chunkNumber="l/"$3
+  split --number=$chunkNumber --additional-suffix=.txt -d $2FileList_relax.txt $2"relaxFileList"
+  # Remove any chunks that are empty:
+  find . -name $2'relaxFileList*' -type f -empty -delete
+  # Create a file listing those chunks:
+  ls $2"relaxFileList"* > $2"relaxChunkList.txt"
+  
+done
