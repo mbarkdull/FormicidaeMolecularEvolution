@@ -7,71 +7,27 @@ library(rjson)
 library(MetBrewer)
 library(SuperExactTest)
 library(topGO)
+library(ggpubr)
 
 ##### Analyze results for all orthogroups: ##### 
 # Read in results:
 relaxResults <- read_csv("./Results/allRelaxResults.csv", col_names = TRUE)
+relaxResults$pValue <- as.numeric(as.character(relaxResults$pValue))
+relaxResults$kValue <- as.numeric(as.character(relaxResults$kValue))
+
 bustedPHResults <- read_csv("./Results/allBustedPHResults.csv", col_names = TRUE)
+bustedPHResults$`test results background p-value` <- as.numeric(as.character(bustedPHResults$`test results background p-value`))
+bustedPHResults$`test results p-value` <- as.numeric(as.character(bustedPHResults$`test results p-value`))
+bustedPHResults$`test results shared distributions p-value` <- as.numeric(as.character(bustedPHResults$`test results shared distributions p-value`))
 
 # Combine relax and busted results:
-relaxAndBustedPH <- full_join(relaxResults, 
-                  bustedPHResults, 
-                  by = c("orthogroup" = "orthogroup", 
-                         "trait" = "trait"))
+relaxAndBustedPH <- full_join(relaxResults,
+                              bustedPHResults,
+                              by = c("orthogroup" = "orthogroup",
+                                     "trait" = "trait"))
 
 relaxAndBustedPH$combo <- paste(relaxAndBustedPH$selectionOn, relaxAndBustedPH$selectionCategory)
 write.csv(relaxAndBustedPH, file = "relaxAndBustedPH.csv")
-
-relaxAndBustedPHPlot <- ggplot(data = filter(relaxAndBustedPH,
-                                             file != "File empty." & !is.na(trait) & !is.na(file))) + 
-  geom_bar(mapping = aes(x = combo),
-           position = "dodge") +
-  theme(axis.text.x = element_text(angle = 90,
-                                   hjust = 1,
-                                   vjust = 1),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.major.x = element_blank()) +
-  coord_flip() + 
-  scale_x_discrete(labels=c("EvidenceOfSelectionAssociatedWithLackOfTraitButNS nonsignficantRelaxation" = "nonsignficant background positive, nonsignificant foreground relaxation",      
-                            "NoEvidenceOfSelection nonsignficantRelaxation" = "no positive selection, nonsignficant foreground relaxation",                                 
-                            "EvidenceOfSelectionAssociatedWithLackOfTraitButNS signficantIntensification" = "nonsignificant background positive, significant foreground intensification",
-                            "BackgroundOnly signficantIntensification" = "significant background positive selection, significant foreground intensification",
-                            "NoEvidenceOfSelection signficantIntensification" = "no positive selection, significant foreground intensification",
-                            "SelectionOnBothButNoSignificantDifference nonsignficantIntensification" = "similar positive selection on both, nonsignificant foreground intensification",
-                            "EvidenceOfSelectionAssociatedWithTraitButNS signficantIntensification" = "nonsignificant foreground positive selection, significant foreground intensification",
-                            "EvidenceOfSelectionAssociatedWithTraitButNS nonsignficantRelaxation" = "nonsignificant foreground positive selection, nonsignificant foreground relaxation",
-                            "NoEvidenceOfSelection nonsignficantIntensification" = "no positive selection, nonsignificant foreground intensification",
-                            "EvidenceOfSelectionAssociatedWithLackOfTraitButNS nonsignficantIntensification" = "nonsignificant foreground positive selection, nonsignificant foreground intensification",
-                            "ForegroundOnly nonsignficantRelaxation" = "significant foreground positive selection, nonsignificant foreground relaxation",
-                            "NoEvidenceOfSelection signficantRelaxation" = "no positive selection, significant foreground relaxation",
-                            "EvidenceOfSelectionAssociatedWithTraitButNS nonsignficantIntensification" = "nonsignificant foreground positive selection, nonsignificant foreground relaxation",
-                            "BackgroundOnly nonsignficantIntensification" = "significant background positive selection, nonsignificant foreground intensification",
-                            "BackgroundOnly nonsignficantRelaxation" = "significant background positive selection, nonsignificant foreground relaxation",                                         
-                            "BackgroundOnly signficantRelaxation" = "significant background positive selection, significant foreground relaxation",                                           
-                            "ForegroundOnly signficantRelaxation" = "significant foreground positive selection, significant foreground relaxation",                                            
-                            "EvidenceOfSelectionAssociatedWithLackOfTraitButNS signficantRelaxation" = "nonsignificant background positive selection, significant foreground relaxation",        
-                            "EvidenceOfSelectionAssociatedWithTraitButNS signficantRelaxation"  = "nonsignificant foreground positive selection, significant foreground relaxation",                
-                            "ForegroundOnly signficantIntensification" = "significant foreground positive selection, significant foreground intensification",                                      
-                            "NoEvidenceOfSelection NA" = "no positive selection, not tested with RELAX",                                                       
-                            "SelectionOnBothButDifferent nonsignficantIntensification" = "positive and different selection on fore- and background, nonsignificant foreground intensification",                      
-                            "ForegroundOnly nonsignficantIntensification"  = "significant foreground positive selection, nonsignficant foreground intensification",                                    
-                            "SelectionOnBothButNoSignificantDifference signficantIntensification" = "positive and not different selection on fore- and background, significant foreground intensification",           
-                            "SelectionOnBothButDifferent signficantIntensification" = "positive and different selection on fore- and background, significant foreground intensification",                          
-                            "NA nonsignficantIntensification" = "not tested with BUSTED-PH, nonsignificant foreground intensification",                                               
-                            "SelectionOnBothButNoSignificantDifference nonsignficantRelaxation" = "positive and not different selection on fore- and background, nonsignificant foreground relaxation",              
-                            "SelectionOnBothButDifferent signficantRelaxation" = "positive and different selection on fore- and background, significant foreground relaxation",                              
-                            "SelectionOnBothButNoSignificantDifference signficantRelaxation"  = "positive and not different selection on fore- and background, significant foreground relaxation",                  
-                            "EvidenceOfSelectionAssociatedWithTraitButNS NA" = "nonsignificant foreground positive selection, not tested with RELAX",                                 
-                            "SelectionOnBothButDifferent nonsignficantRelaxation"  = "positive and different selection on fore- and background, nonsignificant foreground relaxation",                             
-                            "EvidenceOfSelectionAssociatedWithLackOfTraitButNS NA" = "nonsignificant background positive selection, not tested with RELAX",                           
-                            "BackgroundOnly NA" = "signficant background positive selection, not tested with RELAX",                                                              
-                            "SelectionOnBothButDifferent NA" = "positive and different selection on fore- and background, not tested with RELAX",                                                
-                            "SelectionOnBothButNoSignificantDifference NA"  = "positive and not different selection on fore- and background, not tested with RELAX",                                    
-                            "ForegroundOnly NA"  = "significant foreground positive selection, not tested with RELAX"  )) + 
-  facet_wrap(~trait.x,
-             nrow = 3) 
-  
-relaxAndBustedPHPlot
 
 traits <- unique(relaxAndBustedPH$trait)
 
@@ -106,13 +62,18 @@ pValueByTraitRelax <- function(specificTrait, inputData) {
     round(fishersExactTest[["p.value"]], digits = 4)
   }
   textHeight <- as.numeric(max(nSelectionIntensified, nSelectionRelaxed))
-  return(c(specificTrait, pValue, textHeight))
+  return(c(specificTrait, pValue, textHeight, nSelectionIntensified, nSelectionRelaxed))
 }
+
 possiblypValueByTraitRelax <- possibly(pValueByTraitRelax, otherwise = "Error")
+
 pValuesRelax <- traits %>% 
   purrr::map(~ possiblypValueByTraitRelax(.x, relaxAndBustedPH))
+
 pValuesRelax <- as.data.frame(do.call(rbind, pValuesRelax))   
-colnames(pValuesRelax) <- c("trait", "pValue", "maxHeight")
+
+colnames(pValuesRelax) <- c("trait", "pValue", "maxHeight", "nSelectionIntensified", "nSelectionRelaxed")
+
 pValuesRelax$test <- "relax"
 
 pValueByTraitBUSTEDPH <- function(specificTrait, inputData) {
@@ -147,16 +108,16 @@ pValueByTraitBUSTEDPH <- function(specificTrait, inputData) {
     round(fishersExactTest[["p.value"]], digits = 4)
   }
   textHeight <- as.numeric(max(nSelectionForeground, nSelectionBackground))
-  return(c(specificTrait, pValue, textHeight))
+  return(c(specificTrait, pValue, textHeight, nSelectionForeground, nSelectionBackground))
 }
 possiblypValueByTraitBUSTEDPH <- possibly(pValueByTraitBUSTEDPH, otherwise = "Error")
 pValuesBUSTEDPH <- traits %>% 
   map(~ possiblypValueByTraitBUSTEDPH(.x, relaxAndBustedPH))
 pValuesBUSTEDPH <- as.data.frame(do.call(rbind, pValuesBUSTEDPH))   
-colnames(pValuesBUSTEDPH) <- c("trait", "pValue", "maxHeight")
+colnames(pValuesBUSTEDPH) <- c("trait", "pValue", "maxHeight", "nSelectionForeground", "nSelectionBackground")
 pValuesBUSTEDPH$test <- "bustedPH"
 
-pValuesAll <- rbind(pValuesRelax, pValuesBUSTEDPH)
+pValuesAll <- bind_rows(pValuesRelax, pValuesBUSTEDPH)
 
 # Make a lollipop plot:
 # Create data
@@ -213,10 +174,10 @@ summaryDataframe <- separate(summaryDataframe,
 summaryDataframe <- dplyr::full_join(summaryDataframe, pValuesAll, by = c("trait", "test")) 
 
 # Create a color scheme and nicely formatted trait category labels:
-colorScheme <- c("nSelectionIntensified" = "#819fe3",
-                 "nSelectionRelaxed" = "#391463",
-                 "nSelectionForeground" = "#fc9086",
-                 "nSelectionBackground" = "#ba1f19",
+colorScheme <- c("nSelectionIntensified" = "#48266e",
+                 "nSelectionRelaxed" = "#819fe3",
+                 "nSelectionForeground" = "#bf3934",
+                 "nSelectionBackground" = "#e3a59f",
                  "nSelectionBoth" = "#e0d8d7")
 traitLabels <- c("polyandry" = "polyandry",
                  "polygyny" = "polygyny",
@@ -225,7 +186,6 @@ traitLabels <- c("polyandry" = "polyandry",
                  "multilineage" = "multilineage colonies")
 traitLabels <- data.frame(traitLabels, trait = names(traitLabels))
 summaryDataframe <- left_join(summaryDataframe, traitLabels)
-rm(traitLabels)
 
 traits <- unique(summaryDataframe$trait)
 summaryDataframe$selection <- factor(summaryDataframe$selection,
@@ -234,6 +194,12 @@ summaryDataframe$selection <- factor(summaryDataframe$selection,
                                                 "nSelectionBoth",
                                                 "nSelectionRelaxed",
                                                 "nSelectionIntensified"))
+summaryDataframe$maxHeight <- as.numeric(as.character(summaryDataframe$maxHeight))
+summaryDataframe$nSelectionIntensified <- as.numeric(as.character(summaryDataframe$nSelectionIntensified))
+summaryDataframe$nSelectionRelaxed <- as.numeric(as.character(summaryDataframe$nSelectionRelaxed))
+summaryDataframe$nSelectionForeground <- as.numeric(as.character(summaryDataframe$nSelectionForeground))
+summaryDataframe$nSelectionBackground <- as.numeric(as.character(summaryDataframe$nSelectionBackground))
+
 #traits <- c("workerReproductionQueens", "workerPolymorphism")
 
 #### Plot all results with lollipop plots: ####
@@ -247,15 +213,9 @@ lollipopPlots <- function(specificTrait, inputData) {
                  aes(x = selection,
                      y = number,
                      fill = selection)) +
-    geom_point(mapping = aes(colour = selection),
-               position = position_dodge2(width = 0.75),
-               size = 4.5) + 
-    geom_linerange(aes(x = selection,
-                       ymin = 0,
-                       ymax = number,
-                       colour = selection),
-                   position = position_dodge2(width = 0.75),
-                   size = 2) +
+    geom_col(plotData,
+             mapping = aes(fill = selection),
+             position = position_dodge2(width = 0.75)) +
     geom_text(data = dplyr::filter(plotData, 
                                    trait == specificTrait), 
               aes(x = 1.5,
@@ -270,8 +230,7 @@ lollipopPlots <- function(specificTrait, inputData) {
                        y = (as.numeric(as.character(maxHeight)) + 200)), 
                    color = "grey50", 
                    size = 0.3) +
-    theme_bw() +
-    scale_color_manual(values = colorScheme,
+    scale_fill_manual(values = colorScheme,
                        labels = c("nSelectionIntensified" = "Selection intensified\non foreground",
                                   "nSelectionRelaxed" = "Selection relaxed\non foreground",
                                   "nSelectionForeground" = "Positive selection\non foreground",
@@ -317,11 +276,11 @@ patchworkTest <- patchwork::wrap_plots(test,
   patchwork::plot_annotation(title = 'Impact of sociality-associated traits on molecular evolution',
                              theme = theme(plot.title = element_text(size = 19)))
 patchworkTest[[1]] <- patchworkTest[[1]] +
-  ylim(0, 2700)
+  ylim(0, 3200)
 patchworkTest[[2]] <- patchworkTest[[2]] + 
-  ylim(0, 2700)
+  ylim(0, 3200)
 patchworkTest[[3]] <- patchworkTest[[3]] +
-  ylim(0, 2700)
+  ylim(0, 3200)
 #patchworkTest[[4]] <- patchworkTest[[4]] + 
   #ylim(0, 2700)
 #patchworkTest[[5]] <- patchworkTest[[5]] + 
@@ -739,49 +698,56 @@ kValueViolinPlotFlipped
 
 #### Plot lollipop and violin plots together: ####
 lollipopViolin <- function(specificTrait) {
-  plotData <- dplyr::filter(summaryDataframe, 
+  inputData <- summaryDataframe
+  testLabels <- c("bustedPH" = "Distribution of positive selection\n(BUSTED-PH)",
+                  "relax" = "Distribution of selection intensity")
+  plotData <- dplyr::filter(inputData, 
                             trait == specificTrait,
-                            selection != "nSelectionBoth",
-                            test == "relax")
-  lollipop <- ggplot(data = dplyr::filter(summaryDataframe, 
-                                          selection != "nSelectionBoth",
-                                          test == "relax",
-                                          trait == specificTrait),
-                     mapping = aes(x = trait,
-                                   y = number,
-                                   fill = selection)) +
-    geom_point(mapping = aes(colour = selection),
-               position = position_dodge2(width = 0.75),
-               size = 4.5) + 
-    geom_linerange(aes(x = trait,
-                       ymin = 0,
-                       ymax = number,
-                       colour = selection),
-                   position = position_dodge2(width = 0.75),
-                   size = 2) +
-    geom_text(data = dplyr::filter(plotData,
-                                   trait == specificTrait), 
-              aes(x = 1,
+                            selection != "nSelectionBoth")
+  barPlot <- ggplot(filter(plotData,
+                           test != "bustedPH"), 
+                    aes(x = selection,
+                        y = number,
+                        fill = selection)) +
+    geom_col(filter(plotData,
+                    test != "bustedPH"),
+             mapping = aes(fill = selection),
+             position = position_dodge2(width = 0.75)) +
+    geom_text(data = dplyr::filter(plotData, 
+                                   trait == specificTrait,
+                                   test != "bustedPH"), 
+              aes(x = 1.5,
                   y = as.numeric(as.character(maxHeight)) + 300,
                   label = pValue),
               colour = "grey50",
               size = 3) + 
-    geom_linerange(data = dplyr::filter(plotData,
-                                        trait == specificTrait),
-                   aes(xmin = 0.75, 
-                       xmax = 1.25, 
+    geom_linerange(data = dplyr::filter(plotData, 
+                                        trait == specificTrait,
+                                        test != "bustedPH"),
+                   aes(xmin = 1, 
+                       xmax = 2, 
                        y = (as.numeric(as.character(maxHeight)) + 200)), 
                    color = "grey50", 
                    size = 0.3) +
-    scale_color_manual(values = colorScheme,
-                       labels = c("nSelectionIntensified" = "Selection intensified\non foreground",
-                                  "nSelectionRelaxed" = "Selection relaxed\non foreground",
-                                  "nSelectionForeground" = "Positive selection\non foreground",
-                                  "nSelectionBackground" = "Positive selection\non background")) +
+    scale_fill_manual(values = colorScheme,
+                      labels = c("nSelectionIntensified" = "Selection intensified\non foreground",
+                                 "nSelectionRelaxed" = "Selection relaxed\non foreground",
+                                 "nSelectionForeground" = "Positive selection\non foreground",
+                                 "nSelectionBackground" = "Positive selection\non background")) +
     labs(y = "Count of orthogroups", 
-         title = "Ratios of relaxed to intensified selection") + 
-    theme(axis.text.x = element_blank(),
-          axis.ticks.x = element_blank(),
+         title = paste(str_to_sentence(plotData$traitLabels), 
+                       sep = " ")) +
+    scale_x_discrete(labels = c("bustedPH" = "Positive selection\non fore- or background",
+                                "relax" = "Relaxed or\nintensified selection")) + 
+    facet_wrap(~test,
+               nrow = 2,
+               labeller = labeller(test = testLabels),
+               scales = 'free_x', 
+               strip.position = "top") + 
+    theme(axis.text.x = element_text(angle = 0,
+                                     hjust = 0.5,
+                                     vjust = 1,
+                                     size = 8),
           panel.grid.minor.x = element_blank(),
           panel.grid.major.x = element_blank(),
           panel.spacing = unit(0.5, "cm"),
@@ -792,16 +758,14 @@ lollipopViolin <- function(specificTrait) {
           panel.spacing.y = unit(30, "pt"),
           strip.background = element_blank(),
           strip.placement = "outside",
+          strip.text = element_text(hjust = 0),
           axis.title.x = element_blank(), 
           rect = element_rect(fill = "transparent"),
           plot.title = element_text(size = 15)) +
-    facet_wrap(~factor(traitLabels, 
-                       levels = c('reproductive workers',
-                                  'polymorphic workers',
-                                  'multilineage colonies')),
-               ncol = 3,
-               scales = 'free_y', 
-               strip.position = "top")
+    scale_x_discrete(labels = c("nSelectionBackground" = "Positive selection\non species without trait",
+                                "nSelectionForeground" = "Positive selection\non species with trait",
+                                "nSelectionIntensified" = "Intensified selection\nassociated with trait",
+                                "nSelectionRelaxed"  = "Relaxed selection\nassociated with trait"))
   
   violin <- ggplot(data = filter(relaxResults,
                                  !is.na(kValue),
@@ -812,16 +776,17 @@ lollipopViolin <- function(specificTrait) {
                 fill = "#efebf0") +
     geom_hline(yintercept = 1) + 
     labs(title = paste("Distribution of selection intensity parameters\nassociated with each focal trait"),
-         x = "Focal sociality-associated trait",
          y = "K-values") +
     scale_y_continuous(trans = "log10",
                        breaks = scales::log_breaks(n = 10),
-                       labels = function(x) format(x, scientific = FALSE),
+                       labels = function(x) sprintf("%g", x),
                        limits = c(0.001, 400)) + 
     coord_flip() +
     theme(axis.text.y = element_text(color = "white",
                                      angle = 90),
           axis.ticks.y = element_line(color = "white"),
+          axis.text.x = element_text(angle = 45,
+                                     hjust = 1),
           panel.spacing = unit(0.5, "cm"),
           panel.border = element_blank(),
           panel.background = element_rect(fill = "gray98"),
@@ -832,8 +797,8 @@ lollipopViolin <- function(specificTrait) {
           strip.placement = "outside",
           axis.title.y = element_text(color = "white"), 
           rect = element_rect(fill = "transparent"),
-          plot.title = element_text(size = 13),
-          strip.text = element_text(hjust = 0)) +
+          plot.title = element_blank(),
+          strip.text = element_blank()) +
     facet_wrap(~factor(traitLabels, 
                        levels = c('Reproductive workers',
                                   'Polymorphic workers',
@@ -842,10 +807,9 @@ lollipopViolin <- function(specificTrait) {
                scales = 'free_y', 
                strip.position = "top") 
   
-  ggarrange(lollipop,
+  ggarrange(barPlot,
             violin,
-            ncol = 1)
-}
+            ncol = 1)}
 
 lollipopViolin(specificTrait = "multilineage")
 test <- purrr::map(subsetTraits, lollipopViolin)
@@ -853,6 +817,12 @@ patchworkTest <- cowplot::plot_grid(plotlist = test,
                    ncol = 3)
 
 patchworkTest
+ggsave(filename = "relaxResultsBarAndViolin.png", 
+       device = "png",
+       path = "./Plots/", 
+       bg = "transparent", 
+       width = 16, 
+       height = 8)
 # Plot the distribution of k-values and color them by whether they are under positive selection in foreground or background species:
 ggplot(data = filter(relaxAndBustedPH,
                      trait == "polyandry")) +
