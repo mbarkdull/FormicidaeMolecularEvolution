@@ -20,9 +20,19 @@ bustedPHResults$`test results background p-value` <- as.numeric(as.character(bus
 bustedPHResults$`test results p-value` <- as.numeric(as.character(bustedPHResults$`test results p-value`))
 bustedPHResults$`test results shared distributions p-value` <- as.numeric(as.character(bustedPHResults$`test results shared distributions p-value`))
 
+# Adjust the raw p-values with Benjamini-Hochberg FDR:
+relaxResultsAdjusted <- relaxResults %>%
+  group_by(trait) %>% 
+  mutate(pValueFDR = p.adjust(pValue, method='BH')) 
+bustedPHResultsAdjusted <- bustedPHResults %>%
+  group_by(trait) %>% 
+  mutate(testResultspValueFDR = p.adjust(`test results p-value`, method='BH')) %>% 
+  mutate(testResultsBackgroundpValueFDR = p.adjust(`test results background p-value`, method='BH')) %>% 
+  mutate(testResultsSharedDistributionspValueFDR = p.adjust(`test results shared distributions p-value`, method='BH'))
+
 # Combine relax and busted results:
-relaxAndBustedPH <- full_join(relaxResults,
-                              bustedPHResults,
+relaxAndBustedPH <- full_join(relaxResultsAdjusted,
+                              bustedPHResultsAdjusted,
                               by = c("orthogroup" = "orthogroup",
                                      "trait" = "trait"))
 
@@ -31,17 +41,17 @@ write.csv(relaxAndBustedPH, file = "relaxAndBustedPH.csv")
 
 traits <- unique(relaxAndBustedPH$trait)
 
-# Calculate p-values for each trait:
+# Calculate p-values for each trait, on the FDR adjusted p-values:
 pValueByTraitRelax <- function(specificTrait, inputData) {
   relaxResultsTrait <- filter(inputData, 
                               trait == specificTrait & !is.na(kValue))
   nSelectionIntensified <- relaxResultsTrait %>% 
-    filter(pValue <= 0.05,
+    filter(pValueFDR <= 0.05,
            kValue > 1) %>%
     nrow()
   
   nSelectionRelaxed <- relaxResultsTrait %>% 
-    filter(pValue <= 0.05,
+    filter(pValueFDR <= 0.05,
            kValue < 1) %>%
     nrow()
   # Construct a frequency table with that information:
@@ -80,15 +90,15 @@ pValueByTraitBUSTEDPH <- function(specificTrait, inputData) {
   bustedPHResultsTrait <- filter(inputData, 
                                  trait == specificTrait & !is.na(`test results p-value`))
   nSelectionForeground <- bustedPHResultsTrait %>% 
-    filter(`test results p-value` <= 0.05,
-           `test results background p-value` > 0.05,
-           `test results shared distributions p-value` <= 0.05) %>%
+    filter(testResultspValueFDR <= 0.05,
+           testResultsBackgroundpValueFDR > 0.05,
+           testResultsSharedDistributionspValueFDR <= 0.05) %>%
     nrow()
   
   nSelectionBackground <- bustedPHResultsTrait %>% 
-    filter(`test results p-value` > 0.05,
-           `test results background p-value` <= 0.05,
-           `test results shared distributions p-value` <= 0.05) %>%
+    filter(testResultspValueFDR > 0.05,
+           testResultsBackgroundpValueFDR <= 0.05,
+           testResultsSharedDistributionspValueFDR <= 0.05) %>%
     nrow()
   # Construct a frequency table with that information:
   frequencyTableWithNoCorrection <- matrix(c(nSelectionForeground, nSelectionBackground, 
@@ -120,36 +130,36 @@ pValuesBUSTEDPH$test <- "bustedPH"
 pValuesAll <- bind_rows(pValuesRelax, pValuesBUSTEDPH)
 
 # Make a lollipop plot:
-# Create data
+# Create a summary of the data
 summaryData <- function(specificTrait) {
-  relaxResultsTrait <- filter(relaxResults, 
+  relaxResultsTrait <- filter(relaxResultsAdjusted, 
                               trait == specificTrait)
   nSelectionIntensified <- relaxResultsTrait %>% 
-    filter(pValue <= 0.05,
+    filter(pValueFDR <= 0.05,
            kValue > 1) %>%
     nrow()
   
   nSelectionRelaxed <- relaxResultsTrait %>% 
-    filter(pValue <= 0.05,
+    filter(pValueFDR <= 0.05,
            kValue < 1) %>%
     nrow()
-  bustedPHResultsTrait <- filter(bustedPHResults, 
+  bustedPHResultsTrait <- filter(bustedPHResultsAdjusted, 
                                  trait == specificTrait)
   nSelectionForeground <- bustedPHResultsTrait %>% 
-    filter(`test results p-value` <= 0.05,
-           `test results background p-value` > 0.05,
-           `test results shared distributions p-value` <= 0.05) %>%
+    filter(testResultspValueFDR <= 0.05,
+           testResultsBackgroundpValueFDR > 0.05,
+           testResultsSharedDistributionspValueFDR <= 0.05) %>%
     nrow()
   
   nSelectionBackground <- bustedPHResultsTrait %>% 
-    filter(`test results p-value` > 0.05,
-           `test results background p-value` <= 0.05,
-           `test results shared distributions p-value` <= 0.05) %>%
+    filter(testResultspValueFDR > 0.05,
+           testResultsBackgroundpValueFDR <= 0.05,
+           testResultsSharedDistributionspValueFDR <= 0.05) %>%
     nrow()
   
   nSelectionBoth <- bustedPHResultsTrait %>% 
-    filter(`test results p-value` <= 0.05,
-           `test results background p-value` <= 0.05) %>%
+    filter(testResultspValueFDR <= 0.05,
+           testResultsBackgroundpValueFDR <= 0.05) %>%
     nrow()
   # Create a dataframe that lists these data:
   test <- c("relax", "relax", "bustedPH", "bustedPH", "bustedPH")
@@ -185,6 +195,8 @@ traitLabels <- c("polyandry" = "polyandry",
                  "workerPolymorphism" = "polymorphic workers",
                  "multilineage" = "multilineage colonies")
 traitLabels <- data.frame(traitLabels, trait = names(traitLabels))
+
+# Add the trait labels to the summary data:
 summaryDataframe <- left_join(summaryDataframe, traitLabels)
 
 traits <- unique(summaryDataframe$trait)
@@ -200,15 +212,14 @@ summaryDataframe$nSelectionRelaxed <- as.numeric(as.character(summaryDataframe$n
 summaryDataframe$nSelectionForeground <- as.numeric(as.character(summaryDataframe$nSelectionForeground))
 summaryDataframe$nSelectionBackground <- as.numeric(as.character(summaryDataframe$nSelectionBackground))
 
-#traits <- c("workerReproductionQueens", "workerPolymorphism")
-
-#### Plot all results with lollipop plots: ####
+#### Plot only BUSTED-PH results with bar plots: ####
 lollipopPlots <- function(specificTrait, inputData) {
   testLabels <- c("bustedPH" = "Distribution of positive selection\n(BUSTED-PH)",
                   "relax" = "Distribution of selection intensity\n(RELAX)")
   plotData <- dplyr::filter(inputData, 
                             trait == specificTrait,
-                            selection != "nSelectionBoth")
+                            selection != "nSelectionBoth",
+                            test == "bustedPH")
   plot <- ggplot(plotData, 
                  aes(x = selection,
                      y = number,
@@ -231,24 +242,19 @@ lollipopPlots <- function(specificTrait, inputData) {
                    color = "grey50", 
                    size = 0.3) +
     scale_fill_manual(values = colorScheme,
-                       labels = c("nSelectionIntensified" = "Selection intensified\non foreground",
-                                  "nSelectionRelaxed" = "Selection relaxed\non foreground",
-                                  "nSelectionForeground" = "Positive selection\non foreground",
-                                  "nSelectionBackground" = "Positive selection\non background")) +
+                      labels = c("nSelectionIntensified" = "Selection intensified\non foreground",
+                                 "nSelectionRelaxed" = "Selection relaxed\non foreground",
+                                 "nSelectionForeground" = "Positive selection\non foreground",
+                                 "nSelectionBackground" = "Positive selection\non background")) +
     labs(y = "Count of orthogroups", 
          title = paste(str_to_sentence(plotData$traitLabels), 
                        sep = " ")) +
     scale_x_discrete(labels = c("bustedPH" = "Positive selection\non fore- or background",
                                 "relax" = "Relaxed or\nintensified selection")) + 
-    facet_wrap(~test,
-               nrow = 2,
-               labeller = labeller(test = testLabels),
-               scales = 'free_x', 
-               strip.position = "top") + 
     theme(axis.text.x = element_text(angle = 0,
                                      hjust = 0.5,
                                      vjust = 1,
-                                     size = 8),
+                                     size = 10),
           panel.grid.minor.x = element_blank(),
           panel.grid.major.x = element_blank(),
           panel.spacing = unit(0.5, "cm"),
@@ -266,25 +272,24 @@ lollipopPlots <- function(specificTrait, inputData) {
                                 "nSelectionForeground" = "Positive selection\non species with trait",
                                 "nSelectionIntensified" = "Intensified selection\nassociated with trait",
                                 "nSelectionRelaxed"  = "Relaxed selection\nassociated with trait"))
+  plot
 }
-subsetTraits <- c("workerReproductionQueens", "workerPolymorphism", "multilineage")
+subsetTraits <- c("workerReproductionQueens", "workerPolymorphism")
 test <- purrr::map(subsetTraits, ~lollipopPlots(.x, inputData = summaryDataframe))
 cowplot::plot_grid(plotlist = test,
-                   ncol = 3)
+                   ncol = 2)
+
+# Render the plots together in a patchwork:
 patchworkTest <- patchwork::wrap_plots(test, 
-                                       ncol = 3) + 
+                                       ncol = 2) + 
   patchwork::plot_annotation(title = 'Impact of sociality-associated traits on molecular evolution',
                              theme = theme(plot.title = element_text(size = 19)))
+# Set the individual plots to have the same y limits:
 patchworkTest[[1]] <- patchworkTest[[1]] +
-  ylim(0, 3200)
+  ylim(0, 2100)
 patchworkTest[[2]] <- patchworkTest[[2]] + 
-  ylim(0, 3200)
-patchworkTest[[3]] <- patchworkTest[[3]] +
-  ylim(0, 3200)
-#patchworkTest[[4]] <- patchworkTest[[4]] + 
-  #ylim(0, 2700)
-#patchworkTest[[5]] <- patchworkTest[[5]] + 
-  #ylim(0, 2700)
+  ylim(0, 2100)
+
 patchworkTest[[1]] <- patchworkTest[[1]] +
   theme(strip.text.x = element_text(color = "white")) 
 
@@ -294,268 +299,16 @@ patchworkTest[[2]] <- patchworkTest[[2]] +
         axis.title.y = element_blank(),
         strip.text.x = element_text(size = 11)) 
 
-patchworkTest[[3]] <- patchworkTest[[3]] + 
-  theme(axis.text.y = element_blank(),           
-        axis.ticks.y = element_blank(),        
-        axis.title.y = element_blank(),
-        strip.text.x = element_text(color = "white")) 
-
 patchworkTest
 
-ggsave(filename = "comparativeGenomicsResultsLollipop.png", 
+ggsave(filename = "bustedPHResultsBarPlot.png", 
        device = "png",
        path = "./Plots/", 
        bg = "transparent", 
-       width = 9, 
-       height = 8)
+       width = 8, 
+       height = 4)
 
-for (i in test) {
-  trait <- unique(i[["data"]][["trait"]])
-  filename <- paste(trait, "ComparativeGenomicsResultsLollipop.png", sep = "")
-  plot(i)
-  print(filename)
-  ggsave(filename = filename, path = "./Plots/", bg = "transparent", width = 7, height = 5)
-}
-
-#### Construct euler diagrams (like Venn diagrams but doesn't have to show all possible intersections) ####
-library(eulerr)
-
-eulerPlot <- function(specificTrait) {
-  intensifiedOrthogroups <- relaxAndBustedPH %>%
-    filter(trait  == specificTrait) %>%
-    filter(pValue <= 0.05 & kValue > 1) %>%
-    pull(orthogroup)
-  
-  relaxedOrthogroups <- relaxAndBustedPH %>% 
-    filter(trait  == specificTrait) %>%
-    filter(pValue <= 0.05 & kValue < 1) %>%
-    pull(orthogroup)
-  
-  foregroundPositiveOrthogroups <- relaxAndBustedPH %>% 
-    filter(trait  == specificTrait) %>%
-    filter(selectionOn == "ForegroundOnly") %>%
-    pull(orthogroup)
-  
-  backgroundPositiveOrthogroups <- relaxAndBustedPH %>% 
-    filter(trait  == specificTrait) %>%
-    filter(selectionOn == "BackgroundOnly") %>%
-    pull(orthogroup)
-  
-  allOrthogroups <- relaxAndBustedPH %>% 
-    filter(trait  == specificTrait) %>%
-    pull(orthogroup) %>%
-    unique()
-  
-  selectionSets <- list(`Intensified selection` = intensifiedOrthogroups,
-                        `Relaxed selection` = relaxedOrthogroups,
-                        `Positive selection\nassociated\nwith trait` = foregroundPositiveOrthogroups,
-                        `Positive selection\nassociated\nwith lack of trait` = backgroundPositiveOrthogroups)
-  
-  intersectionsOfSelection <- euler(selectionSets,
-                                    shape = "ellipse")
-  #library(Hmisc)
-  # If you want to capitalize the first letter of something, use Hmisc::capitalize()
-  #eulerr_options(padding = grid::unit(0, "lines"))
-  test <- plot(intersectionsOfSelection,
-          quantities = list(fontsize = 5,
-                            labels = paste(intersectionsOfSelection$original, "\northogroups", sep = "")),
-          labels = list(fontsize = 8),
-          adjust_labels = TRUE,
-          main = list(label = paste("Combinations of selective regimes\nrelated to", tolower(gsub("([A-Z])", " \\1", specificTrait)), sep = " "),
-                      fontsize = 7),
-          edges = list(col = "grey50"),
-          fills = c("#dce7f5", 
-                    "#b6a5c9", 
-                    "#f5ccc9", 
-                    "#d1726f")) 
-  test
-}
-
-eulerPlotsList <- purrr::map(traits, ~eulerPlot(.x))
-eulerPatchwork <- patchwork::wrap_plots(eulerPlotsList,
-                                        nrow = 2)
-eulerPatchwork
-ggsave(filename = "eulerPatchwork.svg", 
-       device = "svg",
-       path = "./Plots/", 
-       bg = "transparent", 
-       width = 12, 
-       height = 18)
-
-#### Test for differences in the number of orthogroups under BOTH intensified and positive selection in the foreground vs the background: ####
-differencesInPurifyingSelection <- function(specificTrait, inputData) {
-  resultsTrait <- filter(inputData,
-                        trait == specificTrait & !is.na(`test results p-value`) & !is.na(pValue))
-  nPurifyingForeground <- resultsTrait %>% 
-    filter(`test results p-value` <= 0.05,
-           `test results background p-value` > 0.05,
-           `test results shared distributions p-value` <= 0.05,
-           kValue > 1, 
-           pValue <= 0.05) %>%
-    nrow()
-  
-  nPurifyingBackground <- resultsTrait %>% 
-    filter(`test results p-value` > 0.05,
-           `test results background p-value` <= 0.05,
-           `test results shared distributions p-value` <= 0.05,
-           kValue < 1,
-           pValue <= 0.05) %>%
-    nrow()
-  # Construct a frequency table with that information:
-  frequencyTableWithNoCorrection <- matrix(c(nPurifyingForeground, nPurifyingBackground, 
-                                             (nrow(resultsTrait) - nPurifyingForeground),
-                                             (nrow(resultsTrait) - nPurifyingBackground)),
-                                           nrow = 2,
-                                           byrow = TRUE,
-                                           dimnames = list("category" = c("purifying", "noPurifying") ,
-                                                           "selection" = c("foreground", "background")))
-  # Run a fisher's exact test to see if there is a difference in the proportion of genes under selection in the fore- vs. background:
-  fishersExactTest <- fisher.test(frequencyTableWithNoCorrection)
-  # Print the resulting p-value:
-  fishersExactTest[["p.value"]]
-  pValue <- if (fishersExactTest[["p.value"]] < 0.000001) {
-    formatC(fishersExactTest[["p.value"]], format = "e", digits = 2)
-  } else {
-    round(fishersExactTest[["p.value"]], digits = 4)
-  }
-  textHeight <- as.numeric(max(nPurifyingForeground, nPurifyingBackground))
-  return(c(specificTrait, pValue, textHeight, nPurifyingForeground, nPurifyingBackground))
-}
-
-possiblyDifferencesInPurifyingSelection <- possibly(differencesInPurifyingSelection, otherwise = "Error")
-
-pValuesPurifying <- traits %>% 
-  map(~ possiblyDifferencesInPurifyingSelection(.x, relaxAndBustedPH))
-
-pValuesPurifying <- as.data.frame(do.call(rbind, pValuesPurifying))   
-
-colnames(pValuesPurifying) <- c("trait", "pValue", "maxHeight", "nPurifyingForeground", "nPurifyingBackground")
-
-# Construct a list of orthogroups under positive selection in the foreground:
-foregroundPositiveOrthogroups <- relaxAndBustedPH %>% 
-  filter(trait  == specificTrait) %>%
-  filter(selectionOn == "ForegroundOnly") %>%
-  pull(orthogroup)
-
-# Construct a list of orthogroups under positive selection in the background:
-backgroundPositiveOrthogroups <- relaxAndBustedPH %>% 
-  filter(trait  == specificTrait) %>%
-  filter(selectionOn == "BackgroundOnly") %>%
-  pull(orthogroup)
-
-# Construct a list of orthogroups under intensified selection in the foreground:
-foregroundIntensifiedOrthogroups <- relaxAndBustedPH %>% 
-  filter(trait  == specificTrait) %>%
-  filter(shortDescription == "Intensification of selection along foreground branches") %>%
-  pull(orthogroup)
-
-# Construct a list of orthogroups under intensified selection in the background:
-backgroundIntensifiedOrthogroups <- relaxAndBustedPH %>% 
-  filter(trait  == specificTrait) %>%
-  filter(shortDescription == "Relaxation of selection along foreground branches") %>%
-  pull(orthogroup)
-
-selectionSets <- list(`Foreground positive selection` = foregroundPositiveOrthogroups,
-                      `Background positive selection` = backgroundPositiveOrthogroups,
-                      `Foreground intensified selection` = foregroundIntensifiedOrthogroups,
-                      `Background intensified selection` = backgroundIntensifiedOrthogroups)
-totalNumberOfGenes <- length(which(relaxAndBustedPH$trait == specificTrait))
-
-test <- supertest(selectionSets, 
-          n = totalNumberOfGenes,
-          degree = c(2))
-summary(test)
-
-##### Do these same analyses but only for the single-copy orthogroups: #####
-# Get a list of the single copy orthogroups:
-singleCopyOrthogroups <- list.files(path = paste("./5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Single_Copy_Orthologue_Sequences/", sep = ""), full.names = FALSE)
-singleCopyOrthogroups <- sapply(strsplit(as.character(singleCopyOrthogroups), "[.]"), head, 1)
-singleCopyOrthogroups <- read_csv("./Results/singleCopyOrthogroups.csv")
-singleCopyOrthogroups <- singleCopyOrthogroups$x
-
-singleCopyResults <- dplyr::filter(relaxAndBustedPH, 
-                                   orthogroup %in% singleCopyOrthogroups)
-
-
-# Get p-values for the relax results for each trait:
-pValuesRelaxSingle <- traits %>% 
-  purrr::map(~ possiblypValueByTraitRelax(.x, singleCopyResults))
-pValuesRelaxSingle <- as.data.frame(do.call(rbind, pValuesRelaxSingle))   
-colnames(pValuesRelaxSingle) <- c("trait", "pValue", "maxHeight")
-pValuesRelaxSingle$test <- "relax"
-
-# Get p-values for the BUSTED-PH results for each trait:
-pValuesBUSTEDPHSingle <- traits %>% 
-  map(~ possiblypValueByTraitBUSTEDPH(.x, singleCopyResults))
-pValuesBUSTEDPHSingle <- as.data.frame(do.call(rbind, pValuesBUSTEDPHSingle))   
-colnames(pValuesBUSTEDPHSingle) <- c("trait", "pValue", "maxHeight")
-pValuesBUSTEDPHSingle$test <- "bustedPH"
-
-# Combine the p-values:
-pValuesAllSingle <- rbind(pValuesRelaxSingle, pValuesBUSTEDPHSingle)
-
-# Get summary data for the single copy orthogroups:
-summaryData <- function(specificTrait, inputData) {
-  relaxResultsTrait <- filter(inputData, 
-                              trait == specificTrait)
-  nSelectionIntensified <- relaxResultsTrait %>% 
-    filter(pValue <= 0.05,
-           kValue > 1) %>%
-    nrow()
-  
-  nSelectionRelaxed <- relaxResultsTrait %>% 
-    filter(pValue <= 0.05,
-           kValue < 1) %>%
-    nrow()
-  bustedPHResultsTrait <- filter(inputData, 
-                                 trait == specificTrait)
-  nSelectionForeground <- bustedPHResultsTrait %>% 
-    filter(`test results p-value` <= 0.05,
-           `test results background p-value` > 0.05,
-           `test results shared distributions p-value` <= 0.05) %>%
-    nrow()
-  
-  nSelectionBackground <- bustedPHResultsTrait %>% 
-    filter(`test results p-value` > 0.05,
-           `test results background p-value` <= 0.05,
-           `test results shared distributions p-value` <= 0.05) %>%
-    nrow()
-  # Create a dataframe that lists these data:
-  test <- c("relax", "relax", "bustedPH", "bustedPH")
-  selection <- c(paste(specificTrait, "nSelectionIntensified"), 
-                 paste(specificTrait, "nSelectionRelaxed"), 
-                 paste(specificTrait, "nSelectionForeground"), 
-                 paste(specificTrait, "nSelectionBackground"))
-  number <- c(nSelectionIntensified, nSelectionRelaxed, nSelectionForeground, nSelectionBackground)
-  countsOfSelectionRegimes <- data.frame(test, selection, number)
-  
-  return(c(countsOfSelectionRegimes))
-}
-possiblysummaryData <- possibly(summaryData, otherwise = "Error")
-
-summaryDataframeSingle <- traits %>% 
-  map_dfr(~ possiblysummaryData(.x, singleCopyResults))
-
-summaryDataframeSingle <- separate(summaryDataframeSingle,
-                             selection, 
-                             into = c("trait", "selection"),
-                             sep = " ")
-
-summaryDataframeSingle <- dplyr::full_join(summaryDataframeSingle, pValuesAllSingle, by = c("trait", "test")) 
-traitLabels <- c("polyandry" = "polyandry",
-                 "polygyny" = "polygyny",
-                 "workerReproductionQueens" = "reproductive workers",
-                 "workerPolymorphism" = "polymorphic workers",
-                 "multilineage" = "multilineage colonies")
-traitLabels <- data.frame(traitLabels, trait = names(traitLabels))
-summaryDataframeSingle <- left_join(summaryDataframeSingle, traitLabels)
-rm(traitLabels)
-
-# Make lollipop plots:
-test <- purrr::map(traits, ~lollipopPlots(.x, inputData = summaryDataframeSingle))
-cowplot::plot_grid(plotlist = test,
-                   nrow = 2)
-
+##### RELAX results ####
 #### Plot the distributons of k-values: ####
 # Define a new axis transformation that does log10(x + 1) to the k values, so that values of zero are not dropped.
 log10plusone_trans <- function() scales::trans_new("one_over", function(x) log10(x + 1), function(x) (10^x) -1)
@@ -567,13 +320,13 @@ traitLabels <- factor(c("polyandry" = "Polyandry",
                         "workerPolymorphism" = "Polymorphic workers",
                         "multilineage" = "Multilineage colonies"))
 traitLabels <- data.frame(traitLabels, trait = names(traitLabels))
-relaxResults <- left_join(relaxResults, traitLabels)
+relaxResultsAdjusted <- left_join(relaxResultsAdjusted, traitLabels)
 rm(traitLabels)
 
-kValuePlot <- ggplot(data = filter(relaxResults,
+kValuePlot <- ggplot(data = filter(relaxResultsAdjusted,
                                    !is.na(kValue),
                                    trait %in% subsetTraits,
-                                   pValue <= 0.05)) +
+                                   pValueFDR <= 0.05)) +
   geom_histogram(mapping = aes(x = as.numeric(kValue)),
                  bins = 200,
                  fill = "#655569") +
@@ -616,10 +369,10 @@ ggsave(filename = "kValueHistogramsPVALUE.png",
        width = 8, 
        height = 8)
 
-kValueViolinPlot <- ggplot(data = filter(relaxResults,
-                                   !is.na(kValue),
-                                   trait %in% subsetTraits,
-                                   pValue <= 0.05)) +
+kValueViolinPlot <- ggplot(data = filter(relaxResultsAdjusted,
+                                         !is.na(kValue),
+                                         trait %in% subsetTraits,
+                                         pValueFDR <= 0.05)) +
   geom_violin(mapping = aes(x = traitLabels, 
                             y = as.numeric(kValue)),
               fill = "#efebf0") +
@@ -657,10 +410,10 @@ ggsave(filename = "kValueViolins.png",
        height = 8)
 
 # Make a flipped violin plot:
-kValueViolinPlotFlipped <- ggplot(data = filter(relaxResults,
-                                         !is.na(kValue),
-                                         trait %in% subsetTraits,
-                                         pValue <= 0.05)) +
+kValueViolinPlotFlipped <- ggplot(data = filter(relaxResultsAdjusted,
+                                                !is.na(kValue),
+                                                trait %in% subsetTraits,
+                                                pValueFDR <= 0.05)) +
   geom_violin(mapping = aes(x = traitLabels, 
                             y = as.numeric(kValue)),
               fill = "#efebf0") +
@@ -765,12 +518,13 @@ lollipopViolin <- function(specificTrait) {
     scale_x_discrete(labels = c("nSelectionBackground" = "Positive selection\non species without trait",
                                 "nSelectionForeground" = "Positive selection\non species with trait",
                                 "nSelectionIntensified" = "Intensified selection\nassociated with trait",
-                                "nSelectionRelaxed"  = "Relaxed selection\nassociated with trait"))
+                                "nSelectionRelaxed"  = "Relaxed selection\nassociated with trait")) +
+    ylim(0, 3200)
   
-  violin <- ggplot(data = filter(relaxResults,
+  violin <- ggplot(data = filter(relaxResultsAdjusted,
                                  !is.na(kValue),
                                  trait == specificTrait,
-                                 pValue <= 0.05)) +
+                                 pValueFDR <= 0.05)) +
     geom_violin(mapping = aes(x = traitLabels, 
                               y = as.numeric(kValue)),
                 fill = "#efebf0") +
@@ -809,20 +563,23 @@ lollipopViolin <- function(specificTrait) {
   
   ggarrange(barPlot,
             violin,
-            ncol = 1)}
+            ncol = 1,
+            heights = c(2, 1))
+}
 
-lollipopViolin(specificTrait = "multilineage")
+lollipopViolin(specificTrait = "workerPolymorphism")
 test <- purrr::map(subsetTraits, lollipopViolin)
 patchworkTest <- cowplot::plot_grid(plotlist = test,
-                   ncol = 3)
+                                    ncol = 2)
 
 patchworkTest
 ggsave(filename = "relaxResultsBarAndViolin.png", 
        device = "png",
        path = "./Plots/", 
        bg = "transparent", 
-       width = 16, 
-       height = 8)
+       width = 8, 
+       height = 5)
+
 # Plot the distribution of k-values and color them by whether they are under positive selection in foreground or background species:
 ggplot(data = filter(relaxAndBustedPH,
                      trait == "polyandry")) +
