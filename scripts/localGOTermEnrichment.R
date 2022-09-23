@@ -20,20 +20,30 @@ wideListAnnotations <- tapply(longAnnotations$domain_id, longAnnotations$orthogr
 
 # Read in BUSTED-PH results:
 bustedPHResults <- read_csv("./Results/allBustedPHResults.csv", col_names = TRUE)
+bustedPHResults$`test results background p-value` <- as.numeric(as.character(bustedPHResults$`test results background p-value`))
+bustedPHResults$`test results p-value` <- as.numeric(as.character(bustedPHResults$`test results p-value`))
+bustedPHResults$`test results shared distributions p-value` <- as.numeric(as.character(bustedPHResults$`test results shared distributions p-value`))
+
+# Adjust the raw p-values with Benjamini-Hochberg FDR:
+bustedPHResultsAdjusted <- bustedPHResults %>%
+  group_by(trait) %>% 
+  mutate(testResultspValueFDR = p.adjust(`test results p-value`, method='BH')) %>% 
+  mutate(testResultsBackgroundpValueFDR = p.adjust(`test results background p-value`, method='BH')) %>% 
+  mutate(testResultsSharedDistributionspValueFDR = p.adjust(`test results shared distributions p-value`, method='BH'))
 
 # For each trait, check for GO term enrichment:
 goEnrichmentBUSTEDPH <- function(specificTrait) {
-  significanceInfo <- dplyr::select(bustedPHResults, 
+  significanceInfo <- dplyr::select(bustedPHResultsAdjusted, 
                                     orthogroup, 
-                                    `test results p-value`, 
-                                    `test results background p-value`, 
-                                    `test results shared distributions p-value`, 
+                                    testResultspValueFDR, 
+                                    testResultsBackgroundpValueFDR, 
+                                    testResultsSharedDistributionspValueFDR, 
                                     trait) 
   significanceInfo <- dplyr::filter(significanceInfo, trait == specificTrait)
   pcutoff <- 0.05 
-  tmp <- ifelse(significanceInfo$`test results p-value` < pcutoff & 
-                  significanceInfo$`test results background p-value` > pcutoff & 
-                  significanceInfo$`test results shared distributions p-value` < pcutoff, 1, 0)
+  tmp <- ifelse(significanceInfo$testResultspValueFDR < pcutoff & 
+                  significanceInfo$testResultsBackgroundpValueFDR > pcutoff & 
+                  significanceInfo$testResultsSharedDistributionspValueFDR < pcutoff, 1, 0)
   geneList <- tmp
   names(geneList) <- significanceInfo$orthogroup
   GOdataBP <- new("topGOdata",
@@ -148,20 +158,27 @@ goTermsBustedPH <- purrr::map(traits, goEnrichmentBUSTEDPH)
 
 # Read in the RELAX results:
 relaxResults <- read_csv("./Results/allRelaxResults.csv", col_names = TRUE)
+relaxResults$pValue <- as.numeric(as.character(relaxResults$pValue))
+relaxResults$kValue <- as.numeric(as.character(relaxResults$kValue))
+
+# Adjust the raw p-values with BH FDR:
+relaxResultsAdjusted <- relaxResults %>%
+  group_by(trait) %>% 
+  mutate(pValueFDR = p.adjust(pValue, method='BH')) 
 
 # For each trait, check for GO term enrichment:
 goEnrichmentRELAX <- function(specificTrait) {
   # Define vector that is 1 if gene is under relaxed selection and 0 otherwise:
-  significanceInfo <- dplyr::select(relaxResults, 
+  significanceInfo <- dplyr::select(relaxResultsAdjusted, 
                                     orthogroup, 
-                                    pValue, 
+                                    pValueFDR, 
                                     kValue,
                                     trait) 
   significanceInfo <- dplyr::filter(significanceInfo, 
                                     trait == specificTrait)
   # Set each gene to 1 if adjP < cutoff, 0, otherwise
   pcutoff <- 0.05 
-  tmp <- ifelse(significanceInfo$pValue < pcutoff & significanceInfo$kValue < 1, 1, 0)
+  tmp <- ifelse(significanceInfo$pValueFDR < pcutoff & significanceInfo$kValue < 1, 1, 0)
   geneList <- tmp
   rm(tmp)
   
@@ -278,65 +295,56 @@ goTermsRELAX <- as.data.frame(do.call(rbind, goTermsRELAX))
 goTermsAll <- rbind(goTermsBustedPH,
                     goTermsRELAX)
 
-# Add names to the vector of traits, so that they can be nicely formatted for the tables:
-names(traits) <- c("multilineage colonies", 
-                   "polyandry",
-                   "polygyny",
-                   "worker reproduction",
-                   "worker polymorphism")
+# Make .docx tables with flextable:
+library(flextable)
 
-# Make a nice table:
-subTables <- function(specificTrait, formattedTrait) {
-  goTermsTable <- goTermsAll %>% 
-    filter(trait == specificTrait) %>%
-    dplyr::select(-c(trait, 
-                     Expected)) %>%
-    dplyr::select(c(`p-value` = raw.p.value,
-                    `GO ID` = GO.ID,
-                    `Total orthogroups annotated` = Annotated,
-                    `Significant orthogroups` = Significant,
-                    `Type of selection` = selectionCategory,
-                    Term = Term)) %>%
-    gt(rowname_col = "Term",
-       groupname_col = "Type of selection") %>%
-    tab_header(title = paste("GO terms associated with", formattedTrait, sep = " ")) %>% 
-    tab_options(table.width = pct(100),
-                container.width = pct(100),
-                container.height = pct(100),
-                row_group.background.color = "#f2f2fa",
-                heading.title.font.size = 30,
-                heading.title.font.weight = "bolder") %>%
-    cols_width(everything() ~ pct(25)) %>%
-    gtsave(paste("GOTerms_", 
-                 specificTrait, 
-                 ".png", 
-                 sep = ""), 
-           path = "./Plots/",
-           vwidth = 1000)
-  
-}
+workerPolymorphismGOResults <- filter(goTermsAll,
+                                trait == "workerPolymorphism") %>%
+  dplyr::select(-c(trait, 
+                   Expected)) %>%
+  dplyr::select(c(Term = Term,
+                  `GO ID` = GO.ID,
+                  `p-value` = raw.p.value,
+                  `Total orthogroups annotated` = Annotated,
+                  `Significant orthogroups` = Significant,
+                  `Selective regime` = selectionCategory))
 
-goTermsAllTable <- purrr::map2(traits, names(traits), subTables)
+workerPolymorphismGOResults <- as_grouped_data(x = workerPolymorphismGOResults, 
+                                         groups = c("Selective regime"))
 
-listOfGOTables <- list.files(path = "./Plots", 
-                             pattern = "GOTerms_*", 
-                             full.names = TRUE)
 
-plotGTTable <- function(file) {
-  plot <- ggdraw() + 
-    draw_image(file, 
-               scale = 0.8) +
-    theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
-  return(plot)
-}
+workerPolymorphismGOResultsTable <- flextable(workerPolymorphismGOResults)
+workerPolymorphismGOResultsTable <- theme_vanilla(workerPolymorphismGOResultsTable)
+workerPolymorphismGOResultsTable <- set_caption(workerPolymorphismGOResultsTable, 
+                                          caption = "Gene ontology terms associated with worker polymorphism")
+workerPolymorphismGOResultsTable
+save_as_docx(workerPolymorphismGOResultsTable,
+             path = "./Plots/workerPolymorphismGOResultsTable.docx")
 
-testPlotList <- purrr::map(listOfGOTables, 
-                   plotGTTable)
+#################################
 
-test <- plot_grid(plotlist = testPlotList, 
-                  ncol = 1)
-test
-ggsave(filename = "goTermsAll.pdf", path = "./Plots/")
+workerReproductionGOResults <- filter(goTermsAll,
+                                      trait == "workerReproductionQueens") %>%
+  dplyr::select(-c(trait, 
+                   Expected)) %>%
+  dplyr::select(c(Term = Term,
+                  `GO ID` = GO.ID,
+                  `p-value` = raw.p.value,
+                  `Total orthogroups annotated` = Annotated,
+                  `Significant orthogroups` = Significant,
+                  `Selective regime` = selectionCategory))
+
+workerReproductionGOResults <- as_grouped_data(x = workerReproductionGOResults, 
+                                               groups = c("Selective regime"))
+
+
+workerReproductionGOResultsTable <- flextable(workerReproductionGOResults)
+workerReproductionGOResultsTable <- theme_vanilla(workerReproductionGOResultsTable)
+workerReproductionGOResultsTable <- set_caption(workerReproductionGOResultsTable, 
+                                                caption = "Gene ontology terms associated with worker reproduction")
+workerReproductionGOResultsTable
+save_as_docx(workerReproductionGOResultsTable,
+             path = "./Plots/workerReproductionGOResultsTable.docx")
 
 
 
