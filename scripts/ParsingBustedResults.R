@@ -45,19 +45,35 @@ bustedResults <- map(jsonFiles, possiblyBustedJSONProcessing)
 # Convert the results to a dataframe:
 bustedResults <- as.data.frame(do.call(rbind, bustedResults))   
 colnames(bustedResults) <- c("file", "orthogroup", "test results p-value", "omega3", "proportionOfSitesUnderSelection")
-bustedResults$`test results p-value` <- as.numeric(bustedResults$`test results p-value`)
-bustedResults$omega3 <- as.numeric(bustedResults$omega3)
-bustedResults$proportionOfSitesUnderSelection <- as.numeric(bustedResults$proportionOfSitesUnderSelection)
+bustedResults$`test results p-value` <- as.numeric(as.character(bustedResults$`test results p-value`))
+bustedResults$omega3 <- as.numeric(as.character(bustedResults$omega3))
+bustedResults$proportionOfSitesUnderSelection <- as.numeric(as.character(bustedResults$proportionOfSitesUnderSelection))
+
+# Adjust the raw p-values with Benjamini-Hochberg FDR:
+bustedResults <- bustedResults %>%
+  mutate(pValueFDR = p.adjust(`test results p-value`, method='BH')) 
 
 # Get the number of genes with and without positive selection:
-numberPositive <- sum(bustedResults$selectionOn == "yes, BUSTED found evidence for positive selection")
-numberNone <- sum(bustedResults$selectionOn == "no evidence for positive selection from BUSTED")
+numberPositive <- length(which(bustedResults$pValueFDR <= 0.05))
+numberNone <- length(which(bustedResults$pValueFDR > 0.05))
 percentPositive <- (numberPositive / (numberPositive + numberNone))*100
 
 # Create an output directory:
 dir.create("./Results")
 # Export the results:
 write_csv(bustedResults, "./Results/bustedResults.csv")
+
+#### Check result for just single-copy orthogroups: ####
+singleCopyOrthogroups <- read_csv("./Results/singleCopyOrthogroups.csv")
+singleCopyOrthogroups <- singleCopyOrthogroups$x
+
+singleCopyResults <- dplyr::filter(bustedResults, 
+                                   orthogroup %in% singleCopyOrthogroups)
+# Get the number of genes with and without positive selection:
+numberPositive <- length(which(singleCopyResults$pValueFDR <= 0.05))
+numberNone <- length(which(singleCopyResults$pValueFDR > 0.05))
+percentPositive <- (numberPositive / (numberPositive + numberNone))*100
+
 
 #### Make a heat map of p-values vs. omega3 values, a la https://github.com/veg/hyphy/issues/737 ###
 
@@ -104,10 +120,10 @@ longAnnotations <- longAnnotations %>%
 wideListAnnotations <- tapply(longAnnotations$domain_id, longAnnotations$orthogroup, function(x)x)
 
 # Define vector that is 1 if gene is significantly DE (`test results p-value` < 0.05) and 0 otherwise:
-significanceInfo <- dplyr::select(bustedResults, orthogroup, `test results p-value`)
+significanceInfo <- dplyr::select(bustedResults, orthogroup, pValueFDR)
 # Set each gene to 1 if adjP < cutoff, 0, otherwise
 pcutoff <- 0.05 
-tmp <- ifelse(significanceInfo$`test results p-value` < pcutoff , 1, 0)
+tmp <- ifelse(significanceInfo$pValueFDR < pcutoff , 1, 0)
 geneList <- tmp
 
 # Give geneList names:
@@ -152,7 +168,7 @@ resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNode
                                  numChar = 120)
 head(resultsFisherCCTable)
 # Use the Kolomogorov-Smirnov test:
-geneList <- as.numeric(as.character(bustedResults$`test results p-value`))
+geneList <- as.numeric(as.character(bustedResults$pValueFDR))
 names(geneList) <- bustedResults$orthogroup
 # Create topGOData object
 GOdataBP <- new("topGOdata",
@@ -212,6 +228,58 @@ significantGOResults <- dplyr::filter(allResults,
                                       as.numeric(raw.p.value) <= 0.01) %>%
   distinct(Term, .keep_all = TRUE)
 significantGOResults$raw.p.value <- as.numeric(significantGOResults$raw.p.value)
+significantGOResults <- arrange(significantGOResults, 
+                                dplyr::desc(raw.p.value))
+goTermsTable <- significantGOResults %>% 
+  dplyr::select(-c(Expected)) %>%
+  dplyr::select(c(`p-value` = raw.p.value,
+                  `GO ID` = GO.ID,
+                  `Total orthogroups annotated` = Annotated,
+                  `Significant orthogroups` = Significant,
+                  Term = Term)) %>%
+  gt(rowname_col = "Term") %>%
+  tab_header(title = paste("Gene ontology terms under\npositive selection across the ant phylogeny")) %>% 
+  tab_options(table.width = pct(100),
+              container.width = pct(100),
+              container.height = pct(100),
+              row_group.background.color = "#f2f2fa",
+              heading.title.font.size = 30,
+              heading.title.font.weight = "bolder") %>%
+  cols_width(everything() ~ pct(25))
+
+# Get a dataframe wtih just significant Go terms and the columns you want:
+printResults <- significantGOResults %>% 
+  dplyr::select(-c(Expected)) %>%
+  dplyr::select(c(Term = Term,
+                  `GO ID` = GO.ID,
+                  `p-value` = raw.p.value,
+                  `Total orthogroups annotated` = Annotated,
+                  `Significant orthogroups` = Significant)) %>%
+  arrange(`p-value`)
+
+library(flextable)
+
+ft <- flextable(printResults)
+
+ft <- theme_vanilla(ft)
+
+ft <- set_caption(ft, caption = "Gene ontology terms under\npositive selection across the ant phylogeny")
+
+save_as_docx(ft,
+             path = "./Plots/significantGOTermsBustedS.docx")
+
+#%>%
+ # gtsave(paste("GOTerms_BUSTED.png", 
+  #             sep = ""), 
+   #      path = "./Plots/",
+    #     vwidth = 1000)
+
+
+
+
+
+
+
 
 ################## Generate some violin plots ###############################
 
