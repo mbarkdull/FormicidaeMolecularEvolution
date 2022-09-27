@@ -1,7 +1,6 @@
 #devtools::install_github("mhahsler/rBLAST")
 library(rBLAST)
 library(tidyverse)
-library(googlesheets4)
 Sys.setenv(PATH = paste(Sys.getenv("PATH"), "/usr/local/ncbi/blast/bin/", sep= .Platform$path.sep))
 
 # Read in concatenated genomes:
@@ -19,7 +18,11 @@ orthogroupMembers$X1 <- gsub(':', '', orthogroupMembers$X1)
 makeblastdb(file = './allGenomes.fasta', dbtype = "nucl")
 
 # List files:
-files <- list.files(path = "./genesOfInterest", pattern = "*.fasta", full.names = TRUE)
+literatureReview <- googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1lVe5BsNmvGiF4jfC6ypwHSMDuEziXUQhsPqk7Xvf458/edit?usp=sharing",
+                                              sheet = "workerPolymorphism",
+                                              col_names = TRUE) %>%
+  filter(`including?` == "yes")
+files <- literatureReview$`blast gene file name`
 
 # Write a function that will blast the candidate gene sequences against my ant orthogroup sequences:
 fetchingOrthogroups <- function(i) {
@@ -54,111 +57,140 @@ possiblyfetchingOrthogroups <- purrr::possibly(fetchingOrthogroups, otherwise = 
 orthogroupsToTest <- purrr::map(files, possiblyfetchingOrthogroups)
 orthogroupsToTest <- as.data.frame(do.call(rbind, orthogroupsToTest))   
 
-# Make a file to export to feed to a BASH script for running HYPHY tests:
-write.table(orthogroupsToTest$V1, 
-            file = "orthogroupsOfInterest.txt", 
-            sep = "\t",
-            row.names = FALSE, 
-            col.names = FALSE, 
-            quote = FALSE)
-write.table(orthogroupsToTest, 
-            file = "orthogroupsOfInterestFullInfo.txt", 
-            sep = "\t",
-            row.names = FALSE, 
-            col.names = FALSE, 
-            quote = FALSE)
-
-# Check the genes of interest for their selective regimes:
-allHyphyResults <- read_csv("relaxAndBustedPH.csv", col_names = TRUE)
-
-selectionOnGenesOfInterest <- filter(allHyphyResults,
-                                     orthogroup %in% orthogroupsToTest$V1)
-selectionOnGenesOfInterest <- full_join(orthogroupsToTest,
-                                        selectionOnGenesOfInterest,
-                                        by = c("V1" = "orthogroup"))
-
-test <- dplyr::select(selectionOnGenesOfInterest,
-                      c("orthogroup" = "V1",
-                        "V2" = "V2",
-                        "positive selection" = "selectionOn",
-                        "selection intensity" = "shortDescription",
-                        "trait" = "trait")) %>%
-  #pivot_wider(names_from = c(trait),                     #No longer pivoting wider because I want just results for the relevant trait
-              #values_from = c(`positive selection`, `selection intensity`)) %>%  
-  dplyr::select(-ends_with(c("polyandry",
-                             "polygyny",
-                             "NA"))) %>%
-  mutate(across(everything(), as.character))
-
-test <- test %>%
-  mutate(`positive selection` = case_when(`positive selection` == "EvidenceOfSelectionAssociatedWithTraitButNS" ~ "Nonsignificant evidence of positive selection associated with trait",
-                                          `positive selection` == "SelectionOnBothButDifferent" ~ "Positive selection associated with trait presence and absence",
-                                          `positive selection` == "EvidenceOfSelectionAssociatedWithLackOfTraitButNS" ~ "Nonsignificant evidence of positive selection associated with trait absence",
-                                          `positive selection` == "BackgroundOnly" ~ "Positive selection associated with trait absence",
-                                          `positive selection` == "SelectionOnBothButNoSignificantDifference" ~ "Positive selection associated with trait presence and absence",
-                                          `positive selection` == "ForegroundOnly" ~ "Positive selection associated with trait presence",
-                                          `positive selection` == "NoEvidenceOfSelection" ~ "No evidence of selection on orthogroup",
-                                          `positive selection` == NA ~ "Orthogroup not tested for selection associated with this trait"))
-
-test <- test %>%
-  mutate(`selection intensity` = case_when(`selection intensity` == "Nonsignificant relaxation" ~ "Nonsignificant relaxation associated with trait",
-                                          `selection intensity` == "Intensification of selection along foreground branches" ~ "Intensified selection significantly associated with trait",
-                                          `selection intensity` == "Nonsignificant intensification" ~ "Nonsignificant intensification associated with trait",
-                                          `selection intensity` == "Relaxation of selection along foreground branches" ~ "Relaxed selection significantly associated with trait"))
-
+# Add back in filenames for the genes with no BLAST match:
+  # Get all the filenames we tested as a dataframe:
+  filenames <- as.data.frame(files)
+  allOrthogroupsToTest <- full_join(orthogroupsToTest, filenames, by = c("V2" = "files"))
+  # Drop any row where V2 isn't a valid filename (these are the rows corresponding to BLAST errors):
+  allOrthogroupsToTest <- allOrthogroupsToTest %>%
+    filter(str_detect(V2, "./"))
+  
+# Read in the literature search data from Google sheets:
 literatureReview <- googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1lVe5BsNmvGiF4jfC6ypwHSMDuEziXUQhsPqk7Xvf458/edit?usp=sharing")
 
-# Join by trait and file name from literature review, and by trait and file name in the selection results. 
-allResults <- full_join(test,
-                        literatureReview,
-                        by = c("V2" = "blast gene file name",
-                               "trait" = "trait")) %>%
-  filter(!is.na(`database query`),
-         `candidate genes` != "-") %>%
-  arrange(trait)
+# Combine the BLASt results with the literature review info so I know which under which trait I'm testing each gene:
+allOrthogroupsToTestPlusTraits <- right_join(literatureReview,
+                                            allOrthogroupsToTest,
+                                            by = c("blast gene file name" = "V2"))
+
+# Check the genes of interest for their selective regimes:
+allHyphyResults <- read_csv("relaxAndBustedPH.csv", col_names = TRUE) %>%
+  dplyr::filter(trait != "polyandry",
+                trait != "polygyny",
+                trait != "multilineage")
+
+genesOfInterest <- filter(allHyphyResults,
+                          orthogroup %in% allOrthogroupsToTestPlusTraits$V1)
+selectionOnGenesOfInterest <- full_join(allOrthogroupsToTestPlusTraits,
+                                        genesOfInterest,
+                                        by = c("V1" = "orthogroup", 
+                                               "...1" = "trait")) %>%
+  select(-c(X1)) %>%
+  drop_na(`paper number`) %>%
+  drop_na(V1) %>%
+  drop_na(pValue) %>%
+  drop_na(`test results p-value`) %>%
+  distinct() 
+
+# Correct the p-values by the number of genes being tested for each trait:
+correctingPValues <- selectionOnGenesOfInterest %>% group_by(`...1`) %>% 
+  mutate(pValueFDR = p.adjust(pValue, method='BH')) 
+
+correctingPValues <- correctingPValues %>%
+  group_by(`...1`) %>% 
+  mutate(testResultspValueFDR = p.adjust(`test results p-value`, method='BH')) %>% 
+  mutate(testResultsBackgroundpValueFDR = p.adjust(`test results background p-value`, method='BH')) %>% 
+  mutate(testResultsSharedDistributionspValueFDR = p.adjust(`test results shared distributions p-value`, method='BH'))
+
+allResults <- correctingPValues %>%
+  select(c(`...1`,
+           `candidate genes`,
+           `gene symbol`,
+           `gene function in original study`,
+           pValueFDR,
+           kValue,
+           testResultsBackgroundpValueFDR,
+           testResultsSharedDistributionspValueFDR,
+           testResultspValueFDR))
+
+test <- allResults %>% mutate(selectionOn =
+                                case_when(as.numeric(as.character(`testResultspValueFDR`)) <= 0.05 & 
+                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) > 0.05 &
+                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) <= 0.05 ~ "Positive selection in the foreground only",
+                                          as.numeric(as.character(`testResultspValueFDR`)) <= 0.05 & 
+                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) <= 0.05 &
+                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) <= 0.05 ~ "Selection on both but with different regimes",
+                                          as.numeric(as.character(`testResultspValueFDR`)) <= 0.05 & 
+                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) <= 0.05 &
+                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) > 0.05 ~ "Selection on both but no significant difference in regimes",
+                                          as.numeric(as.character(`testResultspValueFDR`)) <= 0.05 & 
+                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) > 0.05 &
+                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) > 0.05 ~ "Nonsignficant evidence that selection is associated with the trait",
+                                          as.numeric(as.character(`testResultspValueFDR`)) > 0.05 & 
+                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) <= 0.05 &
+                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) <= 0.05 ~ "Positive selection in the background only",
+                                          as.numeric(as.character(`testResultspValueFDR`)) > 0.05 & 
+                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) <= 0.05 &
+                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) > 0.05 ~ "Nonsignficant evidence that selection is associated with lacking the trait",
+                                          as.numeric(as.character(`testResultspValueFDR`)) > 0.05 & 
+                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) > 0.05 &
+                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) <= 0.05 ~ "No evidence of selection",
+                                          as.numeric(as.character(`testResultspValueFDR`)) > 0.05 & 
+                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) > 0.05 &
+                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) > 0.05 ~ "No evidence of selection"))
+
+allResults <- test %>% mutate(SelectionIntensity =
+                                case_when(as.numeric(as.character(`pValueFDR`)) <= 0.05 &
+                                            as.numeric(as.character(kValue)) <= 1 ~ "Relaxed selection is associated with the trait",
+                                          as.numeric(as.character(`pValueFDR`)) <= 0.05 &
+                                            as.numeric(as.character(kValue)) >= 1 ~ "Intensified selection is associated with the trait",
+                                          as.numeric(as.character(`pValueFDR`)) >= 0.05 &
+                                            as.numeric(as.character(kValue)) <= 1 ~ "Nonsignificant relaxed selection is associated with the trait",
+                                          as.numeric(as.character(`pValueFDR`)) >= 0.05 &
+                                            as.numeric(as.character(kValue)) >= 1 ~ "Nonsignificant intensified selection is associated with the trait"))
+
+allResults <- allResults %>% mutate(`Differential evolution` =
+                                case_when(selectionOn == "Positive selection in the foreground only" ~ "Differentially evolving",
+                                            selectionOn == "Positive selection in the background only" ~ "Differentially evolving",
+                                            SelectionIntensity == "Relaxed selection is associated with the trait" ~ "Differentially evolving",
+                                            SelectionIntensity == "Intensified selection is associated with the trait" ~ "Differentially evolving",
+                                          TRUE ~ "None"))
+
+differentiallyEvolvingGenes <- allResults%>%
+  filter(`Differential evolution` != "None")
+
 googlesheets4::write_sheet(allResults,
                            "https://docs.google.com/spreadsheets/d/1nOIuzA7f6yJbdXLH1A4LgXRo-HSKM8xRsXDCMr8PYZQ/edit?usp=sharing", 
                            sheet = "allResults")
 
-# Make a nice table for the publication:
-publicationTable <- allResults %>%
-  select(trait, 
-         `candidate genes`,
-         `gene symbol`,
-         orthogroup,
-         `positive selection`,
-         `selection intensity`) %>%
-  filter(!is.na(orthogroup)) %>%
-  arrange(desc(trait))
-
-publicationTable <- publicationTable %>% 
-  mutate(trait = case_when(trait == "workerReproductionQueens" ~ "Worker reproduction",
-                           trait == "workerPolymorphism" ~ "Worker polymorphism"))
-
-publicationTable <- publicationTable %>% 
-  mutate(`Differential evolution` = case_when(`positive selection` == "Positive selection associated with trait absence"  ~ "Differentially evolving",
-                                              `positive selection` == "Positive selection associated with trait presence" ~ "Differentially evolving",
-                                              `selection intensity` == "Intensified selection significantly associated with trait" ~ "Differentially evolving",
-                                              `selection intensity` == "Relaxed selection significantly associated with trait" ~ "Differentially evolving",
-                                              TRUE ~ "None"))
-publicationTable <- publicationTable %>% rename("Focal trait" = "trait",
-                                                "Candidate gene" = "candidate genes",
-                                                "NCBI gene symbol" = "gene symbol",
-                                                "Ant orthogroup" = "orthogroup",
-                                                "Positive selection" = "positive selection",
-                                                "Selection intensity" = "selection intensity",
-                                                "Differential evolution" = "Differential evolution")
-
+# Make publication quality tables for these results:
 library(flextable)
+significantCandidateGenes <- allResults %>%
+  dplyr::select(c(`...1`,
+                  `candidate genes`,
+                  `gene symbol`,
+                  `gene function in original study`,
+                  selectionOn,
+                  SelectionIntensity,
+                  `Differential evolution`)) %>%
+  dplyr::select(c(Trait = `...1`,
+                  `Candidate gene` = `candidate genes`,
+                  `NCBI gene symbol` = `gene symbol`,
+                  `Gene function in original study` = `gene function in original study`,
+                  `Positive selection` = selectionOn,
+                  `Selection intensity` = SelectionIntensity,
+                  `Differential evolution` = `Differential evolution`)) %>%
+  arrange(desc(Trait)) %>% 
+  mutate(Trait = case_when(Trait == "workerReproductionQueens" ~ "Worker reproduction",
+                           Trait == "workerPolymorphism" ~ "Worker polymorphism"))
+significantCandidateGenes <- as_grouped_data(x = significantCandidateGenes, 
+                                               groups = c("Trait")) 
 
-publicationTable <- as_grouped_data(x = publicationTable,
-                                    groups = c("Focal trait"))
 
-publicationTable <- flextable(publicationTable)
-publicationTable <- theme_vanilla(publicationTable)
-publicationTable <- set_caption(publicationTable,
-                                caption = "Selective regimes for candidate genes")
-publicationTable
-save_as_docx(publicationTable,
-             path = "./Plots/candidateGenesPublicationTable.docx")
+significantCandidateGenes <- flextable(significantCandidateGenes)
+significantCandidateGenes <- theme_vanilla(significantCandidateGenes)
+
+save_as_docx(significantCandidateGenes,
+             path = "./Plots/significantCandidateGenes2.docx")
+
 
