@@ -31,9 +31,12 @@ do
             echo "$FILE exists; RELAX has already been run on this orthogroup."
             echo "*************************************************************"
         else
-            # Make sure vertical bars are replaced with underscores:
-            echo This file should be added to the file list
+          if grep --quiet oreground $treeFile; then
+            echo File contains foreground tips.
             echo 8_2_RemovedStops/cleaned_"$orthogroupNumber"_cds.fasta >> $2FileList_relax.txt
+          else
+            echo No foreground taxa in this orthogroup.
+          fi
         fi
     else
         echo "$treeFile does not exist because this orthogroup consists of three or fewer sequences."
@@ -110,5 +113,5 @@ do
   find . -name $2'relaxFileList*' -type f -empty -delete
   # Create a file listing those chunks:
   ls $2"relaxFileList"* > $2"relaxChunkList.txt"
-  
+
 done
