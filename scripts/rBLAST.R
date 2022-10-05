@@ -85,7 +85,7 @@ selectionOnGenesOfInterest <- full_join(allOrthogroupsToTestPlusTraits,
                                         genesOfInterest,
                                         by = c("V1" = "orthogroup", 
                                                "...1" = "trait")) %>%
-  select(-c(X1)) %>%
+  dplyr::select(-c(X1)) %>%
   drop_na(`paper number`) %>%
   drop_na(V1) %>%
   drop_na(pValue) %>%
@@ -103,61 +103,58 @@ correctingPValues <- correctingPValues %>%
   mutate(testResultsSharedDistributionspValueFDR = p.adjust(`test results shared distributions p-value`, method='BH'))
 
 allResults <- correctingPValues %>%
-  select(c(`...1`,
+  dplyr::select(c(`...1`,
            `candidate genes`,
            `gene symbol`,
            `gene function in original study`,
+           pValue,
            pValueFDR,
            kValue,
+           `test results p-value`,
+           `test results background p-value`,
+           `test results shared distributions p-value`,
+           testResultspValueFDR,
            testResultsBackgroundpValueFDR,
-           testResultsSharedDistributionspValueFDR,
-           testResultspValueFDR))
+           testResultsSharedDistributionspValueFDR))
 
 test <- allResults %>% mutate(selectionOn =
-                                case_when(as.numeric(as.character(`testResultspValueFDR`)) <= 0.05 & 
-                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) > 0.05 &
-                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) <= 0.05 ~ "Positive selection in the foreground only",
+                                case_when(as.numeric(as.character(`test results p-value`)) <= 0.05 & 
+                                            as.numeric(as.character(`test results background p-value`)) > 0.05 &
+                                            as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05 &
+                                            as.numeric(as.character(pValueFDR)) >= 0.05 ~ "Positive selection in the foreground only, prior to FDR correction",
+                                          as.numeric(as.character(`test results p-value`)) > 0.05 & 
+                                            as.numeric(as.character(`test results background p-value`)) <= 0.05 &
+                                            as.numeric(as.character(`test results shared distributions p-value`)) <= 0.05 &
+                                            as.numeric(as.character(testResultsBackgroundpValueFDR)) >= 0.05 ~ "Positive selection in the background only prior to FDR correction",
                                           as.numeric(as.character(`testResultspValueFDR`)) <= 0.05 & 
-                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) <= 0.05 &
-                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) <= 0.05 ~ "Selection on both but with different regimes",
-                                          as.numeric(as.character(`testResultspValueFDR`)) <= 0.05 & 
-                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) <= 0.05 &
-                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) > 0.05 ~ "Selection on both but no significant difference in regimes",
-                                          as.numeric(as.character(`testResultspValueFDR`)) <= 0.05 & 
                                             as.numeric(as.character(`testResultsBackgroundpValueFDR`)) > 0.05 &
-                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) > 0.05 ~ "Nonsignficant evidence that selection is associated with the trait",
+                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) <= 0.05 ~ "Positive selection in the foreground only, after FDR correction",
                                           as.numeric(as.character(`testResultspValueFDR`)) > 0.05 & 
                                             as.numeric(as.character(`testResultsBackgroundpValueFDR`)) <= 0.05 &
-                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) <= 0.05 ~ "Positive selection in the background only",
-                                          as.numeric(as.character(`testResultspValueFDR`)) > 0.05 & 
-                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) <= 0.05 &
-                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) > 0.05 ~ "Nonsignficant evidence that selection is associated with lacking the trait",
-                                          as.numeric(as.character(`testResultspValueFDR`)) > 0.05 & 
-                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) > 0.05 &
-                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) <= 0.05 ~ "No evidence of selection",
-                                          as.numeric(as.character(`testResultspValueFDR`)) > 0.05 & 
-                                            as.numeric(as.character(`testResultsBackgroundpValueFDR`)) > 0.05 &
-                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) > 0.05 ~ "No evidence of selection"))
+                                            as.numeric(as.character(`testResultsSharedDistributionspValueFDR`)) <= 0.05 ~ "Positive selection in the background only, after FDR correction",
+                                           TRUE ~ "Trait presence or absence is not associated with a shift in selective regime."))
 
 allResults <- test %>% mutate(SelectionIntensity =
-                                case_when(as.numeric(as.character(`pValueFDR`)) <= 0.05 &
-                                            as.numeric(as.character(kValue)) <= 1 ~ "Relaxed selection is associated with the trait",
+                                case_when(as.numeric(as.character(`pValue`)) <= 0.05 &
+                                            as.numeric(as.character(kValue)) <= 1 &
+                                            as.numeric(as.character(`pValueFDR`)) >= 0.05 ~ "Relaxed selection is associated with the trait, prior to FDR correction",
+                                          as.numeric(as.character(`pValue`)) <= 0.05 &
+                                            as.numeric(as.character(kValue)) >= 1 &
+                                            as.numeric(as.character(`pValueFDR`)) >= 0.05 ~ "Intensified selection is associated with the trait, prior to FDR correction",
                                           as.numeric(as.character(`pValueFDR`)) <= 0.05 &
-                                            as.numeric(as.character(kValue)) >= 1 ~ "Intensified selection is associated with the trait",
-                                          as.numeric(as.character(`pValueFDR`)) >= 0.05 &
-                                            as.numeric(as.character(kValue)) <= 1 ~ "Nonsignificant relaxed selection is associated with the trait",
-                                          as.numeric(as.character(`pValueFDR`)) >= 0.05 &
-                                            as.numeric(as.character(kValue)) >= 1 ~ "Nonsignificant intensified selection is associated with the trait"))
+                                            as.numeric(as.character(kValue)) <= 1 ~ "Relaxed selection is associated with the trait after FDR correction",
+                                          as.numeric(as.character(`pValueFDR`)) <= 0.05 &
+                                            as.numeric(as.character(kValue)) >= 1 ~ "Intensified selection is associated with the trait after FDR correction",
+                                          TRUE ~ "Trait presence or absence is not associated with a shift in selective regime."))
 
 allResults <- allResults %>% mutate(`Differential evolution` =
-                                case_when(selectionOn == "Positive selection in the foreground only" ~ "Differentially evolving",
-                                            selectionOn == "Positive selection in the background only" ~ "Differentially evolving",
-                                            SelectionIntensity == "Relaxed selection is associated with the trait" ~ "Differentially evolving",
-                                            SelectionIntensity == "Intensified selection is associated with the trait" ~ "Differentially evolving",
-                                          TRUE ~ "None"))
+                                case_when(selectionOn == "Trait presence or absence is not associated with a shift in selective regime." &
+                                          SelectionIntensity == "Trait presence or absence is not associated with a shift in selective regime." ~ "None",
+                                          TRUE ~ "Some differential evolution."))
 
-differentiallyEvolvingGenes <- allResults%>%
-  filter(`Differential evolution` != "None")
+differentiallyEvolvingGenes <- allResults %>%
+  filter(`Differential evolution` != "None") %>%
+  distinct(...1, `gene symbol`, .keep_all = TRUE)
 
 googlesheets4::write_sheet(allResults,
                            "https://docs.google.com/spreadsheets/d/1nOIuzA7f6yJbdXLH1A4LgXRo-HSKM8xRsXDCMr8PYZQ/edit?usp=sharing", 
@@ -165,6 +162,50 @@ googlesheets4::write_sheet(allResults,
 
 # Make publication quality tables for these results:
 library(flextable)
+significantCandidateGenes <- allResults %>%
+  dplyr::select(c(`...1`,
+                  `candidate genes`,
+                  `gene symbol`,
+                  `gene function in original study`,
+                  selectionOn,
+                  SelectionIntensity,
+                  `Differential evolution`,
+                  pValue,
+                  pValueFDR,
+                  `test results p-value`,
+                  `test results background p-value`,
+                  `test results shared distributions p-value`,
+                  testResultspValueFDR,
+                  testResultsBackgroundpValueFDR,
+                  testResultsSharedDistributionspValueFDR)) %>%
+  dplyr::select(c(Trait = `...1`,
+                  `Candidate gene` = `candidate genes`,
+                  `NCBI gene symbol` = `gene symbol`,
+                  `Gene function in original study` = `gene function in original study`,
+                  `Positive selection` = selectionOn,
+                  `Selection intensity` = SelectionIntensity,
+                  `Differential evolution` = `Differential evolution`,
+                  `unadjusted RELAX p-value` = pValue,
+                  `FDR-adjusted RELAX p-value` = pValueFDR,
+                  `unadjusted BUSTED-PH p-value, foreground selection` = `test results p-value`,
+                  `unadjusted BUSTED-PH p-value, background selection` = `test results background p-value`,
+                  `unadjusted BUSTED-PH p-value, difference in selective regimes` = `test results shared distributions p-value`,
+                  `FDR-adjusted BUSTED-PH p-value, foreground selection` = testResultspValueFDR,
+                  `FDR-adjusted BUSTED-PH p-value, background selection` = testResultsBackgroundpValueFDR,
+                  `FDR-adjusted BUSTED-PH p-value, difference in selective regimes` = testResultsSharedDistributionspValueFDR)) %>%
+  arrange(desc(Trait)) %>% 
+  mutate(Trait = case_when(Trait == "workerReproductionQueens" ~ "Worker reproduction",
+                           Trait == "workerPolymorphism" ~ "Worker polymorphism"))
+significantCandidateGenes <- as_grouped_data(x = significantCandidateGenes, 
+                                               groups = c("Trait")) 
+
+
+significantCandidateGenes <- flextable(significantCandidateGenes)
+significantCandidateGenes <- theme_vanilla(significantCandidateGenes)
+
+save_as_docx(significantCandidateGenes,
+             path = "./Plots/fullResultsSignificantCandidateGenes.docx")
+
 significantCandidateGenes <- allResults %>%
   dplyr::select(c(`...1`,
                   `candidate genes`,
@@ -184,13 +225,13 @@ significantCandidateGenes <- allResults %>%
   mutate(Trait = case_when(Trait == "workerReproductionQueens" ~ "Worker reproduction",
                            Trait == "workerPolymorphism" ~ "Worker polymorphism"))
 significantCandidateGenes <- as_grouped_data(x = significantCandidateGenes, 
-                                               groups = c("Trait")) 
+                                             groups = c("Trait")) 
 
 
 significantCandidateGenes <- flextable(significantCandidateGenes)
 significantCandidateGenes <- theme_vanilla(significantCandidateGenes)
 
 save_as_docx(significantCandidateGenes,
-             path = "./Plots/significantCandidateGenes2.docx")
+             path = "./Plots/significantCandidateGenes.docx")
 
 
