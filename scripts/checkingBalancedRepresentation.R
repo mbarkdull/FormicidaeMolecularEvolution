@@ -59,9 +59,9 @@ workerReproductionTreeFiles <- list.files(path = "9_1_LabelledPhylogenies/worker
 
 # Map it over all tree files:
 workerPolymorphismBalancedTrees <- workerPolymorphismTreeFiles %>% 
-  purrr::map(~ possiblySubsettingBalancedTrees(.x, "greater"))
+  purrr::map(~ possiblySubsettingBalancedTrees(.x, "equal"))
 workerReproductionBalancedTrees <- workerReproductionTreeFiles %>% 
-  purrr::map(~ possiblySubsettingBalancedTrees(.x, "greater"))
+  purrr::map(~ possiblySubsettingBalancedTrees(.x, "equal"))
 
 workerPolymorphismBalancedTrees <- as.data.frame(do.call(rbind, workerPolymorphismBalancedTrees)) %>%
   dplyr::filter(V1 != "Unbalanced.")
