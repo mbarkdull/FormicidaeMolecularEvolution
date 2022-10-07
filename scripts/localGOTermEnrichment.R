@@ -5,7 +5,7 @@ library(RJSONIO)
 library(gt)
 library(cowplot)
 
-# Read in the GO term annotations for each orthogroup, which we obtained from KinFin:
+##### Read in the GO term annotations for each orthogroup, which we obtained from KinFin: ######
 GOannotations <- read_delim("cluster_domain_annotation.GO.txt", delim = "\t")
 # Subset so we just have orthogroup name and GO domain IDs:
 longAnnotations <- dplyr::select(GOannotations, `#cluster_id`, domain_id)
@@ -18,6 +18,7 @@ longAnnotations <- longAnnotations %>%
 # Create list with element for each gene, containing vectors with all terms for each gene
 wideListAnnotations <- tapply(longAnnotations$domain_id, longAnnotations$orthogroup, function(x)x)
 
+#### Do GO enrichment for the BUSTED-PH results: ####
 # Read in BUSTED-PH results:
 bustedPHResults <- read_csv("./Results/allBustedPHResults.csv", col_names = TRUE)
 bustedPHResults$`test results background p-value` <- as.numeric(as.character(bustedPHResults$`test results background p-value`))
@@ -156,6 +157,7 @@ traits <- unique(bustedPHResults$trait)
 # Map the GO enrichment function over the traits:
 goTermsBustedPH <- purrr::map(traits, goEnrichmentBUSTEDPH)
 
+#### Do GO term enrichment for the RELAX results: ####
 # Read in the RELAX results:
 relaxResults <- read_csv("./Results/allRelaxResults.csv", col_names = TRUE)
 relaxResults$pValue <- as.numeric(as.character(relaxResults$pValue))
@@ -226,16 +228,16 @@ goEnrichmentRELAX <- function(specificTrait) {
   
   goTermsRelaxed
   
-  significanceInfo <- dplyr::select(relaxResults, 
+  significanceInfo <- dplyr::select(relaxResultsAdjusted, 
                                     orthogroup, 
-                                    pValue, 
+                                    pValueFDR, 
                                     kValue,
                                     trait) 
   significanceInfo <- dplyr::filter(significanceInfo, 
                                     trait == specificTrait)
   # Set each gene to 1 if k >1, 0, otherwise
   pcutoff <- 0.05 
-  tmp <- ifelse(significanceInfo$pValue < pcutoff & significanceInfo$kValue > 1, 1, 0)
+  tmp <- ifelse(significanceInfo$pValueFDR < pcutoff & significanceInfo$kValue > 1, 1, 0)
   geneList <- tmp
   rm(tmp)
   
