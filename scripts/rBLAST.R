@@ -115,7 +115,8 @@ allResults <- correctingPValues %>%
            `test results shared distributions p-value`,
            testResultspValueFDR,
            testResultsBackgroundpValueFDR,
-           testResultsSharedDistributionspValueFDR))
+           testResultsSharedDistributionspValueFDR,
+           `paper citation`))
 
 test <- allResults %>% mutate(selectionOn =
                                 case_when(as.numeric(as.character(`test results p-value`)) <= 0.05 & 
