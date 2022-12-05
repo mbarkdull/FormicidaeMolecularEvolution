@@ -11,7 +11,7 @@ if (length(args)==0) {
 # I need to be able to label all of my phylogenies in order to run aBSREL and RELAX. 
 
 library(ape)
-library(tidyverse)
+library(purrr)
 
 # Create an output directory:
 dir.create("./9_1_LabelledPhylogenies")
@@ -19,15 +19,16 @@ dir.create("./9_1_LabelledPhylogenies")
 # List all of the unlabelled tree files:
 treeFiles <- list.files(path = args[1], full.names = TRUE)
 #treeFiles <- list.files(path = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees", full.names = TRUE)
-#tree <- ape::read.tree("/workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt")
-#interest <- read_csv(file = "./ForegroundGroupings/WorkerPolymorphismLabelling.txt", col_names = FALSE)
+#tree <- ape::read.tree("/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt")
+#interest <- read_csv(file = "WorkerPolymorphismLabelling.txt", col_names = FALSE)
 
-interest <- read_csv(file = args[2], col_names = FALSE)
+interest <- read.csv(file = args[2], header = FALSE)
 
 # Write a function that can relabel any tree with any vector of species of interest:
 multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
   # Read in a phylogeny:
   tree <- ape::read.tree(tree)
+  plot(tree)
   
   # Assign the list of species of interest:
   interest <- speciesOfInterest
@@ -37,7 +38,6 @@ multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
     # i looks like: cvar_filteredTranscripts_cvar_CVAR_01478RA_p1
     # we are extracting the species abbreviation, for example here cvar
     species <- sapply(strsplit(i, "\\_"), `[`, 1)
-    print(species)
     if (species %in% interest) {
       new <- paste(i, "{Foreground}", sep = "")
       print(new)
@@ -47,28 +47,36 @@ multiTreeLabelling <- function(tree, speciesOfInterest, exportFile) {
   }
   
   # Apply that to all of the tip labels with purrr:map.
-  tree[["tip.label"]] <- map(tree[["tip.label"]], labellingFunction)
+  tree[["tip.label"]] <- purrr::map(tree[["tip.label"]], labellingFunction)
   
-  # Create a list of tip positions for the foreground tips:
   selected_tips <- grep("\\{Foreground\\}", tree$tip.label)
   
-  # Now only produce an output tree if there are actually foreground tips present:
-  if (length(selected_tips) == 0) {
-    print("No foreground tips in this tree")
-  } else if (length(selected_tips) == length(tree[["tip.label"]])) {
-    print("all tips are foreground")
-  } else {
-    ## Finding the direct ancestor for each of these tips
-    descendants <- tree$edge[tree$edge[, 2] %in% selected_tips, 1]
-    
-    ## Adding the term "{Foreground}" to the selected descendants (the -Ntip(tree) part is because the node counting in the $edge table starts at the value Ntip(tree)).
-    tree$node.label[descendants-Ntip(tree)] <- paste(tree$node.label[descendants-Ntip(tree)], "{Foreground}")
-    
-    ## Plotting the results
-    ape::write.tree(tree, file = exportFile)
-    #return(tree)
-  }
+  ## Finding the direct ancestor for each of these tips
+  descendants <- tree$edge[tree$edge[, 2] %in% selected_tips, 1]
+  
+  ## Adding the term "{Foreground}" to the selected descendants (the -ape::Ntip(tree) part is because the node counting in the $edge table starts at the value ape::Ntip(tree)).
+  tree$node.label[descendants-ape::Ntip(tree)] <- paste(tree$node.label[descendants-ape::Ntip(tree)], "{Foreground}")
+  ## Replacing all the non selected node labels by nothing ("")
+  #tree$node.label[-c(descendants-ape::Ntip(tree))] <- ""
+  tree$node.label
+  ## Plotting the results
+  ape::write.tree(tree, file = exportFile)
+  return(tree)
 }
+
+#test <- multiTreeLabelling(tree = "/workdir/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt", speciesOfInterest = interest$V1, exportFile = "test.txt")
+
+#test1 <- ape::read.tree(file = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt")
+#unlabelled <- ggtree(test1) + geom_tiplab() + geom_nodelab() + xlim(0, 2.5)
+#plot(unlabelled)
+
+#test <- multiTreeLabelling(tree = "/Users/meganbarkdull/mb2337/FormicidaeMolecularEvolution/5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Resolved_Gene_Trees/OG0001224_tree.txt", speciesOfInterest = interest$X1, exportFile = "test.txt")
+#labelled <- ggtree(test) + geom_tiplab() + geom_nodelab() + xlim(0, 2.5)
+#plot(labelled)
+
+#combo <- ggarrange(unlabelled, labelled, ncol = 2, nrow = 1)
+#plot(combo)
+#ggsave(filename = "unlabelledAndLabelled.png", width = 15, height = 10, units = "in")
 
 setwd("./9_1_LabelledPhylogenies")
 dir.create(args[3])
