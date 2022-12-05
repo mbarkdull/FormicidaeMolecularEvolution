@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Randomly select 1,000 orthogroups
+ls DIRECTORY > allOrthogroups.txt
+shuf -n 1000 allOrthogroups.txt > subsetOrthogroups.txt
+
+# Randomly label three foreground species
+shuf -n 3 ./scripts/inputurls_full.txt > subsetSpeciesFull.txt
+cut -d',' -f4 subsetSpeciesFull.txt > subsetSpecies.txt
+rm subsetSpeciesFull.txt
+
+# Run BUSTED-PH on those orthogroups/trees
