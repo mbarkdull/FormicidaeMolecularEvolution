@@ -1,12 +1,23 @@
 #!/bin/bash
 
-# Randomly select 1,000 orthogroups
-ls DIRECTORY > allOrthogroups.txt
-shuf -n 1000 allOrthogroups.txt > subsetOrthogroups.txt
+# Note the start time:
+echo Starting one round of bootstrapping at `date` >> bootstrappingLog.txt
 
-# Randomly label three foreground species
+# Randomly select 1,000 orthogroups:
+ls 9_3_BustedPHResults/workerReproductionQueens/*.json > allOrthogroups.txt
+shuf -n 1000 allOrthogroups.txt > subsetOrthogroupFiles.txt
+cut -d'_' -f4 subsetOrthogroupFiles.txt > subsetOrthogroups.txt
+echo Finished getting random orthogroups at `date` >> bootstrappingLog.txt
+
+# Randomly label three foreground species:
+# Get a random list of foreground species:
 shuf -n 3 ./scripts/inputurls_full.txt > subsetSpeciesFull.txt
 cut -d',' -f4 subsetSpeciesFull.txt > subsetSpecies.txt
 rm subsetSpeciesFull.txt
+echo Finished getting random species at `date` >> bootstrappingLog.txt
+
+# Label trees with those random species:
+Rscript ./scripts/LabellingPhylogeniesHYPHY.R /workdir/mb2337/FormicidaeMolecularEvolution/allGeneTrees subsetSpecies.txt bootstrapping
+echo Finished labelling trees with random species at `date` >> bootstrappingLog.txt
 
 # Run BUSTED-PH on those orthogroups/trees
