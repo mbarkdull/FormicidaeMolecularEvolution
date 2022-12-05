@@ -68,7 +68,7 @@ publicationTable <- publicationTable %>%
   mutate(trait = case_when(...1 == "workerReproductionQueens" ~ "Worker reproduction",
                            ...1 == "workerPolymorphism" ~ "Worker polymorphism"))
 
-publicationTable <- publicationTable %>% dplyr::rename("Focal trait" = "...1",
+publicationTable <- publicationTable %>% dplyr::rename("Focal trait" = "trait",
                                                 "Candidate gene" = "candidate genes",
                                                 "NCBI gene symbol" = "gene symbol",
                                                 "Positive selection" = "selectionOn",
@@ -82,7 +82,7 @@ publicationTable <- publicationTable %>% dplyr::rename("Focal trait" = "...1",
                                                 "FDR-adjusted BUSTED-PH p-value, background selection" = "testResultsBackgroundpValueFDR",
                                                 "FDR-adjusted BUSTED-PH p-value, difference in selective regimes" = "testResultsSharedDistributionspValueFDR",
                                                 "Originally discussed in" = "paper citation") %>%
-  dplyr::select(-c("trait"))
+  dplyr::select(-c("...1"))
 
 library(flextable)
 
