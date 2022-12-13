@@ -54,25 +54,24 @@ pValueByTraitRelax <- function(specificTrait, inputData) {
     filter(pValueFDR <= 0.05,
            kValue < 1) %>%
     nrow()
+  nTotal <- relaxResultsTrait %>% 
+    nrow()
   # Construct a frequency table with that information:
-  frequencyTableWithNoCorrection <- matrix(c(nSelectionIntensified, nSelectionRelaxed, 
-                                             (nrow(relaxResultsTrait) - nSelectionIntensified),
-                                             (nrow(relaxResultsTrait) - nSelectionRelaxed)),
-                                           nrow = 2,
-                                           byrow = TRUE,
-                                           dimnames = list("category" = c("evidenceForSelection", "nonsignificantResult") ,
-                                                           "selection" = c("intensified", "relaxed")))
-  # Run a fisher's exact test to see if there is a difference in the proportion of genes under selection in the fore- vs. background:
-  fishersExactTest <- fisher.test(frequencyTableWithNoCorrection)
+  shiftInIntensity <- c(nSelectionIntensified, 
+                        nSelectionRelaxed)
+  population <- c((nrow(relaxResultsTrait) - nSelectionIntensified),
+                  (nrow(relaxResultsTrait) - nSelectionRelaxed))
+  proportionTest <- prop.test(shiftInIntensity,
+                              population)
   # Print the resulting p-value:
-  fishersExactTest[["p.value"]]
-  pValue <- if (fishersExactTest[["p.value"]] < 0.000001) {
-    formatC(fishersExactTest[["p.value"]], format = "e", digits = 2)
+  proportionTest[["p.value"]]
+  pValue <- if (proportionTest[["p.value"]] < 0.000001) {
+    formatC(proportionTest[["p.value"]], format = "e", digits = 2)
   } else {
-    round(fishersExactTest[["p.value"]], digits = 4)
+    round(proportionTest[["p.value"]], digits = 4)
   }
   textHeight <- as.numeric(max(nSelectionIntensified, nSelectionRelaxed))
-  return(c(specificTrait, pValue, textHeight, nSelectionIntensified, nSelectionRelaxed))
+  return(c(specificTrait, pValue, textHeight, nSelectionIntensified, nSelectionRelaxed, nTotal))
 }
 
 possiblypValueByTraitRelax <- possibly(pValueByTraitRelax, otherwise = "Error")
@@ -82,7 +81,7 @@ pValuesRelax <- traits %>%
 
 pValuesRelax <- as.data.frame(do.call(rbind, pValuesRelax))   
 
-colnames(pValuesRelax) <- c("trait", "pValue", "maxHeight", "nSelectionIntensified", "nSelectionRelaxed")
+colnames(pValuesRelax) <- c("trait", "pValue", "maxHeight", "nSelectionIntensified", "nSelectionRelaxed", "nTotal")
 
 pValuesRelax$test <- "relax"
 
@@ -100,31 +99,31 @@ pValueByTraitBUSTEDPH <- function(specificTrait, inputData) {
            testResultsBackgroundpValueFDR <= 0.05,
            testResultsSharedDistributionspValueFDR <= 0.05) %>%
     nrow()
+  nTotal <- bustedPHResultsTrait %>% 
+    nrow()
+  
   # Construct a frequency table with that information:
-  frequencyTableWithNoCorrection <- matrix(c(nSelectionForeground, nSelectionBackground, 
-                                             (nrow(bustedPHResultsTrait) - nSelectionForeground),
-                                             (nrow(bustedPHResultsTrait) - nSelectionBackground)),
-                                           nrow = 2,
-                                           byrow = TRUE,
-                                           dimnames = list("category" = c("selected", "noSelection") ,
-                                                           "selection" = c("foreground", "background")))
-  # Run a fisher's exact test to see if there is a difference in the proportion of genes under selection in the fore- vs. background:
-  fishersExactTest <- fisher.test(frequencyTableWithNoCorrection)
+  selected <- c(nSelectionForeground, nSelectionBackground)
+  population <- c((nrow(bustedPHResultsTrait) - nSelectionForeground),
+                  (nrow(bustedPHResultsTrait) - nSelectionBackground))
+  # Run a test of equal proportions:
+  proportionTest <- prop.test(selected,
+                              population)
   # Print the resulting p-value:
-  fishersExactTest[["p.value"]]
-  pValue <- if (fishersExactTest[["p.value"]] < 0.000001) {
-    formatC(fishersExactTest[["p.value"]], format = "e", digits = 2)
+  proportionTest[["p.value"]]
+  pValue <- if (proportionTest[["p.value"]] < 0.000001) {
+    formatC(proportionTest[["p.value"]], format = "e", digits = 2)
   } else {
-    round(fishersExactTest[["p.value"]], digits = 4)
+    round(proportionTest[["p.value"]], digits = 4)
   }
   textHeight <- as.numeric(max(nSelectionForeground, nSelectionBackground))
-  return(c(specificTrait, pValue, textHeight, nSelectionForeground, nSelectionBackground))
+  return(c(specificTrait, pValue, textHeight, nSelectionForeground, nSelectionBackground, nTotal))
 }
 possiblypValueByTraitBUSTEDPH <- possibly(pValueByTraitBUSTEDPH, otherwise = "Error")
 pValuesBUSTEDPH <- traits %>% 
   map(~ possiblypValueByTraitBUSTEDPH(.x, relaxAndBustedPH))
 pValuesBUSTEDPH <- as.data.frame(do.call(rbind, pValuesBUSTEDPH))   
-colnames(pValuesBUSTEDPH) <- c("trait", "pValue", "maxHeight", "nSelectionForeground", "nSelectionBackground")
+colnames(pValuesBUSTEDPH) <- c("trait", "pValue", "maxHeight", "nSelectionForeground", "nSelectionBackground", "nTotal")
 pValuesBUSTEDPH$test <- "bustedPH"
 
 pValuesAll <- bind_rows(pValuesRelax, pValuesBUSTEDPH)
@@ -621,6 +620,40 @@ ggplot(data = filter(relaxAndBustedPH,
   geom_boxplot(mapping = aes(x = selectionOn, 
                             y = kValue)) +
   scale_y_log10()
+
+#### Look at only single-copy orthogroups: ####
+singleCopyOrthogroups <- read_delim("5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Orthogroups/Orthogroups_SingleCopyOrthologues.txt",
+                                    delim = "\t",
+                                    col_names = FALSE)
+
+relaxResultsAdjustedUngrouped <- ungroup(relaxResultsAdjusted)
+
+singleCopyOrthogroupResults <- dplyr::filter(relaxResultsAdjustedUngrouped, 
+                                             relaxResultsAdjustedUngrouped$orthogroup %in% singleCopyOrthogroups$X1) %>%
+  group_by(trait)
+
+pValuesRelaxSingleCopy <- traits %>% 
+  purrr::map(~ possiblypValueByTraitRelax(.x, singleCopyOrthogroupResults))
+pValuesRelaxSingleCopy <- as.data.frame(do.call(rbind, pValuesRelaxSingleCopy))   
+colnames(pValuesRelaxSingleCopy) <- c("trait", "pValue", "maxHeight", "nSelectionIntensified", "nSelectionRelaxed", "nTotal")
+pValuesRelaxSingleCopy$test <- "relax"
+
+bustedPHResultsAdjustedUngrouped <- ungroup(bustedPHResultsAdjusted)
+
+singleCopyOrthogroupResults <- dplyr::filter(bustedPHResultsAdjustedUngrouped, 
+                                             bustedPHResultsAdjustedUngrouped$orthogroup %in% singleCopyOrthogroups$X1) %>%
+  group_by(trait)
+
+pValuesBUSTEDPHSingleCopy <- traits %>% 
+  map(~ possiblypValueByTraitBUSTEDPH(.x, singleCopyOrthogroupResults))
+pValuesBUSTEDPHSingleCopy <- as.data.frame(do.call(rbind, pValuesBUSTEDPHSingleCopy))   
+colnames(pValuesBUSTEDPHSingleCopy) <- c("trait", "pValue", "maxHeight", "nSelectionForeground", "nSelectionBackground", "nTotal")
+pValuesBUSTEDPHSingleCopy$test <- "bustedPH"
+
+pValuesAllSingleCopy <- bind_rows(pValuesRelaxSingleCopy, pValuesBUSTEDPHSingleCopy)
+
+#### Plot the single-copy RELAX results ####
+
 
 ##### Look at whether common genes are under positive selection in multiple traits (specifically polyandry, polygyny, and multilineage): #####
 polyandryOrthogroups <- bustedPHResults %>%
