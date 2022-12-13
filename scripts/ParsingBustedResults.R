@@ -14,10 +14,30 @@ library(plyr)
 library(tidyverse)
 library(rjson)
 
+# Check how many orthogroups should have been tested. Some orthogroups contain only a single gene, and so weren't tested by BUSTED[S]. 
+orthogroupMembers <- readr::read_table2("./5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Orthogroups/Orthogroups.txt", col_names = FALSE) 
+multiGeneGroups <- orthogroupMembers %>%
+  drop_na(X3)
+multiGeneGroups$X1 <- gsub(':', '', multiGeneGroups$X1) 
+multiGeneGroups <- multiGeneGroups%>%
+  select(c(X1))
+  
 # Construct a list of all of the json files:
 jsonFiles <- list.files(path = args[1], pattern = "*.json", full.names = TRUE)
-#jsonFiles <- list.files(path = "./8_3_BustedResults/8_3_BustedResults/", pattern = "*.json", full.names = TRUE)
 jsonFiles <- sort(jsonFiles, decreasing = TRUE)
+
+#jsonFiles <- list.files(path = "./8_3_BustedResults/8_3_BustedResults/", pattern = "*.json", full.names = TRUE)
+# Get a list of all orthogroups tested:
+getOrthogroup <- function(i) {
+  orthogoupName <- sapply(strsplit(as.character(i),"/"), tail, 1)
+  orthogoupName <- sapply(strsplit(orthogoupName, "\\_"), `[`, 1)
+}
+possiblygetOrthogroup <- possibly(getOrthogroup, otherwise = "Error.")
+allOrthogroups <- map(jsonFiles, possiblygetOrthogroup)
+testedOrthogroups <- as.data.frame(do.call(rbind, allOrthogroups))   
+# See which orthogroups weren't tested:
+singleGeneGroups$tested <- singleGeneGroups$X1 %in% testedOrthogroups$V1  
+
 # bustedResult <- rjson::fromJSON(file = "./8_3_BustedResults/OG0000067_busted.json")
 # Write a function that will process each individual json file and extract the file name, orthogroup number, p-value, and return a text description of the p-value:
 bustedJSONProcessing <- function(i) {
