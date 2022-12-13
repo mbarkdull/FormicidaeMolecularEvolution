@@ -15,13 +15,16 @@ library(rjson)
 jsonFiles <- list.files(path = args[1], pattern = "*.json", full.names = TRUE)
 #jsonFiles <- list.files(path = "./10_1_RelaxResults/polygyny", pattern = "*.json", full.names = TRUE)
 #jsonFiles <- list.files(path = "./10_1_RelaxResults/workerPolymorphism", pattern = "*.json", full.names = TRUE)
+#jsonFiles <- list.files(path = "./10_1_RelaxResults/workerReproductionQueens", pattern = "*.json", full.names = TRUE)
+#jsonFiles <- list.files(path = "./10_1_RelaxResults/multilineage", pattern = "*.json", full.names = TRUE)
+#jsonFiles <- list.files(path = "./10_1_RelaxResults/polyandry", pattern = "*.json", full.names = TRUE)
 
 jsonFiles <- sort(jsonFiles, decreasing = TRUE)
 jsonFiles <- jsonFiles[sapply(jsonFiles, file.size) > 0]
 
 relaxJSONProcessing <- function(i) {
   relaxResult <- rjson::fromJSON(file = i)
-  if (relaxResult[["test results"]][["p-value"]] < 0.05) {
+  if (relaxResult[["test results"]][["p-value"]] <= 0.05) {
     if (relaxResult[["test results"]][["relaxation or intensification parameter"]] > 1) {
       data <- c(relaxResult[["input"]][["file name"]], relaxResult[["test results"]][["p-value"]], relaxResult[["test results"]][["relaxation or intensification parameter"]], "Significant difference in selective regime between foreground and background branches", "Intensification of selection along foreground branches")
       return(data)
@@ -50,6 +53,8 @@ colnames(relaxResults) <- c("fileName", "pValue", "kValue", "description", "shor
 orthogroup <- sapply(strsplit(as.character(relaxResults$fileName),"/"), tail, 1)
 orthogroup <- sapply(strsplit(orthogroup, "_"), `[`, 2)
 relaxResults$orthogroup <- orthogroup
+relaxResults$pValue <- as.numeric(as.character(relaxResults$pValue))
+relaxResults$kValue <- as.numeric(as.character(relaxResults$kValue))
 
 numberRelax <- sum(relaxResults$shortDescription == "Relaxation of selection along foreground branches")
 numberNonsignficant <- sum(relaxResults$description == "No significant difference in selective regime between foreground and background branches")
