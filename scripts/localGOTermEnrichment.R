@@ -348,5 +348,70 @@ workerReproductionGOResultsTable
 save_as_docx(workerReproductionGOResultsTable,
              path = "./Plots/workerReproductionGOResultsTable.docx")
 
+#### Get a list of just single-copy orthogroups: ####
+singleCopyOrthogroups <- read_delim("5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Orthogroups/Orthogroups_SingleCopyOrthologues.txt",
+                                    delim = "\t",
+                                    col_names = FALSE)
+
+# Read in all orthogroups:
+allOrthogroups <- read_delim("./5_OrthoFinder/fasta/OrthoFinder/Results_Jul13/Orthogroups/Orthogroups.tsv",
+                             delim = "\t") %>%
+  dplyr::select(c("Orthogroup"))
+allOrthogroups$singleCopy <- allOrthogroups$Orthogroup %in% singleCopyOrthogroups$X1
+
+##### Read in the GO term annotations for each orthogroup, which we obtained from KinFin: ######
+GOannotations <- read_delim("cluster_domain_annotation.GO.txt", delim = "\t")
+# Subset so we just have orthogroup name and GO domain IDs:
+longAnnotations <- dplyr::select(GOannotations, `#cluster_id`, domain_id)
+# Take out genes without GO terms
+longAnnotations <- longAnnotations[which(longAnnotations$domain_id != ""),] 
+# Rename the column #cluster_id to orthogroup
+longAnnotations <- longAnnotations %>%
+  dplyr::rename(orthogroup = `#cluster_id`)
+
+# Create list with element for each gene, containing vectors with all terms for each gene
+wideListAnnotations <- tapply(longAnnotations$domain_id, longAnnotations$orthogroup, function(x)x)
+
+# See if single-copy orthogroups are enriched for particular GO terms: #
+tmp <- ifelse(allOrthogroups$singleCopy == TRUE, 1, 0)
+geneList <- tmp
+names(geneList) <- allOrthogroups$Orthogroup
+GOdataBP <- new("topGOdata",
+                ontology = "BP",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherBP <- runTest(GOdataBP, algorithm = "elim", statistic = "fisher")
+resultFisherBP
+resultsFisherBPTable <- GenTable(GOdataBP, raw.p.value = resultFisherBP, topNodes = length(resultFisherBP@score),
+                                 numChar = 120)
+
+GOdataMF <- new("topGOdata",
+                ontology = "MF",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherMF <- runTest(GOdataMF, algorithm = "elim", statistic = "fisher")
+resultFisherMF
+resultsFisherMFTable <- GenTable(GOdataMF, raw.p.value = resultFisherMF, topNodes = length(resultFisherMF@score),
+                                 numChar = 120)
+
+GOdataCC <- new("topGOdata",
+                ontology = "CC",
+                allGenes = geneList,
+                geneSelectionFun = function(x)(x == 1),
+                annot = annFUN.gene2GO, gene2GO = wideListAnnotations)
+# Run Fisher's exact test to check for enrichment:
+resultFisherCC <- runTest(GOdataCC, algorithm = "elim", statistic = "fisher")
+resultFisherCC
+resultsFisherCCTable <- GenTable(GOdataCC, raw.p.value = resultFisherCC, topNodes = length(resultFisherCC@score),
+                                 numChar = 120)
+
+goTermsSingleCopy <- rbind(resultsFisherBPTable, resultsFisherMFTable, resultsFisherCCTable) %>%
+  dplyr::filter(raw.p.value <= 0.01)
+
+head(goTermsSingleCopy)
 
 
