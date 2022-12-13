@@ -41,71 +41,38 @@ subsetFiles <- subsetFiles2
 # Get a column for the orthogroup:
 subsetFiles <- separate(subsetFiles, col = file, into = c("junk1", "junk2", "junk3", "orthogroup"), sep = "_")
 
-# Create a column that classifies orthogroups based on selective regime:
-subsetFiles <- subsetFiles %>% mutate(selectionOn =
-                                                case_when(as.numeric(as.character(`test results.p-value`)) <= 0.05 & 
-                                                            as.numeric(as.character(`test results background.p-value`)) > 0.05 &
-                                                            as.numeric(as.character(`test results shared distributions.p-value`)) <= 0.05 ~ "ForegroundOnly",
-                                                          
-                                                          as.numeric(as.character(`test results.p-value`)) <= 0.05 & 
-                                                            as.numeric(as.character(`test results background.p-value`)) <= 0.05 &
-                                                            as.numeric(as.character(`test results shared distributions.p-value`)) <= 0.05 ~ "SelectionOnBothButDifferent",
-                                                          
-                                                          as.numeric(as.character(`test results.p-value`)) <= 0.05 & 
-                                                            as.numeric(as.character(`test results background.p-value`)) <= 0.05 &
-                                                            as.numeric(as.character(`test results shared distributions.p-value`)) > 0.05 ~ "SelectionOnBothButNoSignificantDifference",
-                                                          
-                                                          as.numeric(as.character(`test results.p-value`)) <= 0.05 & 
-                                                            as.numeric(as.character(`test results background.p-value`)) > 0.05 &
-                                                            as.numeric(as.character(`test results shared distributions.p-value`)) > 0.05 ~ "EvidenceOfSelectionAssociatedWithTraitButNS",
-                                                          
-                                                          as.numeric(as.character(`test results.p-value`)) > 0.05 & 
-                                                            as.numeric(as.character(`test results background.p-value`)) <= 0.05 &
-                                                            as.numeric(as.character(`test results shared distributions.p-value`)) <= 0.05 ~ "BackgroundOnly",
-                                                          
-                                                          as.numeric(as.character(`test results.p-value`)) > 0.05 & 
-                                                            as.numeric(as.character(`test results background.p-value`)) <= 0.05 &
-                                                            as.numeric(as.character(`test results shared distributions.p-value`)) > 0.05 ~ "EvidenceOfSelectionAssociatedWithLackOfTraitButNS",
-                                                          
-                                                          as.numeric(as.character(`test results.p-value`)) > 0.05 & 
-                                                            as.numeric(as.character(`test results background.p-value`)) > 0.05 &
-                                                            as.numeric(as.character(`test results shared distributions.p-value`)) <= 0.05 ~ "NoEvidenceOfSelection",
-                                                          
-                                                          as.numeric(as.character(`test results.p-value`)) > 0.05 & 
-                                                            as.numeric(as.character(`test results background.p-value`)) > 0.05 &
-                                                            as.numeric(as.character(`test results shared distributions.p-value`)) > 0.05 ~ "NoEvidenceOfSelection"))
-
-# Convert the.p-value and omega columns to numeric, not character:
-subsetFiles$`test results.p-value` <- as.numeric(as.character(subsetFiles$`test results.p-value`))
-subsetFiles$`test results background.p-value` <- as.numeric(as.character(subsetFiles$`test results background.p-value`))
-subsetFiles$`test results shared distributions.p-value` <- as.numeric(as.character(subsetFiles$`test results shared distributions.p-value`))
+# Read in the hyphy results with FDR correction applied:
+allHyphy <- read_csv(file = "./Results/relaxAndBustedPH.csv")
+workerReproductionBustedPH <- filter(allHyphy, 
+                                     trait == "workerReproductionQueens", 
+                                     orthogroup %in% subsetFiles$orthogroup)
 
 # Create a dataframe with genes only under selection in the background:
-backgroundSelected <- subsetFiles %>% 
-  filter(as.numeric(as.character(`test results.p-value`)) > 0.05 &
-           as.numeric(as.character(`test results background.p-value`)) <= 0.05 & 
-           as.numeric(as.character(`test results shared distributions.p-value`)) <= 0.05)
+backgroundSelected <- workerReproductionBustedPH %>% 
+  filter(as.numeric(as.character(testResultspValueFDR)) > 0.05 &
+           as.numeric(as.character(testResultsBackgroundpValueFDR)) <= 0.05 & 
+           as.numeric(as.character(testResultsSharedDistributionspValueFDR)) <= 0.05)
 nBackgroundSelected <- nrow(backgroundSelected)
 
 # Create a dataframe with genes only under selection in the foreground:
-foregroundSelected <- subsetFiles %>% 
-  filter(as.numeric(as.character(`test results.p-value`)) <= 0.05 & 
-           as.numeric(as.character(`test results background.p-value`)) > 0.05 & 
-           as.numeric(as.character(`test results shared distributions.p-value`)) <= 0.05)
+foregroundSelected <- workerReproductionBustedPH %>% 
+  filter(as.numeric(as.character(testResultspValueFDR)) <= 0.05 & 
+           as.numeric(as.character(testResultsBackgroundpValueFDR)) > 0.05 & 
+           as.numeric(as.character(testResultsSharedDistributionspValueFDR)) <= 0.05)
 nForegroundSelected <- nrow(foregroundSelected)
 
+nTotal <- workerReproductionBustedPH %>% 
+  nrow()
+
 # Construct a frequency table with that information:
-frequencyTableWithNoCorrection <- matrix(c(nBackgroundSelected, nForegroundSelected, 
-                                           (nrow(subsetFiles) - nBackgroundSelected),
-                                           (nrow(subsetFiles) - nForegroundSelected)),
-                                         nrow = 2,
-                                         byrow = TRUE,
-                                         dimnames = list("category" = c("selected", "noSelection") ,
-                                                         "selection" = c("backgroundSelected", "foregroundSelected")))
-# Run a fisher's exact test to see if there is a difference in the proportion of genes under selection in the fore- vs. background:
-fishersExactTest <- fisher.test(frequencyTableWithNoCorrection)
-# Print the resulting.p-value:
-fishersExactTest[["p.value"]]
+selected <- c(nForegroundSelected, nBackgroundSelected)
+population <- c((nrow(workerReproductionBustedPH) - nForegroundSelected),
+                (nrow(workerReproductionBustedPH) - nBackgroundSelected))
+# Run a test of equal proportions:
+proportionTest <- prop.test(selected,
+                            population)
+# Print the resulting p-value:
+proportionTest[["p.value"]]
 
 #### Check the subsetted results for GO term enrichment: ####
 # Read in the GO term annotations for each orthogroup, which we obtained from KinFin:
@@ -124,13 +91,13 @@ wideListAnnotations <- tapply(longAnnotations$domain_id, longAnnotations$orthogr
 goEnrichmentBUSTEDPH <- function(specificTrait) {
   significanceInfo <- dplyr::select(subsetFiles, 
                                     orthogroup, 
-                                    `test results.p-value`, 
-                                    `test results background.p-value`, 
-                                    `test results shared distributions.p-value`) 
+                                    testResultspValueFDR, 
+                                    testResultsBackgroundpValueFDR, 
+                                    testResultsSharedDistributionspValueFDR) 
   pcutoff <- 0.05 
-  tmp <- ifelse(significanceInfo$`test results.p-value` < pcutoff & 
-                  significanceInfo$`test results background.p-value` > pcutoff & 
-                  significanceInfo$`test results shared distributions.p-value` < pcutoff, 1, 0)
+  tmp <- ifelse(significanceInfo$testResultspValueFDR < pcutoff & 
+                  significanceInfo$testResultsBackgroundpValueFDR > pcutoff & 
+                  significanceInfo$testResultsSharedDistributionspValueFDR < pcutoff, 1, 0)
   geneList <- tmp
   names(geneList) <- significanceInfo$orthogroup
   GOdataBP <- new("topGOdata",
@@ -175,16 +142,16 @@ goEnrichmentBUSTEDPH <- function(specificTrait) {
   # Check GO term enrichment of genes under positive selection in background species:
   significanceInfo <- dplyr::select(bustedPHResults, 
                                     orthogroup, 
-                                    `test results.p-value`, 
-                                    `test results background.p-value`, 
-                                    `test results shared distributions.p-value`)
+                                    testResultspValueFDR, 
+                                    testResultsBackgroundpValueFDR, 
+                                    testResultsSharedDistributionspValueFDR)
   significanceInfo <- dplyr::filter(significanceInfo)
   
   # Set each gene to 1 if adjP < cutoff, 0, otherwise
   pcutoff <- 0.05 
-  tmp <- ifelse(significanceInfo$`test results.p-value` > pcutoff & 
-                  significanceInfo$`test results background.p-value` < pcutoff & 
-                  significanceInfo$`test results shared distributions.p-value` < pcutoff, 1, 0)
+  tmp <- ifelse(significanceInfo$testResultspValueFDR > pcutoff & 
+                  significanceInfo$testResultsBackgroundpValueFDR < pcutoff & 
+                  significanceInfo$testResultsSharedDistributionspValueFDR < pcutoff, 1, 0)
   geneList <- tmp
   
   # Give geneList names:
