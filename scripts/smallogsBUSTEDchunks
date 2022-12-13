@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# $1 is the path to tree files, which should be ./inferredTrees
+
+# Remove any existing list-of-input files so that they don't get appended to:
+rm smallChunkList.txt
+rm smallTestFileList.txt
+rm smallCheckedFileList.txt
+rm smallBustedsFileList*
+
+# Export required paths:
+export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
+
+# Make a directory for BUSTED[S] outputs:
+mkdir ./8_3_BustedResults
+
+# Download the newest version of HyPhy:
+export PATH=/home/$USER/miniconda3/bin:$PATH
+conda install -c bioconda hyphy
+
+# Create the list of alignment files:
+ls -hSr ./MAFFToutput/ > smallTestFileList.txt
+
+# Read through that list of alignments:
+while read -r line;
+do
+  # Get the orthogroup number:
+  export orthogroupNumber=`echo "$line" | awk -F'.' '{print ($1)}'`
+  # Get the tree file and it's path:
+  export treeFile=$1$orthogroupNumber"_tree.txt"
+  # If the tree file exists, then check if the corresponding output from BUSTED also exists:
+  if [ -f "$treeFile" ]; then
+    FILE="./8_3_BustedResults/"$orthogroupNumber"_busted.json"
+    if [ -f "$FILE" ]; then
+      # If it does, then tell us that:
+      echo "$FILE exists; BUSTED has already been run on this orthogroup."
+    # If it doesn't, add that alignment file to the input file list:
+    else
+      # Make sure vertical bars are replaced with underscores:
+      echo This file should be added to the file list
+      echo "$orthogroupNumber".fa >> smallCheckedFileList.txt
+    fi
+  # If the tree file doesn't exist, tell us that.
+  else
+    echo "$treeFile does not exist."
+  fi
+done < smallTestFileList.txt
+rm smallTestFileList.txt
+
+
+# Split the list of allowable input files into a specified number of chunks:
+export chunkNumber="l/"$2
+split --number=$chunkNumber --additional-suffix=.txt -d smallCheckedFileList.txt smallBustedsFileList*
+
+# Create a file listing those chunks:
+ls smallBustedsFileList* > smallChunkList.txt
+
+# Create a holder for the chunks:
+export batchSize=$2
+export currentBatch=0
+export batchFileNames=()
+
+# while reading each line in our list of chunked files,
+while read -r line;
+do
+  export batchFile=$line
+  batchFileNames+=($batchFile)
+
+  if [ ${#batchFileNames[@]} -eq $batchSize ]; then
+    for batchFile in ${batchFileNames[@]} ; do
+      #sleep 10 &
+      ./scripts/smallogsBUSTEDchunksSingle $batchFile $1 &
+    done
+    wait
+    batchFileNames=()
+  fi
+
+done < smallChunkList.txt
