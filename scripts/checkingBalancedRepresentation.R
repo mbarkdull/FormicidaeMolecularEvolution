@@ -73,6 +73,9 @@ workerReproductionBalancedTrees$trait <- "workerReproductionQueens"
 # Combine the lists of balanced trees for each trait:
 allBalancedTrees <- rbind(workerPolymorphismBalancedTrees, workerReproductionBalancedTrees)
 
+# Make sure the tree file column is of type character:
+allBalancedTrees$V1 <- as.character(allBalancedTrees$V1)
+
 # Extract the orthogroup number from the tree file name:
 getOrthogroup <- function(file) {
   filePieces <- strsplit(file, split = "_")
@@ -83,7 +86,7 @@ allBalancedTrees$orthogroups <- purrr::map(allBalancedTrees$V1, getOrthogroup)
 allBalancedTrees$orthogroups <- as.character(allBalancedTrees$orthogroups)
 
 # Read in the results:
-selectionResults <- read_csv("./Results/relaxAndBustedPH.csv")
+selectionResults <- read_csv("./relaxAndBustedPH.csv")
 traits <- unique(selectionResults$trait)
 
 # Subset to only balanced orthogroups:
@@ -111,10 +114,8 @@ pValueByTraitRelax <- function(specificTrait, inputData) {
   # Construct a frequency table with that information:
   shiftInIntensity <- c(nSelectionIntensified, 
                         nSelectionRelaxed)
-  population <- c((nrow(relaxResultsTrait) - nSelectionIntensified),
-                  (nrow(relaxResultsTrait) - nSelectionRelaxed))
-  proportionTest <- prop.test(shiftInIntensity,
-                              population)
+  proportionTest <- chisq.test(shiftInIntensity)
+  
   # Print the resulting p-value:
   proportionTest[["p.value"]]
   pValue <- if (proportionTest[["p.value"]] < 0.000001) {
@@ -152,11 +153,8 @@ pValueByTraitBUSTEDPH <- function(specificTrait, inputData) {
   
   # Construct a frequency table with that information:
   selected <- c(nSelectionForeground, nSelectionBackground)
-  population <- c((nrow(bustedPHResultsTrait) - nSelectionForeground),
-                  (nrow(bustedPHResultsTrait) - nSelectionBackground))
   # Run a test of equal proportions:
-  proportionTest <- prop.test(selected,
-                              population)
+  proportionTest <- chisq.test(selected)
   # Print the resulting p-value:
   proportionTest[["p.value"]]
   pValue <- if (proportionTest[["p.value"]] < 0.000001) {
@@ -176,3 +174,73 @@ pValuesBUSTEDPH$test <- "bustedPH"
 
 # Get all the p-values:
 pValuesAll <- bind_rows(pValuesRelax, pValuesBUSTEDPH)
+
+############################################################################################
+### Trim trees so that they have equal representation of fore- and background species:######
+############################################################################################
+# Write a function to trim a single tree:
+forcingBalanced <- function(inputFile) {
+  # Read in a labelled tree:
+  tree <- ape::read.tree(inputFile)
+  # Count the number of foreground tips and background tips:
+  # Create a function that checks each tip to see if it is labelled as foreground:
+  countingTips <- function(tip) {
+    foreground <- "oreground"
+    presence <- grepl(foreground, tip)
+    result <- c(presence, tip)
+    return(result)
+  }
+  
+  # Make a safe version of this function with possibly:
+  possiblyCountingTips <- possibly(countingTips, otherwise = "Error")
+  
+  # Map this function over all the tip labels, checking each one for the foreground label:
+  tips <- purrr::map(tree[["tip.label"]], possiblyCountingTips)
+  tips <- as.data.frame(do.call(rbind, tips))  
+  colnames(tips) <- c("foreground", "tip")
+  
+  # Count how many tip labels contain the foreground and background labels:
+  numberFore <- length(which(tips$foreground == TRUE))
+  numberBack <- length(which(tips$foreground == FALSE))
+  numbers <- c(numberFore, numberBack)
+  names(numbers) <- c("numberFore", "numberBack")
+  
+  # Check which of those categories is smaller:
+  minimumValue <- min(numbers)
+  minimumCategory <- names(numbers)[which.min(numbers)]
+  
+  # Randomly select a subset of the larger category:
+  if (minimumCategory == "numberFore") {
+    backgroundTips <- filter(tips,
+                             tips$foreground == FALSE)
+    tipsToKeep <- dplyr::sample_n(backgroundTips, minimumValue)
+    tipsToDrop <-  subset(backgroundTips,
+                          !tip %in% tipsToKeep$tip)
+    tipsToDrop$tip <- as.character(tipsToDrop$tip)
+    
+    # Randomly trim the tree:
+    trimmedTree <- ape::drop.tip(tree, tipsToDrop$tip)
+  } else {
+    foregroundTips <- filter(tips,
+                             tips$foreground == TRUE)
+    tipsToKeep <- dplyr::sample_n(foregroundTips, minimumValue)
+    tipsToDrop <-  subset(foregroundTips,
+                          !tip %in% tipsToKeep$tip)
+    tipsToDrop$tip <- as.character(tipsToDrop$tip)
+    
+    # Randomly trim the tree:
+    trimmedTree <- ape::drop.tip(tree, tipsToDrop$tip)
+  }
+  return(c(inputFile, trimmedTree))
+}
+
+# Make a safe version of the tree selection function:
+possiblyForcingBalanced <- possibly(forcingBalanced, otherwise = "Error")
+
+# List all tree files:
+workerPolymorphismTreeFiles <- list.files(path = "9_1_LabelledPhylogenies/workerPolymorphism", pattern = "*_tree.txt", full.names = TRUE)
+workerReproductionTreeFiles <- list.files(path = "9_1_LabelledPhylogenies/workerReproductionQueens", pattern = "*_tree.txt", full.names = TRUE)
+
+# Map it over all tree files:
+workerPolymorphismNewBalancedTrees <- purrr::map(workerPolymorphismTreeFiles, possiblyForcingBalanced)
+workerReproductionNewBalancedTrees <- purrr::map(workerReproductionTreeFiles, possiblyForcingBalanced)
