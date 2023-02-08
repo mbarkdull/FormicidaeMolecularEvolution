@@ -1,7 +1,7 @@
 # Load packages:
 library(tidyverse)
 
-#Function to read in all results from a single run, do FDR corrections, and get the number and proportion of genes under positive selection in the fore- and backgrounds. 
+# Function to read in all results from a single run, do FDR corrections, and get the number and proportion of genes under positive selection in the fore- and backgrounds. 
 parsingBootstrapping <- function(i) {
   # Get a list of results files, sort by decreasing size, and remove any that are empty:
   files <- list.files(path = i, pattern = "*.json", full.names = TRUE)
@@ -102,9 +102,26 @@ runs <- list.files(path = "/workdir/mb2337/FormicidaeMolecularEvolution/9_3_Bust
 # Iterate over all your runs:
 resultsBootstrapping <- purrr::map(runs, possiblyparsingBootstrapping)
 resultsBootstrapping <- as.data.frame(do.call(rbind, resultsBootstrapping))   
+write.csv(resultsBootstrapping, 
+          "./Results/threeSpeciesBootstrappingResults.csv")
 
-# Plot the results as a barplot:
+# Plot the results as a barplot, marking the value for the real result:
 ggplot(resultsBootstrapping) +
-  geom_bar(mapping = aes(x = proportionForeToBack)) +
+  geom_histogram(mapping = aes(x = proportionForeToBack),
+                 binwidth = 0.02) +
   geom_vline(xintercept = 0.1288, 
-             color = "red") 
+             color = "red") +
+  ggtitle("Summary of boostrap iterations\nwith three random foreground species") +
+  xlab("Ratio of orthogroups positively selected\nin the foreground vs. background") +
+  ylab("Count of bootstrap iterations") + 
+  annotate("text", 
+           x = 0.14, 
+           y = 6.75, 
+           label = "Ratio in actual results",
+           color = "red",
+           hjust = 0)
+
+# Plot as a scatterplot:
+ggplot(resultsBootstrapping) +
+  geom_point(mapping = aes(x = percentForeground,
+                           y = percentBackground))
