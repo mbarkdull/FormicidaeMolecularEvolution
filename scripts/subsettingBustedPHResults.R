@@ -42,7 +42,7 @@ subsetFiles <- subsetFiles2
 subsetFiles <- separate(subsetFiles, col = file, into = c("junk1", "junk2", "junk3", "orthogroup"), sep = "_")
 
 # Read in the hyphy results with FDR correction applied:
-allHyphy <- read_csv(file = "./Results/relaxAndBustedPH.csv")
+allHyphy <- read_csv(file = "./relaxAndBustedPH.csv")
 workerReproductionBustedPH <- filter(allHyphy, 
                                      trait == "workerReproductionQueens", 
                                      orthogroup %in% subsetFiles$orthogroup)
@@ -66,11 +66,10 @@ nTotal <- workerReproductionBustedPH %>%
 
 # Construct a frequency table with that information:
 selected <- c(nForegroundSelected, nBackgroundSelected)
-population <- c((nrow(workerReproductionBustedPH) - nForegroundSelected),
-                (nrow(workerReproductionBustedPH) - nBackgroundSelected))
+
 # Run a test of equal proportions:
-proportionTest <- prop.test(selected,
-                            population)
+proportionTest <- chisq.test(selected)
+
 # Print the resulting p-value:
 proportionTest[["p.value"]]
 
