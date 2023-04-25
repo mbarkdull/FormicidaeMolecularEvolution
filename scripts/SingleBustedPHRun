@@ -35,7 +35,7 @@ do
             # HYPHYMPI /workdir/mb2337/FormicidaeMolecularEvolution/9_3_BustedPHResults/hyphy-analyses/BUSTED-PH/BUSTED-PH.bf --alignment ./9_3_BustedPHResults/workerPolymorphism/workerPolymorphism_OG0013357_BUSTEDPH.fas --srv Yes
             HYPHYMP /workdir/mb2337/FormicidaeMolecularEvolution/9_3_BustedPHResults/hyphy-analyses/BUSTED-PH/BUSTED-PH.bf --alignment $inputFile --srv Yes
         else
-            echo "."
+            echo "Didn't find tree file at $pathToTrees$treeFile"
         fi
     else
         echo "."
