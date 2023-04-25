@@ -61,8 +61,7 @@ pValueByTraitRelax <- function(specificTrait, inputData) {
                         nSelectionRelaxed)
   population <- c((nrow(relaxResultsTrait) - nSelectionIntensified),
                   (nrow(relaxResultsTrait) - nSelectionRelaxed))
-  proportionTest <- prop.test(shiftInIntensity,
-                              population)
+  proportionTest <- chisq.test(shiftInIntensity)
   # Print the resulting p-value:
   proportionTest[["p.value"]]
   pValue <- if (proportionTest[["p.value"]] < 0.000001) {
@@ -73,16 +72,11 @@ pValueByTraitRelax <- function(specificTrait, inputData) {
   textHeight <- as.numeric(max(nSelectionIntensified, nSelectionRelaxed))
   return(c(specificTrait, pValue, textHeight, nSelectionIntensified, nSelectionRelaxed, nTotal))
 }
-
 possiblypValueByTraitRelax <- possibly(pValueByTraitRelax, otherwise = "Error")
-
 pValuesRelax <- traits %>% 
   purrr::map(~ possiblypValueByTraitRelax(.x, relaxAndBustedPH))
-
 pValuesRelax <- as.data.frame(do.call(rbind, pValuesRelax))   
-
 colnames(pValuesRelax) <- c("trait", "pValue", "maxHeight", "nSelectionIntensified", "nSelectionRelaxed", "nTotal")
-
 pValuesRelax$test <- "relax"
 
 pValueByTraitBUSTEDPH <- function(specificTrait, inputData) {
@@ -107,8 +101,7 @@ pValueByTraitBUSTEDPH <- function(specificTrait, inputData) {
   population <- c((nrow(bustedPHResultsTrait) - nSelectionForeground),
                   (nrow(bustedPHResultsTrait) - nSelectionBackground))
   # Run a test of equal proportions:
-  proportionTest <- prop.test(selected,
-                              population)
+  proportionTest <- chisq.test(x = selected)
   # Print the resulting p-value:
   proportionTest[["p.value"]]
   pValue <- if (proportionTest[["p.value"]] < 0.000001) {
