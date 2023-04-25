@@ -22,83 +22,89 @@ do
   i=$(($i+1))
   echo "$i"
 
-  # Note the start time:
-  echo Starting $i round of bootstrapping at `date` >> bootstrappingLog.txt
+  # Check if the output directory for this round exists:
+  export directory="9_3_BustedPHResults/"$i"bootstrapping/"
+  if [ -d "$directory" ]; then
+    echo "$directory does exist; skipping this iteration."
+  else
+    # Note the start time:
+    echo Starting $i round of bootstrapping at `date` >> bootstrappingLog.txt
 
-  # Get a random list of X foreground species:
-  shuf -n $2 ./scripts/inputurls_full.txt > subsetSpeciesFull.txt
-  cut -d',' -f4 subsetSpeciesFull.txt > subsetSpecies.txt
-  rm subsetSpeciesFull.txt
-  echo Finished getting random species at `date` >> bootstrappingLog.txt
+    # Get a random list of X foreground species:
+    shuf -n $2 ./scripts/inputurls_full.txt > subsetSpeciesFull.txt
+    cut -d',' -f4 subsetSpeciesFull.txt > subsetSpecies.txt
+    rm subsetSpeciesFull.txt
+    echo Finished getting random species at `date` >> bootstrappingLog.txt
 
-  # Label trees with your random species:
-  echo "Labelling trees with foreground species"
-  export LD_LIBRARY_PATH=
-  rm -R ./9_1_LabelledPhylogenies/bootstrapping/
-  Rscript ./scripts/LabellingPhylogeniesHYPHY.R /workdir/mb2337/FormicidaeMolecularEvolution/bootstrappingTreeFiles subsetSpecies.txt bootstrapping
+    # Label trees with your random species:
+    echo "Labelling trees with foreground species"
+    export LD_LIBRARY_PATH=
+    rm -R ./9_1_LabelledPhylogenies/bootstrapping/
+    Rscript ./scripts/LabellingPhylogeniesHYPHY.R /workdir/mb2337/FormicidaeMolecularEvolution/bootstrappingTreeFiles subsetSpecies.txt bootstrapping
 
-  echo Finished labelling trees with random species at `date` >> bootstrappingLog.txt
+    echo Finished labelling trees with random species at `date` >> bootstrappingLog.txt
 
-  # Run BUSTED-PH on those orthogroups/trees
-  # Export required paths:
-  export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
+    # Run BUSTED-PH on those orthogroups/trees
+    # Export required paths:
+    export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
 
-  # Make a directory for BUSTED[S] outputs:
-  mkdir ./9_3_BustedPHResults
-  mkdir ./9_3_BustedPHResults/bootstrapping
+    # Make a directory for BUSTED[S] outputs:
+    mkdir ./9_3_BustedPHResults
+    mkdir ./9_3_BustedPHResults/bootstrapping
 
-  # Add HyPhy to your path:
-  module load gcc/7.3.0
-  export PATH=/programs/hyphy-20210923/bin:$PATH
-  cd ./9_3_BustedPHResults
-  git clone https://github.com/veg/hyphy-analyses.git
-  cd ../
+    # Add HyPhy to your path:
+    module load gcc/7.3.0
+    export PATH=/programs/hyphy-20210923/bin:$PATH
+    cd ./9_3_BustedPHResults
+    git clone https://github.com/veg/hyphy-analyses.git
+    cd ../
 
-  # List our sequence files for the boostrap run:
-  #echo "List our sequence files for the boostrap run:"
-  rm sequencefileList.txt
-  while read -r line;
-  do
-    export removedStopFile=/workdir/mb2337/FormicidaeMolecularEvolution/8_2_RemovedStops/cleaned_$line"_cds.fasta"
-    echo $removedStopFile >> sequencefileList.txt
-  done < subsetOrthogroups.txt
+    # List our sequence files for the boostrap run:
+    #echo "List our sequence files for the boostrap run:"
+    rm sequencefileList.txt
+    while read -r line;
+    do
+      export removedStopFile=/workdir/mb2337/FormicidaeMolecularEvolution/8_2_RemovedStops/cleaned_$line"_cds.fasta"
+      echo $removedStopFile >> sequencefileList.txt
+    done < subsetOrthogroups.txt
 
-  # Split the list of allowable input files into a specified number of chunks:
-  echo "Split the list of allowable input files into a specified number of chunks:"
-  export chunkNumber="l/"$1
-  split --number=$chunkNumber --additional-suffix=.txt -d sequencefileList.txt bootstrapping_bustedphFileList
+    # Split the list of allowable input files into a specified number of chunks:
+    echo "Split the list of allowable input files into a specified number of chunks:"
+    export chunkNumber="l/"$1
+    split --number=$chunkNumber --additional-suffix=.txt -d sequencefileList.txt bootstrapping_bustedphFileList
 
-  # Create a file listing those chunks:
-  echo "Create a file listing those chunks:"
-  ls bootstrapping_bustedphFileList* > bootstrapping_chunkList.txt
+    # Create a file listing those chunks:
+    echo "Create a file listing those chunks:"
+    ls bootstrapping_bustedphFileList* > bootstrapping_chunkList.txt
 
-  # Create a holder for the chunks:
-  export batchSize=$1
-  export currentBatch=0
-  export batchFileNames=()
+    # Create a holder for the chunks:
+    export batchSize=$1
+    export currentBatch=0
+    export batchFileNames=()
 
-  # while reading each line in our list of chunked files,
-  #echo "Running BUSTED-PH"
-  while read -r line;
-  do
-    export batchFile=$line
-    batchFileNames+=($batchFile)
+    # while reading each line in our list of chunked files,
+    #echo "Running BUSTED-PH"
+    while read -r line;
+    do
+      export batchFile=$line
+      batchFileNames+=($batchFile)
 
-    if [ ${#batchFileNames[@]} -eq $batchSize ]; then
-      for batchFile in ${batchFileNames[@]} ; do
-        echo $batchFile
-        sleep 10 &
-        ./scripts/SingleBustedPHRun $batchFile  9_1_LabelledPhylogenies/bootstrapping/ bootstrapping &
-        # ./scripts/SingleBustedPHRun bootstrapping_bustedphFileList00.txt 9_1_LabelledPhylogenies/bootstrapping bootstrapping
+      if [ ${#batchFileNames[@]} -eq $batchSize ]; then
+        for batchFile in ${batchFileNames[@]} ; do
+          echo $batchFile
+          sleep 10 &
+          ./scripts/SingleBustedPHRun $batchFile  9_1_LabelledPhylogenies/bootstrapping/ bootstrapping &
+          # ./scripts/SingleBustedPHRun bootstrapping_bustedphFileList00.txt 9_1_LabelledPhylogenies/bootstrapping bootstrapping
 
-        # cat /workdir/mb2337/FormicidaeMolecularEvolution/8_2_RemovedStops/cleaned_OG0015422_cds.fasta 9_1_LabelledPhylogenies/bootstrapping/bootstrappingLabelled_OG0015422_tree.txt >> ./9_3_BustedPHResults/bootstrapping/bootstrapping_OG0015422_BUSTEDPH.fas
-        # HYPHYMP /workdir/mb2337/FormicidaeMolecularEvolution/9_3_BustedPHResults/hyphy-analyses/BUSTED-PH/BUSTED-PH.bf --alignment ./9_3_BustedPHResults/bootstrapping/bootstrapping_OG0001903_BUSTEDPH.fas --srv Yes
-      done
-      wait
-      batchFileNames=()
-    fi
-  done < bootstrapping_chunkList.txt
+          # cat /workdir/mb2337/FormicidaeMolecularEvolution/8_2_RemovedStops/cleaned_OG0015422_cds.fasta 9_1_LabelledPhylogenies/bootstrapping/bootstrappingLabelled_OG0015422_tree.txt >> ./9_3_BustedPHResults/bootstrapping/bootstrapping_OG0015422_BUSTEDPH.fas
+          # HYPHYMP /workdir/mb2337/FormicidaeMolecularEvolution/9_3_BustedPHResults/hyphy-analyses/BUSTED-PH/BUSTED-PH.bf --alignment ./9_3_BustedPHResults/bootstrapping/bootstrapping_OG0001903_BUSTEDPH.fas --srv Yes
+        done
+        wait
+        batchFileNames=()
+      fi
+    done < bootstrapping_chunkList.txt
 
-  mv 9_3_BustedPHResults/bootstrapping/ "9_3_BustedPHResults/"$i"bootstrapping/"
-  mv subsetSpecies.txt $i"subsetSpecies.txt"
+    mv 9_3_BustedPHResults/bootstrapping/ "9_3_BustedPHResults/"$i"bootstrapping/"
+    mv subsetSpecies.txt $i"subsetSpecies.txt"
+  fi
 done
