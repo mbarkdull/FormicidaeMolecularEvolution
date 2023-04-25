@@ -6,6 +6,8 @@ library(plyr)
 library(rjson)
 
 traits <- c("polyandry", "polygyny", "workerReproductionQueens", "workerPolymorphism", "multilineage")
+traits <- c("workerReproductionQueens", "workerPolymorphism")
+
 
 processingRELAXFiles <- function(trait) {
   jsonFiles <- list.files(path = paste("./10_1_RelaxResults/", trait, sep = ""), pattern = "*.json", full.names = TRUE)
@@ -53,6 +55,8 @@ possiblyprocessingRELAXFiles <- possibly(processingRELAXFiles, otherwise = "File
 # Run this function with purrr:map so as to avoid for loops (from https://www.r-bloggers.com/2017/12/skip-errors-in-r-loops-by-not-writing-loops/ and https://jennybc.github.io/purrr-tutorial/ls01_map-name-position-shortcuts.html):
 relaxResults <- purrr::map(traits, possiblyprocessingRELAXFiles)
 relaxResults <- as.data.frame(do.call(rbind, relaxResults))  
+relaxResults$kValue <- as.numeric(as.character(relaxResults$kValue))
+relaxResults$pValue <- as.numeric(as.character(relaxResults$pValue))
 
 # Create a column that accurate categories genes by selective regime:
 relaxResults <- relaxResults %>% mutate(selectionCategory =
@@ -61,6 +65,10 @@ relaxResults <- relaxResults %>% mutate(selectionCategory =
                                                     pValue > 0.05 & kValue > 1 ~ "nonsignficantIntensification",
                                                     pValue > 0.05 & kValue < 1 ~ "nonsignficantRelaxation")
                                         )
+
+# Export results as a .csv:
+write_csv(relaxResults,
+          "./Results/allRelaxResults.csv")
 
 #Calculate p-values for each trait:
 pValueByTrait <- function(specificTrait) {
