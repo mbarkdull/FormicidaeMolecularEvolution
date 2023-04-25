@@ -53,13 +53,13 @@ do
   export LD_LIBRARY_PATH=/usr/local/gcc-7.3.0/lib64:/usr/local/gcc-7.3.0/lib
 
   # Make a directory for BUSTED[S] outputs:
-  mkdir ./10_1_RelaxResults 
+  mkdir ./10_1_RelaxResults
   mkdir ./10_1_RelaxResults/bootstrapping
 
   # Add HyPhy to your path:
   module load gcc/7.3.0
   export PATH=/programs/hyphy-20210923/bin:$PATH
-  cd ./10_1_RelaxResults 
+  cd ./10_1_RelaxResults
   git clone https://github.com/veg/hyphy-analyses.git
   cd ../
 
@@ -98,16 +98,12 @@ do
         echo $batchFile
         sleep 10 &
         ./scripts/SingleRELAXRun $batchFile  9_1_LabelledPhylogenies/bootstrapping/ bootstrapping &
-        # ./scripts/SingleRELAXRun bootstrapping_relaxFileList00.txt 9_1_LabelledPhylogenies/bootstrapping bootstrapping
-
-        # cat /workdir/mb2337/FormicidaeMolecularEvolution/8_2_RemovedStops/cleaned_OG0015422_cds.fasta 9_1_LabelledPhylogenies/bootstrapping/bootstrappingLabelled_OG0015422_tree.txt >> ./10_1_RelaxResults /bootstrapping/bootstrapping_OG0015422_relax.fas
-        # HYPHYMP /workdir/mb2337/FormicidaeMolecularEvolution/10_1_RelaxResults /hyphy-analyses/RELAX/RELAX.bf --alignment ./10_1_RelaxResults /bootstrapping/bootstrapping_OG0001903_relax.fas --srv Yes
       done
       wait
       batchFileNames=()
     fi
   done < bootstrapping_chunkList.txt
 
-  mv 10_1_RelaxResults /bootstrapping/ "10_1_RelaxResults /"$i"bootstrapping/"
+  mv 10_1_RelaxResults/bootstrapping/ "10_1_RelaxResults/"$i"bootstrapping/"
   mv subsetSpecies.txt $i"subsetSpecies.txt"
 done
