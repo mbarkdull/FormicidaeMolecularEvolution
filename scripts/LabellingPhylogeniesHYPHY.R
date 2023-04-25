@@ -9,6 +9,8 @@ if (length(args)==0) {
 }
 
 # I need to be able to label all of my phylogenies in order to run aBSREL and RELAX. 
+#install.packages("ape")
+#install.packages("purrr")
 
 library(ape)
 library(purrr)
@@ -89,5 +91,6 @@ for (i in treeFiles) {
   #orthogoupName <- paste("Labelled_", orthogoupName, sep = "")
   
   print(orthogoupName)
-  multiTreeLabelling(tree = i, speciesOfInterest = interest$X1, exportFile = orthogoupName)
+  multiTreeLabelling(tree = i, speciesOfInterest = interest$V1, exportFile = orthogoupName)
 }
+
