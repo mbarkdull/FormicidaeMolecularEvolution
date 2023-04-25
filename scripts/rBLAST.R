@@ -88,8 +88,8 @@ selectionOnGenesOfInterest <- full_join(allOrthogroupsToTestPlusTraits,
   dplyr::select(-c(X1)) %>%
   drop_na(`paper number`) %>%
   drop_na(V1) %>%
-  drop_na(pValue) %>%
-  drop_na(`test results p-value`) %>%
+  #drop_na(pValue) %>%
+  #drop_na(`test results p-value`) %>%
   distinct() 
 
 # Correct the p-values by the number of genes being tested for each trait:
@@ -164,6 +164,8 @@ googlesheets4::write_sheet(allResults,
 # Make publication quality tables for these results:
 library(flextable)
 significantCandidateGenes <- allResults %>%
+  drop_na(pValue) %>%
+  drop_na(`test results p-value`) %>%
   dplyr::select(c(`...1`,
                   `candidate genes`,
                   `gene symbol`,
